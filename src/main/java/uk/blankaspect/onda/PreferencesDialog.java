@@ -832,7 +832,7 @@ class PreferencesDialog
 		List<ChunkFilter> filters = new ArrayList<>();
 		for (int i = -AppConfig.MIN_CHUNK_FILTER_INDEX; i < comboBox.getItemCount(); i++)
 			filters.add((ChunkFilter)comboBox.getItemAt(i));
-		String titleStr = CHUNK_FILTERS_STR + " | " + fileKind;
+		String titleStr = CHUNK_FILTERS_STR + " : " + fileKind;
 		filters = ChunkFilterListDialog.showDialog(this, titleStr, filters);
 		if (filters != null)
 		{
