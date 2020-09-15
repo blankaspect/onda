@@ -55,14 +55,19 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import uk.blankaspect.common.gui.FButton;
-import uk.blankaspect.common.gui.GuiUtils;
-import uk.blankaspect.common.gui.SingleSelectionList;
-import uk.blankaspect.common.gui.TextRendering;
-
 import uk.blankaspect.common.iff.ChunkFilter;
 
-import uk.blankaspect.common.misc.KeyAction;
+import uk.blankaspect.common.swing.action.KeyAction;
+
+import uk.blankaspect.common.swing.button.FButton;
+
+import uk.blankaspect.common.swing.font.FontUtils;
+
+import uk.blankaspect.common.swing.list.SingleSelectionList;
+
+import uk.blankaspect.common.swing.misc.GuiUtils;
+
+import uk.blankaspect.common.swing.text.TextRendering;
 
 //----------------------------------------------------------------------
 
@@ -79,8 +84,8 @@ class ChunkFilterListDialog
 //  Constructors
 ////////////////////////////////////////////////////////////////////////
 
-	private static final	int	MODIFIERS_MASK	= ActionEvent.ALT_MASK | ActionEvent.META_MASK |
-															ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK;
+	private static final	int	MODIFIERS_MASK	= ActionEvent.ALT_MASK | ActionEvent.META_MASK | ActionEvent.CTRL_MASK
+														| ActionEvent.SHIFT_MASK;
 
 	private static final	String	ADD_STR		= "Add";
 	private static final	String	EDIT_STR	= "Edit";
@@ -181,7 +186,7 @@ class ChunkFilterListDialog
 			// Draw text
 			x = getExtraWidth() + getHorizontalMargin();
 			gr.setColor(getForegroundColour(index));
-			gr.drawString(text, x, y + GuiUtils.getBaselineOffset(rowHeight, fontMetrics));
+			gr.drawString(text, x, y + FontUtils.getBaselineOffset(rowHeight, fontMetrics));
 		}
 
 		//--------------------------------------------------------------
@@ -577,7 +582,7 @@ class ChunkFilterListDialog
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Class fields
+//  Class variables
 ////////////////////////////////////////////////////////////////////////
 
 	private static	Point	location;
@@ -598,7 +603,7 @@ class ChunkFilterListDialog
 	}
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance fields
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
 	private	boolean		accepted;

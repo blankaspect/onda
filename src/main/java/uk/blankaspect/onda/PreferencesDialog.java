@@ -65,25 +65,35 @@ import javax.swing.UIManager;
 
 import uk.blankaspect.common.exception.AppException;
 
-import uk.blankaspect.common.gui.BooleanComboBox;
-import uk.blankaspect.common.gui.FButton;
-import uk.blankaspect.common.gui.FComboBox;
-import uk.blankaspect.common.gui.FIntegerSpinner;
-import uk.blankaspect.common.gui.FLabel;
-import uk.blankaspect.common.gui.FontEx;
-import uk.blankaspect.common.gui.FontStyle;
-import uk.blankaspect.common.gui.FTabbedPane;
-import uk.blankaspect.common.gui.GuiUtils;
-import uk.blankaspect.common.gui.IntegerSpinner;
-import uk.blankaspect.common.gui.TextRendering;
-import uk.blankaspect.common.gui.TitledBorder;
-
 import uk.blankaspect.common.iff.ChunkFilter;
 
-import uk.blankaspect.common.misc.KeyAction;
-import uk.blankaspect.common.misc.StringUtils;
+import uk.blankaspect.common.string.StringUtils;
 
-import uk.blankaspect.common.textfield.IntegerValueField;
+import uk.blankaspect.common.swing.action.KeyAction;
+
+import uk.blankaspect.common.swing.border.TitledBorder;
+
+import uk.blankaspect.common.swing.button.FButton;
+
+import uk.blankaspect.common.swing.combobox.BooleanComboBox;
+import uk.blankaspect.common.swing.combobox.FComboBox;
+
+import uk.blankaspect.common.swing.font.FontEx;
+import uk.blankaspect.common.swing.font.FontStyle;
+import uk.blankaspect.common.swing.font.FontUtils;
+
+import uk.blankaspect.common.swing.label.FLabel;
+
+import uk.blankaspect.common.swing.misc.GuiUtils;
+
+import uk.blankaspect.common.swing.spinner.FIntegerSpinner;
+import uk.blankaspect.common.swing.spinner.IntegerSpinner;
+
+import uk.blankaspect.common.swing.tabbedpane.FTabbedPane;
+
+import uk.blankaspect.common.swing.text.TextRendering;
+
+import uk.blankaspect.common.swing.textfield.IntegerValueField;
 
 //----------------------------------------------------------------------
 
@@ -343,7 +353,7 @@ class PreferencesDialog
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	String	text;
@@ -414,7 +424,7 @@ class PreferencesDialog
 			text = (filter == null) ? "" : filter.getIdString();
 
 			FontMetrics fontMetrics = getFontMetrics(list.getFont());
-			maxTextWidth = NUM_COLUMNS * GuiUtils.getCharWidth('0', fontMetrics);
+			maxTextWidth = NUM_COLUMNS * FontUtils.getCharWidth('0', fontMetrics);
 			textWidth = fontMetrics.stringWidth(text);
 			if (textWidth > maxTextWidth)
 			{
@@ -477,7 +487,7 @@ class PreferencesDialog
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	int			maxTextWidth;
@@ -599,7 +609,7 @@ class PreferencesDialog
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	FComboBox<String>		nameComboBox;
@@ -1657,14 +1667,14 @@ class PreferencesDialog
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Class fields
+//  Class variables
 ////////////////////////////////////////////////////////////////////////
 
 	private static	Point	location;
 	private static	int		tabIndex;
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance fields
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
 	// Main panel

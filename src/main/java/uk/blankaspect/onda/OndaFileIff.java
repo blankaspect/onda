@@ -35,9 +35,10 @@ import uk.blankaspect.common.iff.IffFormFile;
 import uk.blankaspect.common.iff.IffId;
 
 import uk.blankaspect.common.misc.IByteDataOutputStream;
-import uk.blankaspect.common.misc.NumberUtils;
 
 import uk.blankaspect.common.nlf.Document;
+
+import uk.blankaspect.common.number.NumberUtils;
 
 //----------------------------------------------------------------------
 
@@ -156,7 +157,7 @@ class OndaFileIff
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	String	message;
@@ -364,7 +365,7 @@ class OndaFileIff
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	int						readKind;
@@ -539,7 +540,7 @@ class OndaFileIff
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance fields
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
 	private	File				file;

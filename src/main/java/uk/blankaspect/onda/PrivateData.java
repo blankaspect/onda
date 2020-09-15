@@ -35,7 +35,7 @@ import uk.blankaspect.common.iff.ChunkFilter;
 import uk.blankaspect.common.iff.FormFile;
 import uk.blankaspect.common.iff.IffId;
 
-import uk.blankaspect.common.misc.NumberUtils;
+import uk.blankaspect.common.number.NumberUtils;
 
 //----------------------------------------------------------------------
 
@@ -103,6 +103,7 @@ class PrivateData
 	//  Instance methods : AppException.IId interface
 	////////////////////////////////////////////////////////////////////
 
+		@Override
 		public String getMessage()
 		{
 			return message;
@@ -111,7 +112,7 @@ class PrivateData
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	String	message;
@@ -145,7 +146,7 @@ class PrivateData
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		IffId	id;
@@ -183,6 +184,7 @@ class PrivateData
 	//  Instance methods : FormFile.IChunkReader interface
 	////////////////////////////////////////////////////////////////////
 
+		@Override
 		public void beginReading(RandomAccessFile raFile,
 								 IffId            typeId,
 								 int              size)
@@ -196,6 +198,7 @@ class PrivateData
 
 		//--------------------------------------------------------------
 
+		@Override
 		public void read(RandomAccessFile raFile,
 						 IffId            id,
 						 int              size)
@@ -221,6 +224,7 @@ class PrivateData
 
 		//--------------------------------------------------------------
 
+		@Override
 		public void endReading(RandomAccessFile raFile)
 		{
 			compressor.finish();
@@ -232,6 +236,7 @@ class PrivateData
 				compressedDataBlocks.add(buffer);
 			}
 			adler32 = compressor.getAdler();
+			compressor.end();
 		}
 
 		//--------------------------------------------------------------
@@ -260,7 +265,7 @@ class PrivateData
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	ChunkFilter	filter;
@@ -377,7 +382,7 @@ class PrivateData
 		int offset = 0;
 		for (int i = 0; i < index; i++)
 			offset += sourceChunks.get(i).size;
-		chunk.set(sourceChunks.get(index).id, expandedData, offset, sourceChunks.get(index).size);
+		chunk.set(sourceChunks.get(index).id, decompressedData, offset, sourceChunks.get(index).size);
 	}
 
 	//------------------------------------------------------------------
@@ -419,37 +424,37 @@ class PrivateData
 			length += size;
 		}
 
-		// Expand compressed data
-		expandedData = new byte[length];
-		Inflater inflater = new Inflater();
-		inflater.setInput(data, offset, data.length - offset);
+		// Decompress data
+		decompressedData = new byte[length];
+		Inflater decompressor = new Inflater();
+		decompressor.setInput(data, offset, data.length - offset);
 		try
 		{
-			length = inflater.inflate(expandedData);
+			length = decompressor.inflate(decompressedData);
 		}
-		catch (DataFormatException e )
+		catch (DataFormatException e)
 		{
 			throw new AppException(ErrorId.INVALID_DATA);
 		}
 
 		// Validate data
-		if (!inflater.finished() || (length < expandedData.length))
+		if (!decompressor.finished() || (length < decompressedData.length))
 			throw new AppException(ErrorId.INVALID_DATA);
-		if (inflater.getAdler() != adler32)
+		if (decompressor.getAdler() != adler32)
 			throw new AppException(ErrorId.INCORRECT_ADLER32);
 	}
 
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance fields
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
 	private	AudioFileKind		sourceKind;
 	private	int					adler32;
 	private	List<SourceChunk>	sourceChunks;
 	private	List<byte[]>		compressedDataBlocks;
-	private	byte[]				expandedData;
+	private	byte[]				decompressedData;
 
 }
 

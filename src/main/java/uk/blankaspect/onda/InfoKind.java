@@ -2,7 +2,7 @@
 
 InfoKind.java
 
-Information kind enumeration.
+Enumeration: information kind.
 
 \*====================================================================*/
 
@@ -18,35 +18,61 @@ package uk.blankaspect.onda;
 // IMPORTS
 
 
-import java.util.Set;
+import java.util.Arrays;
+import java.util.Collection;
 
 //----------------------------------------------------------------------
 
 
-// INFORMATION KIND ENUMERATION
+// ENUMERATION: INFORMATION KIND
 
 
-enum InfoKind
+public enum InfoKind
 {
 
 ////////////////////////////////////////////////////////////////////////
 //  Constants
 ////////////////////////////////////////////////////////////////////////
 
-	NONE    ("none"),
-	TITLE   ("title"),
-	LOG     ("log"),
-	RESULT  ("result"),
-	ALL     ("all")
+	NONE
+	(
+		"none"
+	),
+
+	TITLE
+	(
+		"title"
+	),
+
+	LOG
+	(
+		"log"
+	),
+
+	RESULT
+	(
+		"result"
+	),
+
+	ALL
+	(
+		"all"
+	)
 	{
 		@Override
-		public void addTo(Set<InfoKind> infoKinds)
+		public void addTo(Collection<InfoKind> infoKinds)
 		{
 			infoKinds.add(TITLE);
 			infoKinds.add(LOG);
 			infoKinds.add(RESULT);
 		}
 	};
+
+////////////////////////////////////////////////////////////////////////
+//  Instance variables
+////////////////////////////////////////////////////////////////////////
+
+	private	String	key;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -65,12 +91,10 @@ enum InfoKind
 
 	public static InfoKind forKey(String key)
 	{
-		for (InfoKind value : values())
-		{
-			if (value.key.equals(key))
-				return value;
-		}
-		return null;
+		return Arrays.stream(values())
+						.filter(value -> value.key.equals(key))
+						.findFirst()
+						.orElse(null);
 	}
 
 	//------------------------------------------------------------------
@@ -79,18 +103,12 @@ enum InfoKind
 //  Instance methods
 ////////////////////////////////////////////////////////////////////////
 
-	public void addTo(Set<InfoKind> infoKinds)
+	public void addTo(Collection<InfoKind> infoKinds)
 	{
 		infoKinds.add(this);
 	}
 
 	//------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////
-//  Instance fields
-////////////////////////////////////////////////////////////////////////
-
-	private	String	key;
 
 }
 

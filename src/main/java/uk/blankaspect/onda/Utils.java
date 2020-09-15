@@ -22,8 +22,9 @@ import java.io.File;
 
 import java.util.List;
 
-import uk.blankaspect.common.misc.PropertiesPathname;
-import uk.blankaspect.common.misc.SystemUtils;
+import uk.blankaspect.common.config.PropertiesPathname;
+
+import uk.blankaspect.common.filesystem.PathnameUtils;
 
 //----------------------------------------------------------------------
 
@@ -38,9 +39,7 @@ class Utils
 //  Constants
 ////////////////////////////////////////////////////////////////////////
 
-	private static final	String	USER_HOME_PREFIX			= "~";
-	private static final	String	FAILED_TO_GET_PATHNAME_STR	= "Failed to get the canonical pathname " +
-																	"for the file or directory.";
+	private static final	String	FAILED_TO_GET_PATHNAME_STR	= "Failed to get the canonical pathname for ";
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -125,38 +124,17 @@ class Utils
 		{
 			try
 			{
-				try
-				{
-					pathname = file.getCanonicalPath();
-				}
-				catch (Exception e)
-				{
-					System.err.println(file.getPath());
-					System.err.println(FAILED_TO_GET_PATHNAME_STR);
-					System.err.println("(" + e + ")");
-					pathname = file.getAbsolutePath();
-				}
+				pathname = file.getCanonicalPath();
 			}
-			catch (SecurityException e)
+			catch (Exception e)
 			{
-				System.err.println(e);
-				pathname = file.getPath();
+				System.err.println(FAILED_TO_GET_PATHNAME_STR + file.getPath());
+				System.err.println("(" + e + ")");
+				pathname = file.getAbsolutePath();
 			}
 
 			if (unixStyle)
-			{
-				try
-				{
-					String userHome = SystemUtils.getUserHomePathname();
-					if ((userHome != null) && pathname.startsWith(userHome))
-						pathname = USER_HOME_PREFIX + pathname.substring(userHome.length());
-				}
-				catch (SecurityException e)
-				{
-					// ignore
-				}
-				pathname = pathname.replace(File.separatorChar, '/');
-			}
+				pathname = PathnameUtils.toUnixStyle(pathname, true);
 		}
 		return pathname;
 	}

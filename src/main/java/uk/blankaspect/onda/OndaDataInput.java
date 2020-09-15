@@ -39,7 +39,7 @@ import java.io.IOException;
  * </p>
  * <p>
  * The implementation of this class in the Onda application works only for integer sample values of up to 24
- * bits per sample.  Above 24 bits per sample, the type of the instance field {@code bitBuffer} must be
+ * bits per sample.  Above 24 bits per sample, the type of the instance variable {@code bitBuffer} must be
  * changed from {@code int} to {@code long} to accommodate the extra bits.
  * </p>
  *
@@ -218,7 +218,7 @@ public class OndaDataInput
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance fields
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
 	private	DataInput	dataInput;

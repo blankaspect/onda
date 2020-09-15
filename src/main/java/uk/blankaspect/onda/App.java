@@ -19,8 +19,13 @@ package uk.blankaspect.onda;
 
 
 import java.io.File;
+import java.io.IOException;
 
 import java.nio.charset.Charset;
+
+import java.time.LocalDateTime;
+
+import java.time.format.DateTimeFormatter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,29 +37,38 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+import uk.blankaspect.common.cls.ClassUtils;
+
+import uk.blankaspect.common.collection.ArraySet;
+
+import uk.blankaspect.common.commandline.CommandLine;
+
 import uk.blankaspect.common.exception.AppException;
 import uk.blankaspect.common.exception.ExceptionUtils;
 import uk.blankaspect.common.exception.FileException;
 import uk.blankaspect.common.exception.TaskCancelledException;
 
-import uk.blankaspect.common.gui.TextRendering;
+import uk.blankaspect.common.exception2.LocationException;
+
+import uk.blankaspect.common.filesystem.PathnameUtils;
 
 import uk.blankaspect.common.iff.ChunkFilter;
 
-import uk.blankaspect.common.misc.ArraySet;
-import uk.blankaspect.common.misc.CalendarTime;
-import uk.blankaspect.common.misc.ClassUtils;
-import uk.blankaspect.common.misc.CommandLine;
+import uk.blankaspect.common.logging.ErrorLogger;
+
 import uk.blankaspect.common.misc.DirectoryFilter;
 import uk.blankaspect.common.misc.FilenameFilter;
-import uk.blankaspect.common.misc.PropertyString;
-import uk.blankaspect.common.misc.ResourceProperties;
-import uk.blankaspect.common.misc.StringUtils;
 import uk.blankaspect.common.misc.TextFile;
+
+import uk.blankaspect.common.resource.ResourceProperties;
 
 import uk.blankaspect.common.stdin.InputUtils;
 
-import uk.blankaspect.common.textfield.TextFieldUtils;
+import uk.blankaspect.common.string.StringUtils;
+
+import uk.blankaspect.common.swing.text.TextRendering;
+
+import uk.blankaspect.common.swing.textfield.TextFieldUtils;
 
 //----------------------------------------------------------------------
 
@@ -79,12 +93,16 @@ public class App
 	private static final	String	BUILD_PROPERTY_KEY		= "build";
 	private static final	String	RELEASE_PROPERTY_KEY	= "release";
 
+	private static final	String	VERSION_DATE_TIME_PATTERN	= "uuuuMMdd-HHmmss";
+
+	private static final	String	BUILD_PROPERTIES_FILENAME	= "build.properties";
+
 	private static final	String	PATHNAME_PREFIX	= "+";
 	private static final	String	LIST_PREFIX		= "@";
 
-	private static final	String	INFO_KIND_SEPARATOR	= ",";
+	private static final	char	INFO_KIND_SEPARATOR_CHAR	= ',';
 
-	private static final	String	BUILD_PROPERTIES_FILENAME	= "build.properties";
+	private static final	String	EXCEPTION_CAUSE_PREFIX	= "- ";
 
 	private static final	String	CONFIG_ERROR_STR	= "Configuration error";
 	private static final	String	LAF_ERROR1_STR		= "Look-and-feel: ";
@@ -153,17 +171,17 @@ public class App
 		"            file (ie, includes none).\n" +
 		"  --output-directory=pathname\n" +
 		"      The directory to which output files will be written.  If an input\n" +
-		"      pathname is a directory and the --recursive option is specified, the\n" +
+		"      pathname is a directory and the 'recursive' option is present, the\n" +
 		"      directory structure below the input directory will be reproduced in the\n" +
 		"      output directory.\n" +
 		"  --overwrite\n" +
-		"      Overwrite an existing file without prompting.\n" +
+		"      Overwrite an existing file without seeking confirmation.\n" +
 		"  --recursive\n" +
 		"      Process the input directory recursively.\n" +
 		"  --show-info={none|title|log|result|all}\n" +
-		"      The kind of information that will be written to standard output.\n" +
+		"      The kinds of information that will be written to standard output.\n" +
 		"      Multiple kinds may be specified, separated by ','.  The default value is\n" +
-		"      log,result.\n" +
+		"      'log,result'.\n" +
 		"\n" +
 		"If an option takes an argument, the key and argument of the option may be\n" +
 		"separated either by whitespace or by a single '='.\n" +
@@ -268,7 +286,7 @@ public class App
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	String	name;
@@ -291,10 +309,10 @@ public class App
 	////////////////////////////////////////////////////////////////////
 
 		INVALID_OPTION_ARGUMENT
-		("'%1' is not a valid argument for the %2 option."),
+		("'%1' is not a valid argument for the '%2' option."),
 
 		CONFLICTING_OPTION_ARGUMENTS
-		("The %1 option was specified more than once with different arguments."),
+		("The '%1' option was specified more than once with different arguments."),
 
 		NO_COMMAND
 		("No command was specified."),
@@ -313,6 +331,9 @@ public class App
 
 		INVALID_WAVE_CHUNK_FILTER
 		("The WAVE chunk filter is invalid."),
+
+		INCONSISTENT_INFO_KINDS
+		("The arguments of the 'show-info' option are inconsistent."),
 
 		LIST_FILE_OR_DIRECTORY_DOES_NOT_EXIST
 		("The file or directory specified by this pathname in the list file does not exist."),
@@ -358,7 +379,7 @@ public class App
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	String	message;
@@ -405,7 +426,7 @@ public class App
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	String	prefix;
@@ -473,7 +494,7 @@ public class App
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	String	prefix;
@@ -504,12 +525,10 @@ public class App
 
 	//------------------------------------------------------------------
 
-	public static String getCharacterEncoding()
+	public static Charset getCharEncoding()
 	{
 		String encodingName = AppConfig.INSTANCE.getCharacterEncoding();
-		if (encodingName.isEmpty())
-			encodingName = Charset.defaultCharset().name();
-		return encodingName;
+		return (encodingName == null) ? Charset.defaultCharset() : Charset.forName(encodingName);
 	}
 
 	//------------------------------------------------------------------
@@ -523,38 +542,35 @@ public class App
 
 		// Parse file
 		List<InputOutput> inputsOutputs = new ArrayList<>();
-		for (String line : TextFile.readLines(file, getCharacterEncoding()))
+		for (String line : TextFile.readLines(file, getCharEncoding()))
 		{
 			if (!line.isEmpty())
 			{
-				String[] strs = line.split("\\t+");
-				if (strs.length > 0)
+				List<String> strs = StringUtils.split(line, '\t');
+				if (!strs.isEmpty())
 				{
-					File inFile = new File(PropertyString.parsePathname(strs[0]));
+					File inFile = new File(PathnameUtils.parsePathname(strs.get(0)));
 					try
 					{
 						if (!inFile.isFile() && !inFile.isDirectory())
-							throw new FileException(ErrorId.LIST_FILE_OR_DIRECTORY_DOES_NOT_EXIST,
-													inFile);
+							throw new FileException(ErrorId.LIST_FILE_OR_DIRECTORY_DOES_NOT_EXIST, inFile);
 					}
 					catch (SecurityException e)
 					{
 						throw new FileException(ErrorId.FILE_OR_DIRECTORY_ACCESS_NOT_PERMITTED, inFile);
 					}
 					File outDirectory = null;
-					if (strs.length > 1)
+					if (strs.size() > 1)
 					{
-						outDirectory = new File(PropertyString.parsePathname(strs[1]));
+						outDirectory = new File(PathnameUtils.parsePathname(strs.get(1)));
 						try
 						{
 							if (outDirectory.isFile())
-								throw new FileException(ErrorId.LIST_FILE_PATHNAME_IS_A_FILE,
-														outDirectory);
+								throw new FileException(ErrorId.LIST_FILE_PATHNAME_IS_A_FILE, outDirectory);
 						}
 						catch (SecurityException e)
 						{
-							throw new FileException(ErrorId.FILE_OR_DIRECTORY_ACCESS_NOT_PERMITTED,
-													outDirectory);
+							throw new FileException(ErrorId.FILE_OR_DIRECTORY_ACCESS_NOT_PERMITTED, outDirectory);
 						}
 					}
 					inputsOutputs.add(new InputOutput(inFile, outDirectory));
@@ -614,11 +630,8 @@ public class App
 			}
 			else
 			{
-				long time = System.currentTimeMillis();
 				buffer.append('b');
-				buffer.append(CalendarTime.dateToString(time));
-				buffer.append('-');
-				buffer.append(CalendarTime.hoursMinsToString(time));
+				buffer.append(DateTimeFormatter.ofPattern(VERSION_DATE_TIME_PATTERN).format(LocalDateTime.now()));
 			}
 			versionStr = buffer.toString();
 		}
@@ -845,13 +858,36 @@ public class App
 
 	//------------------------------------------------------------------
 
-	private void init(String[] arguments)
+	private void init(String[] args)
 	{
-		// Read build properties
-		buildProperties = new ResourceProperties(BUILD_PROPERTIES_FILENAME, getClass());
+		// Log stack trace of uncaught exception
+		if (ClassUtils.isFromJar(getClass()))
+		{
+			Thread.setDefaultUncaughtExceptionHandler((thread, exception) ->
+			{
+				try
+				{
+					ErrorLogger.INSTANCE.write(exception);
+				}
+				catch (IOException e)
+				{
+					e.printStackTrace();
+				}
+			});
+		}
 
-		// Initialise instance fields
-		hasGui = (arguments.length == 0);
+		// Read build properties
+		try
+		{
+			buildProperties = new ResourceProperties(BUILD_PROPERTIES_FILENAME);
+		}
+		catch (LocationException e)
+		{
+			e.printStackTrace();
+		}
+
+		// Initialise instance variables
+		hasGui = (args.length == 0);
 		infoKinds = EnumSet.noneOf(InfoKind.class);
 
 		// Read configuration
@@ -908,7 +944,7 @@ public class App
 			try
 			{
 				List<CommandLine.Element<Option>> commandLineElements =
-									new CommandLine<>(Option.class, true, USAGE_STR).parse(arguments);
+														new CommandLine<>(Option.class, true, USAGE_STR).parse(args);
 				if (!commandLineElements.isEmpty())
 					parseCommandLine(commandLineElements);
 			}
@@ -918,8 +954,31 @@ public class App
 			}
 			catch (AppException e)
 			{
-				showTitle();
+				// Write title
+				if (!titleShown)
+					System.err.println(SHORT_NAME + " " + getVersionString());
+
+				// Write string representation of exception
 				System.err.println(e);
+
+				// Exit application
+				System.exit(ExitCode.ERROR);
+			}
+			catch (CommandLine.CommandLineException e)
+			{
+				// Write title
+				if (!titleShown)
+					System.err.println(SHORT_NAME + " " + getVersionString());
+
+				// Write detail message of exception
+				System.err.println(e.getMessage());
+
+				// Write causes of exception
+				String causeStr = ExceptionUtils.getCompositeCauseString(e.getCause(), EXCEPTION_CAUSE_PREFIX);
+				if (!causeStr.isEmpty())
+					System.err.println(causeStr);
+
+				// Exit application
 				System.exit(ExitCode.ERROR);
 			}
 		}
@@ -949,16 +1008,14 @@ public class App
 				{
 					String pathname = elementValue.substring(LIST_PREFIX.length());
 					inputsOutputs.
-							addAll(readListFile(new File(PropertyString.parsePathname(pathname))));
+							addAll(readListFile(new File(PathnameUtils.parsePathname(pathname))));
 				}
 				else
 				{
 					String pathname = elementValue.startsWith(PATHNAME_PREFIX)
 													? elementValue.substring(PATHNAME_PREFIX.length())
 													: elementValue;
-					inputsOutputs.
-								add(new InputOutput(new File(PropertyString.parsePathname(pathname)),
-													outDirectory));
+					inputsOutputs.add(new InputOutput(new File(PathnameUtils.parsePathname(pathname)), outDirectory));
 				}
 				continue;
 			}
@@ -970,8 +1027,7 @@ public class App
 					{
 						ChunkFilter aiffChunkFilter0 = new ChunkFilter(elementValue);
 						if ((aiffChunkFilter != null) && !aiffChunkFilter.equals(aiffChunkFilter0))
-							throw new UsageException(ErrorId.CONFLICTING_OPTION_ARGUMENTS,
-													 element.getOptionString());
+							throw new UsageException(ErrorId.CONFLICTING_OPTION_ARGUMENTS, element.getOptionString());
 						aiffChunkFilter = aiffChunkFilter0;
 					}
 					catch (IllegalArgumentException e)
@@ -996,10 +1052,9 @@ public class App
 				{
 					if (elementValue.isEmpty())
 						throw new ArgumentException(ErrorId.INVALID_OUTPUT_DIRECTORY, element);
-					File outDirectory0 = new File(PropertyString.parsePathname(elementValue));
+					File outDirectory0 = new File(PathnameUtils.parsePathname(elementValue));
 					if ((outDirectory != null) && !outDirectory.equals(outDirectory0))
-						throw new UsageException(ErrorId.CONFLICTING_OPTION_ARGUMENTS,
-												 element.getOptionString());
+						throw new UsageException(ErrorId.CONFLICTING_OPTION_ARGUMENTS, element.getOptionString());
 					outDirectory = outDirectory0;
 					break;
 				}
@@ -1013,14 +1068,15 @@ public class App
 					break;
 
 				case SHOW_INFO:
-					for (String key : elementValue.split(INFO_KIND_SEPARATOR, -1))
+					for (String key : StringUtils.split(elementValue, INFO_KIND_SEPARATOR_CHAR))
 					{
 						InfoKind infoKind = InfoKind.forKey(key);
 						if (infoKind == null)
-							throw new UsageException(ErrorId.INVALID_OPTION_ARGUMENT, key,
-													 element.getOptionString());
+							throw new UsageException(ErrorId.INVALID_OPTION_ARGUMENT, key, element.getOptionString());
 						infoKind.addTo(infoKinds);
 					}
+					if (infoKinds.contains(InfoKind.NONE) && (infoKinds.size() > 1))
+						throw new ArgumentException(ErrorId.INCONSISTENT_INFO_KINDS, element);
 					break;
 
 				case VALIDATE:
@@ -1036,8 +1092,7 @@ public class App
 					{
 						ChunkFilter waveChunkFilter0 = new ChunkFilter(elementValue);
 						if ((waveChunkFilter != null) && !waveChunkFilter.equals(waveChunkFilter0))
-							throw new UsageException(ErrorId.CONFLICTING_OPTION_ARGUMENTS,
-													 element.getOptionString());
+							throw new UsageException(ErrorId.CONFLICTING_OPTION_ARGUMENTS, element.getOptionString());
 						waveChunkFilter = waveChunkFilter0;
 					}
 					catch (IllegalArgumentException e)
@@ -1048,7 +1103,7 @@ public class App
 			}
 		}
 
-		// Test for commands
+		// Test for a single command
 		if (commands.isEmpty())
 			throw new UsageException(ErrorId.NO_COMMAND);
 		if (commands.size() > 1)
@@ -1076,8 +1131,7 @@ public class App
 					showTitle();
 				else
 					titleShown = true;
-				doTask(new Task.Compress(inputsOutputs,
-										 new ChunkFilter[]{ aiffChunkFilter, waveChunkFilter },
+				doTask(new Task.Compress(inputsOutputs, new ChunkFilter[] { aiffChunkFilter, waveChunkFilter },
 										 recursive));
 				break;
 
@@ -1606,7 +1660,7 @@ public class App
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance fields
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
 	private	ResourceProperties	buildProperties;

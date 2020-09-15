@@ -53,16 +53,22 @@ import javax.swing.SwingUtilities;
 
 import uk.blankaspect.common.exception.AppException;
 
-import uk.blankaspect.common.gui.FButton;
-import uk.blankaspect.common.gui.FLabel;
-import uk.blankaspect.common.gui.GuiUtils;
-import uk.blankaspect.common.gui.IProgressView;
-import uk.blankaspect.common.gui.TextRendering;
+import uk.blankaspect.common.number.NumberUtils;
 
-import uk.blankaspect.common.misc.KeyAction;
-import uk.blankaspect.common.misc.NumberUtils;
-import uk.blankaspect.common.misc.StringUtils;
-import uk.blankaspect.common.misc.TextUtils;
+import uk.blankaspect.common.string.StringUtils;
+
+import uk.blankaspect.common.swing.action.KeyAction;
+
+import uk.blankaspect.common.swing.button.FButton;
+
+import uk.blankaspect.common.swing.label.FLabel;
+
+import uk.blankaspect.common.swing.misc.GuiUtils;
+
+import uk.blankaspect.common.swing.text.TextRendering;
+import uk.blankaspect.common.swing.text.TextUtils;
+
+import uk.blankaspect.common.ui.progress.IProgressView;
 
 //----------------------------------------------------------------------
 
@@ -85,8 +91,8 @@ class TaskProgressDialog
 	private static final	int	PROGRESS_BAR_HEIGHT		= 15;
 	private static final	int	PROGRESS_BAR_MAX_VALUE	= 10000;
 
-	private static final	String	TIME_ELAPSED_STR	= "Time elapsed:";
-	private static final	String	TIME_REMAINING_STR	= "Estimated time remaining:";
+	private static final	String	TIME_ELAPSED_STR	= "Time elapsed";
+	private static final	String	TIME_REMAINING_STR	= "Estimated time remaining";
 
 	// Commands
 	private interface Command
@@ -165,7 +171,7 @@ class TaskProgressDialog
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	String	text;
@@ -276,7 +282,7 @@ class TaskProgressDialog
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	String	text;
@@ -333,7 +339,7 @@ class TaskProgressDialog
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	String	str;
@@ -420,7 +426,7 @@ class TaskProgressDialog
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	double	value;
@@ -496,7 +502,7 @@ class TaskProgressDialog
 		if (owner != null)
 			setIconImages(owner.getIconImages());
 
-		// Initialise instance fields
+		// Initialise instance variables
 		this.task = task;
 
 
@@ -816,7 +822,7 @@ class TaskProgressDialog
 	public void setFileLength(long fileLength,
 							  long fileLengthOffset)
 	{
-		// Set instance fields
+		// Set instance variables
 		this.fileLength = fileLength;
 		this.fileLengthOffset = fileLengthOffset;
 
@@ -845,13 +851,13 @@ class TaskProgressDialog
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Class fields
+//  Class variables
 ////////////////////////////////////////////////////////////////////////
 
 	private static	Point	location;
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance fields
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
 	private	long			fileLength;

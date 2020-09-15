@@ -49,17 +49,22 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 
-import uk.blankaspect.common.gui.Colours;
-import uk.blankaspect.common.gui.FButton;
-import uk.blankaspect.common.gui.GuiUtils;
-import uk.blankaspect.common.gui.TextRendering;
-
 import uk.blankaspect.common.iff.ChunkFilter;
 import uk.blankaspect.common.iff.IffId;
 
-import uk.blankaspect.common.misc.KeyAction;
+import uk.blankaspect.common.swing.action.KeyAction;
 
-import uk.blankaspect.common.textfield.ConstrainedTextField;
+import uk.blankaspect.common.swing.button.FButton;
+
+import uk.blankaspect.common.swing.colour.Colours;
+
+import uk.blankaspect.common.swing.font.FontUtils;
+
+import uk.blankaspect.common.swing.misc.GuiUtils;
+
+import uk.blankaspect.common.swing.text.TextRendering;
+
+import uk.blankaspect.common.swing.textfield.ConstrainedTextField;
 
 //----------------------------------------------------------------------
 
@@ -160,7 +165,7 @@ class ChunkFilterDialog
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	String	text;
@@ -262,7 +267,7 @@ class ChunkFilterDialog
 			String str = filterKind.toString();
 			gr.setColor(TEXT_COLOUR);
 			gr.drawString(str, (width - fontMetrics.stringWidth(str)) / 2,
-						  GuiUtils.getBaselineOffset(height, fontMetrics));
+						  FontUtils.getBaselineOffset(height, fontMetrics));
 
 			// Draw border
 			gr.setColor(BORDER_COLOUR);
@@ -293,7 +298,7 @@ class ChunkFilterDialog
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	FilterKind	filterKind;
@@ -354,7 +359,7 @@ class ChunkFilterDialog
 		@Override
 		protected int getColumnWidth()
 		{
-			return (GuiUtils.getCharWidth('D', getFontMetrics(getFont())) + 1);
+			return (FontUtils.getCharWidth('D', getFontMetrics(getFont())) + 1);
 		}
 
 		//--------------------------------------------------------------
@@ -387,7 +392,7 @@ class ChunkFilterDialog
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	int	index;
@@ -666,13 +671,13 @@ class ChunkFilterDialog
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Class fields
+//  Class variables
 ////////////////////////////////////////////////////////////////////////
 
 	private static	Point	location;
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance fields
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
 	private	boolean				accepted;

@@ -24,6 +24,8 @@ import java.util.List;
 
 import uk.blankaspect.common.exception.AppException;
 
+import uk.blankaspect.common.string.StringUtils;
+
 //----------------------------------------------------------------------
 
 
@@ -76,7 +78,7 @@ class Log
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		Kind	kind;
@@ -141,7 +143,7 @@ class Log
 
 	public void appendException(AppException exception)
 	{
-		for (String str : exception.toString().split("\n"))
+		for (String str : StringUtils.split(exception.toString(), '\n'))
 		{
 			if (show)
 				System.out.println(ERROR_PREFIX + str);
@@ -153,7 +155,7 @@ class Log
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance fields
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
 	private	List<Line>	lines;

@@ -30,13 +30,14 @@ import uk.blankaspect.common.exception.FileException;
 
 import uk.blankaspect.common.misc.IByteDataOutputStream;
 import uk.blankaspect.common.misc.IByteDataSource;
-import uk.blankaspect.common.misc.NumberUtils;
 
 import uk.blankaspect.common.nlf.Chunk;
 import uk.blankaspect.common.nlf.ChunkList;
 import uk.blankaspect.common.nlf.Document;
 import uk.blankaspect.common.nlf.Id;
 import uk.blankaspect.common.nlf.NlfException;
+
+import uk.blankaspect.common.number.NumberUtils;
 
 //----------------------------------------------------------------------
 
@@ -192,7 +193,7 @@ class OndaFile
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	String	message;
@@ -388,7 +389,7 @@ class OndaFile
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		int		version;
@@ -590,7 +591,7 @@ class OndaFile
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	CompressedDataSource	dataSource;
@@ -715,7 +716,7 @@ class OndaFile
 					  CompressedDataSource dataSource)
 		throws AppException
 	{
-		// Set instance fields
+		// Set instance variables
 		this.attributes = attributes;
 		this.privateData = privateData;
 
@@ -974,7 +975,7 @@ class OndaFile
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance fields
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
 	private	File		file;

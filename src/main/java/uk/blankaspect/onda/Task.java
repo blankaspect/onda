@@ -25,10 +25,10 @@ import java.util.List;
 import uk.blankaspect.common.exception.AppException;
 import uk.blankaspect.common.exception.TaskCancelledException;
 
-import uk.blankaspect.common.gui.IProgressView;
-
 import uk.blankaspect.common.iff.Chunk;
 import uk.blankaspect.common.iff.ChunkFilter;
+
+import uk.blankaspect.common.ui.progress.IProgressView;
 
 //----------------------------------------------------------------------
 
@@ -93,7 +93,7 @@ abstract class Task
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	List<InputOutput>	inputsOutputs;
@@ -151,7 +151,7 @@ abstract class Task
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	List<InputOutput>	inputsOutputs;
@@ -201,7 +201,7 @@ abstract class Task
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	List<InputOutput>	inputsOutputs;
@@ -261,7 +261,7 @@ abstract class Task
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	FileProcessor	fileProcessor;
@@ -324,7 +324,7 @@ abstract class Task
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	FileProcessor	fileProcessor;
@@ -382,7 +382,7 @@ abstract class Task
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	File	file;

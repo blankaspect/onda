@@ -66,21 +66,30 @@ import uk.blankaspect.common.exception.ExceptionUtils;
 import uk.blankaspect.common.exception.FileException;
 import uk.blankaspect.common.exception.TaskCancelledException;
 
-import uk.blankaspect.common.gui.FButton;
-import uk.blankaspect.common.gui.FCheckBox;
-import uk.blankaspect.common.gui.FComboBox;
-import uk.blankaspect.common.gui.FLabel;
-import uk.blankaspect.common.gui.FMenuItem;
-import uk.blankaspect.common.gui.GuiUtils;
-import uk.blankaspect.common.gui.NonEditableTextPaneDialog;
-import uk.blankaspect.common.gui.PathnamePanel;
-
 import uk.blankaspect.common.iff.ChunkFilter;
 
-import uk.blankaspect.common.misc.DataImporter;
 import uk.blankaspect.common.misc.FilenameSuffixFilter;
-import uk.blankaspect.common.misc.KeyAction;
 import uk.blankaspect.common.misc.SystemUtils;
+
+import uk.blankaspect.common.swing.action.KeyAction;
+
+import uk.blankaspect.common.swing.button.FButton;
+
+import uk.blankaspect.common.swing.checkbox.FCheckBox;
+
+import uk.blankaspect.common.swing.combobox.FComboBox;
+
+import uk.blankaspect.common.swing.container.PathnamePanel;
+
+import uk.blankaspect.common.swing.dialog.NonEditableTextPaneDialog;
+
+import uk.blankaspect.common.swing.label.FLabel;
+
+import uk.blankaspect.common.swing.menu.FMenuItem;
+
+import uk.blankaspect.common.swing.misc.GuiUtils;
+
+import uk.blankaspect.common.swing.transfer.DataImporter;
 
 //----------------------------------------------------------------------
 
@@ -179,7 +188,7 @@ class MainWindow
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	String	text;
@@ -241,7 +250,7 @@ class MainWindow
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	String	message;
@@ -285,7 +294,7 @@ class MainWindow
 			// Call superclass constructor
 			super(owner, titleStr, KEY, NUM_COLUMNS, NUM_ROWS, true);
 
-			// Initialise instance fields
+			// Initialise instance variables
 			this.lines = lines;
 
 			// Add error style
@@ -343,7 +352,7 @@ class MainWindow
 		//--------------------------------------------------------------
 
 	////////////////////////////////////////////////////////////////////
-	//  Instance fields
+	//  Instance variables
 	////////////////////////////////////////////////////////////////////
 
 		private	List<Log.Line>	lines;
@@ -457,7 +466,7 @@ class MainWindow
 		// Set icons
 		setIconImages(AppIcon.getAppIconImages());
 
-		// Initialise instance fields
+		// Initialise instance variables
 		inPathnameChooser = new JFileChooser(SystemUtils.getUserHomePathname());
 		inPathnameChooser.setDialogTitle(INPUT_FILE_OR_DIRECTORY_TITLE_STR);
 		inPathnameChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
@@ -1328,7 +1337,7 @@ class MainWindow
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance fields
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
 	private	FComboBox<InputMode>	inputModeComboBox;
