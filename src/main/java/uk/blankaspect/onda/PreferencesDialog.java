@@ -415,12 +415,12 @@ class PreferencesDialog
 			ChunkFilter filter = (ChunkFilter)value;
 			icon = (filter == null) ? null
 									: filter.isIncludeAll()
-											? AppIcon.INCLUDE
+											? Icons.INCLUDE
 											: filter.isExcludeAll()
-													? AppIcon.EXCLUDE
+													? Icons.EXCLUDE
 													: filter.isInclude()
-															? AppIcon.INCLUDE
-															: AppIcon.EXCLUDE;
+															? Icons.INCLUDE
+															: Icons.EXCLUDE;
 			text = (filter == null) ? "" : filter.getIdString();
 
 			FontMetrics fontMetrics = getFontMetrics(list.getFont());

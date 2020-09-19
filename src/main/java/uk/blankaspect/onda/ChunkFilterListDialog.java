@@ -141,10 +141,10 @@ class ChunkFilterListDialog
 		private FilterList(List<ChunkFilter> filters)
 		{
 			super(NUM_COLUMNS, NUM_ROWS, AppFont.MAIN.getFont(), filters);
-			setExtraWidth(ICON_MARGIN + AppIcon.INCLUDE.getIconWidth());
+			setExtraWidth(ICON_MARGIN + Icons.INCLUDE.getIconWidth());
 			FontMetrics fontMetrics = getFontMetrics(getFont());
 			setRowHeight(2 * VERTICAL_MARGIN +
-										Math.max(AppIcon.INCLUDE.getIconHeight(),
+										Math.max(Icons.INCLUDE.getIconHeight(),
 												 fontMetrics.getAscent() + fontMetrics.getDescent()));
 		}
 
@@ -173,7 +173,7 @@ class ChunkFilterListDialog
 			int rowHeight = getRowHeight();
 			int x = ICON_MARGIN;
 			int y = index * rowHeight;
-			ImageIcon icon = getElement(index).isInclude() ? AppIcon.INCLUDE : AppIcon.EXCLUDE;
+			ImageIcon icon = getElement(index).isInclude() ? Icons.INCLUDE : Icons.EXCLUDE;
 			gr.drawImage(icon.getImage(), x, y + (rowHeight - icon.getIconHeight()) / 2, null);
 
 			// Set rendering hints for text antialiasing and fractional metrics

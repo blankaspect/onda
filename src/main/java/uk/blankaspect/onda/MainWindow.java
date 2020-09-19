@@ -464,7 +464,7 @@ class MainWindow
 		super(titleStr);
 
 		// Set icons
-		setIconImages(AppIcon.getAppIconImages());
+		setIconImages(Images.APP_ICON_IMAGES);
 
 		// Initialise instance variables
 		inPathnameChooser = new JFileChooser(SystemUtils.getUserHomePathname());
@@ -496,9 +496,8 @@ class MainWindow
 		validateFileChooser = new JFileChooser(config.getValidateDirectory());
 		validateFileChooser.setDialogTitle(VALIDATE_FILE_STR);
 		validateFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		validateFileChooser.
-						setFileFilter(new FilenameSuffixFilter(AppConstants.COMPRESSED_FILES_STR,
-															   AppConstants.COMPRESSED_FILE_SUFFIX));
+		validateFileChooser.setFileFilter(new FilenameSuffixFilter(AppConstants.COMPRESSED_FILES_STR,
+																   AppConstants.COMPRESSED_FILE_SUFFIX));
 
 
 		//----  Control panel
@@ -607,7 +606,7 @@ class MainWindow
 		controlPanel.add(inPathnamePanel);
 
 		// Button: copy input pathname to output pathname
-		JButton copyInPathToOutPathButton = new JButton(AppIcon.ARROW_DOWN);
+		JButton copyInPathToOutPathButton = new JButton(Icons.ARROW_DOWN);
 		copyInPathToOutPathButton.setMargin(ARROW_BUTTON_MARGINS);
 		copyInPathToOutPathButton.setToolTipText(COPY_IN_TO_OUT_TOOLTIP_STR);
 		copyInPathToOutPathButton.setActionCommand(Command.COPY_INPUT_PATHNAME_TO_OUTPUT_PATHNAME);
@@ -660,7 +659,7 @@ class MainWindow
 		controlPanel.add(outDirectoryPanel);
 
 		// Button: copy output pathname to input pathname
-		JButton copyOutPathToInPathButton = new JButton(AppIcon.ARROW_UP);
+		JButton copyOutPathToInPathButton = new JButton(Icons.ARROW_UP);
 		copyOutPathToInPathButton.setMargin(ARROW_BUTTON_MARGINS);
 		copyOutPathToInPathButton.setToolTipText(COPY_OUT_TO_IN_TOOLTIP_STR);
 		copyOutPathToInPathButton.setActionCommand(Command.COPY_OUTPUT_PATHNAME_TO_INPUT_PATHNAME);
