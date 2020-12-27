@@ -24,6 +24,8 @@ import java.util.List;
 
 import uk.blankaspect.common.config.PropertiesPathname;
 
+import uk.blankaspect.common.exception2.ExceptionUtils;
+
 import uk.blankaspect.common.filesystem.PathnameUtils;
 
 //----------------------------------------------------------------------
@@ -128,8 +130,8 @@ class Utils
 			}
 			catch (Exception e)
 			{
-				System.err.println(FAILED_TO_GET_PATHNAME_STR + file.getPath());
-				System.err.println("(" + e + ")");
+				ExceptionUtils.printStderrLocated(FAILED_TO_GET_PATHNAME_STR + file.getPath());
+				System.err.println("- " + e);
 				pathname = file.getAbsolutePath();
 			}
 

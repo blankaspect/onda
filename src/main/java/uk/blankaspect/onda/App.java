@@ -61,6 +61,7 @@ import uk.blankaspect.common.misc.FilenameFilter;
 import uk.blankaspect.common.misc.TextFile;
 
 import uk.blankaspect.common.resource.ResourceProperties;
+import uk.blankaspect.common.resource.ResourceUtils;
 
 import uk.blankaspect.common.stdin.InputUtils;
 
@@ -879,7 +880,7 @@ public class App
 		// Read build properties
 		try
 		{
-			buildProperties = new ResourceProperties(BUILD_PROPERTIES_FILENAME);
+			buildProperties = new ResourceProperties(ResourceUtils.absoluteName(getClass(), BUILD_PROPERTIES_FILENAME));
 		}
 		catch (LocationException e)
 		{
