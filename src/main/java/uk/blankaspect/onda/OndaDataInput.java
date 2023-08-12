@@ -25,22 +25,21 @@ import java.io.IOException;
 //----------------------------------------------------------------------
 
 
-// ONDA LOSSLESS AUDIO COMPRESSION DATA INPUT CLASS
+// CLASS: ONDA LOSSLESS AUDIO COMPRESSION DATA INPUT
 
 
 /**
- * This class implements a data input for decompressing blocks of data that have been compressed with the
- * Onda lossless audio compression algorithm.  Input data is assumed to be in the form of a sequence of data
- * blocks, as specified by the
- * <a href="http://onda.sourceforge.net/ondaAlgorithmAndFileFormats.html">Onda algorithm</a>.
+ * This class implements a data input for decompressing blocks of data that have been compressed with the Onda lossless
+ * audio compression algorithm.  Input data is assumed to be in the form of a sequence of data  blocks, as specified by
+ * the <a href="https://blankaspect.github.io/onda/algorithm/ondaAlgorithmAndFileFormats.html">Onda algorithm</a>.
  * <p>
- * The underlying data source for this input is an instance of {@code java.io.DataInput}.  Data that is read
- * from the data source is buffered to improve efficiency.
+ * The underlying data source for this input is an instance of {@code java.io.DataInput}.  Data that is read from the
+ * data source is buffered to improve efficiency.
  * </p>
  * <p>
- * The implementation of this class in the Onda application works only for integer sample values of up to 24
- * bits per sample.  Above 24 bits per sample, the type of the instance variable {@code bitBuffer} must be
- * changed from {@code int} to {@code long} to accommodate the extra bits.
+ * The implementation of this class in the Onda application works only for integer sample values of up to 24 bits per
+ * sample.  Above 24 bits per sample, the type of the instance variable {@code bitBuffer} must be changed from {@code
+ * int} to {@code long} to accommodate the extra bits.
  * </p>
  *
  * @see OndaDataOutput
@@ -56,25 +55,48 @@ public class OndaDataInput
 	private static final	int	BUFFER_SIZE	= 1 << 13;  // 8192
 
 ////////////////////////////////////////////////////////////////////////
+//  Instance variables
+////////////////////////////////////////////////////////////////////////
+
+	private	DataInput	dataInput;
+	private	long		dataLength;
+	private	int			numChannels;
+	private	int			sampleLength;
+	private	int			keyLength;
+	private	int			bitBuffer;
+	private	int			bitDataLength;
+	private	int			inBufferIndex;
+	private	byte[]		inBuffer;
+	private	int[]		encodingLengths;
+	private	int[]		excessCodes;
+	private	int[]		epsilonMasks;
+
+////////////////////////////////////////////////////////////////////////
 //  Constructors
 ////////////////////////////////////////////////////////////////////////
 
 	/**
-	 * Constructs an {@code OndaDataInput} that has an instance of {@code java.io.DataInput} as its
-	 * underlying data source.
+	 * Constructs an {@code OndaDataInput} that has an instance of {@code java.io.DataInput} as its underlying data
+	 * source.
 	 *
-	 * @param dataLength    the length (in bytes) of the input data.
-	 * @param numChannels   the number of audio channels in the sample data.
-	 * @param sampleLength  the length (in bits) of a sample value.
-	 * @param keyLength     the length (in bits) of an encoding key.
-	 * @param dataInput     the underlying source from which compressed data is to be read.
+	 * @param dataLength
+	 *          the length (in bytes) of the input data.
+	 * @param numChannels
+	 *          the number of audio channels in the sample data.
+	 * @param sampleLength
+	 *          the length (in bits) of a sample value.
+	 * @param keyLength
+	 *          the length (in bits) of an encoding key.
+	 * @param dataInput
+	 *          the underlying source from which compressed data is to be read.
 	 */
 
-	public OndaDataInput(long      dataLength,
-						 int       numChannels,
-						 int       sampleLength,
-						 int       keyLength,
-						 DataInput dataInput)
+	public OndaDataInput(
+		long		dataLength,
+		int			numChannels,
+		int			sampleLength,
+		int			keyLength,
+		DataInput	dataInput)
 	{
 		this.dataLength = dataLength;
 		this.numChannels = numChannels;
@@ -95,13 +117,16 @@ public class OndaDataInput
 ////////////////////////////////////////////////////////////////////////
 
 	/**
-	 * Reads a block of compressed data from the data source, and decompresses the data into the specified
-	 * buffer.  The input data must be in the form of a data block of an Onda file (ie, a compression key
-	 * for each channel, followed by interleaved encoded data).
+	 * Reads a block of compressed data from the data source, and decompresses the data into the specified buffer.  The
+	 * input data must be in the form of a data block of an Onda file (ie, a compression key for each channel, followed
+	 * by interleaved encoded data).
 	 *
-	 * @param  buffer  the buffer in which the decompressed data is to be stored.
-	 * @param  offset  the start offset at which sample data is to be stored in {@code buffer}.
-	 * @param  length  the number of samples that are to be read.
+	 * @param  buffer
+	 *           the buffer in which the decompressed data is to be stored.
+	 * @param  offset
+	 *           the start offset at which sample data is to be stored in {@code buffer}.
+	 * @param  length
+	 *           the number of samples that are to be read.
 	 * @throws IllegalArgumentException
 	 *           <ul>
 	 *             <li>{@code buffer} is {@code null}, or</li>
@@ -110,12 +135,13 @@ public class OndaDataInput
 	 * @throws IndexOutOfBoundsException
 	 *           if {@code (offset < 0)} or {@code (offset > buffer.length)}.
 	 * @throws IOException
-	 *           if an error occurs while attempting to read from the data source.
+	 *           if an error occurred while attempting to read from the data source.
 	 */
 
-	public void readBlock(int[] buffer,
-						  int   offset,
-						  int   length)
+	public void readBlock(
+		int[]	buffer,
+		int		offset,
+		int		length)
 		throws IOException
 	{
 		// Validate arguments
@@ -187,13 +213,15 @@ public class OndaDataInput
 	/**
 	 * Reads a bit string of a specified length from the data source.
 	 *
-	 * @param  length  the number of bits to read.
+	 * @param  length
+	 *           the number of bits to read.
 	 * @return the bit string that was read from the data source, as an unsigned integer.
 	 * @throws IOException
-	 *           if an error occurs while attempting to read from the data source.
+	 *           if an error occurred while attempting to read from the data source.
 	 */
 
-	private int read(int length)
+	private int read(
+		int	length)
 		throws IOException
 	{
 		while (bitDataLength < length)
@@ -216,23 +244,6 @@ public class OndaDataInput
 	}
 
 	//------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////
-//  Instance variables
-////////////////////////////////////////////////////////////////////////
-
-	private	DataInput	dataInput;
-	private	long		dataLength;
-	private	int			numChannels;
-	private	int			sampleLength;
-	private	int			keyLength;
-	private	int			bitBuffer;
-	private	int			bitDataLength;
-	private	int			inBufferIndex;
-	private	byte[]		inBuffer;
-	private	int[]		encodingLengths;
-	private	int[]		excessCodes;
-	private	int[]		epsilonMasks;
 
 }
 

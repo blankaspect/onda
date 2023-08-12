@@ -2,7 +2,7 @@
 
 TaskProgressDialog.java
 
-Task progress dialog box class.
+Task progress dialog class.
 
 \*====================================================================*/
 
@@ -41,6 +41,8 @@ import java.awt.event.WindowEvent;
 
 import java.io.File;
 
+import java.util.Objects;
+
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -55,25 +57,23 @@ import uk.blankaspect.common.exception.AppException;
 
 import uk.blankaspect.common.number.NumberUtils;
 
-import uk.blankaspect.common.string.StringUtils;
-
-import uk.blankaspect.common.swing.action.KeyAction;
-
-import uk.blankaspect.common.swing.button.FButton;
-
-import uk.blankaspect.common.swing.label.FLabel;
-
-import uk.blankaspect.common.swing.misc.GuiUtils;
-
-import uk.blankaspect.common.swing.text.TextRendering;
-import uk.blankaspect.common.swing.text.TextUtils;
-
 import uk.blankaspect.common.ui.progress.IProgressView;
+
+import uk.blankaspect.ui.swing.action.KeyAction;
+
+import uk.blankaspect.ui.swing.button.FButton;
+
+import uk.blankaspect.ui.swing.label.FLabel;
+
+import uk.blankaspect.ui.swing.misc.GuiUtils;
+
+import uk.blankaspect.ui.swing.text.TextRendering;
+import uk.blankaspect.ui.swing.text.TextUtils;
 
 //----------------------------------------------------------------------
 
 
-// TASK PROGRESS DIALOG BOX CLASS
+// TASK PROGRESS DIALOG CLASS
 
 
 class TaskProgressDialog
@@ -85,11 +85,11 @@ class TaskProgressDialog
 //  Constants
 ////////////////////////////////////////////////////////////////////////
 
-	private static final	int	INFO_FIELD_WIDTH	= 480;
+	private static final	int		INFO_FIELD_WIDTH	= 480;
 
-	private static final	int	PROGRESS_BAR_WIDTH		= INFO_FIELD_WIDTH;
-	private static final	int	PROGRESS_BAR_HEIGHT		= 15;
-	private static final	int	PROGRESS_BAR_MAX_VALUE	= 10000;
+	private static final	int		PROGRESS_BAR_WIDTH		= INFO_FIELD_WIDTH;
+	private static final	int		PROGRESS_BAR_HEIGHT		= 15;
+	private static final	int		PROGRESS_BAR_MAX_VALUE	= 10000;
 
 	private static final	String	TIME_ELAPSED_STR	= "Time elapsed";
 	private static final	String	TIME_REMAINING_STR	= "Estimated time remaining";
@@ -101,388 +101,28 @@ class TaskProgressDialog
 	}
 
 ////////////////////////////////////////////////////////////////////////
-//  Member classes : non-inner classes
+//  Class variables
 ////////////////////////////////////////////////////////////////////////
 
-
-	// INFORMATION FIELD CLASS
-
-
-	private static class InfoField
-		extends JComponent
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private InfoField()
-		{
-			AppFont.MAIN.apply(this);
-			setPreferredSize(new Dimension(INFO_FIELD_WIDTH,
-										   getFontMetrics(getFont()).getHeight()));
-			setOpaque(true);
-			setFocusable(false);
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : overriding methods
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		protected void paintComponent(Graphics gr)
-		{
-			// Create copy of graphics context
-			gr = gr.create();
-
-			// Draw background
-			gr.setColor(getBackground());
-			gr.fillRect(0, 0, getWidth(), getHeight());
-
-			// Draw text
-			if (text != null)
-			{
-				// Set rendering hints for text antialiasing and fractional metrics
-				TextRendering.setHints((Graphics2D)gr);
-
-				// Draw text
-				gr.setColor(Color.BLACK);
-				gr.drawString(text, 0, gr.getFontMetrics().getAscent());
-			}
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods
-	////////////////////////////////////////////////////////////////////
-
-		public void setText(String text)
-		{
-			if (!StringUtils.equal(text, this.text))
-			{
-				this.text = text;
-				repaint();
-			}
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	text;
-
-	}
-
-	//==================================================================
-
-
-	// TIME FIELD CLASS
-
-
-	private static class TimeField
-		extends JComponent
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		private static final	int	MIN_TIME	= 0;
-		private static final	int	MAX_TIME	= 100 * 60 * 60 * 1000 - 1;
-
-		private static final	String	SEPARATOR_STR		= ":";
-		private static final	String	PROTOTYPE_STR		= "00" + SEPARATOR_STR + "00" +
-																					SEPARATOR_STR + "00";
-		private static final	String	OUT_OF_RANGE_STR	= "--";
-
-		private static final	Color	TEXT_COLOUR	= new Color(0, 0, 144);
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private TimeField()
-		{
-			AppFont.MAIN.apply(this);
-			FontMetrics fontMetrics = getFontMetrics(getFont());
-			setPreferredSize(new Dimension(fontMetrics.stringWidth(PROTOTYPE_STR),
-										   fontMetrics.getAscent() + fontMetrics.getDescent()));
-			setOpaque(true);
-			setFocusable(false);
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : overriding methods
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		protected void paintComponent(Graphics gr)
-		{
-			// Create copy of graphics context
-			gr = gr.create();
-
-			// Draw background
-			gr.setColor(getBackground());
-			gr.fillRect(0, 0, getWidth(), getHeight());
-
-			// Draw text
-			if (text != null)
-			{
-				// Set rendering hints for text antialiasing and fractional metrics
-				TextRendering.setHints((Graphics2D)gr);
-
-				// Draw text
-				FontMetrics fontMetrics = gr.getFontMetrics();
-				gr.setColor(TEXT_COLOUR);
-				gr.drawString(text, getWidth() - fontMetrics.stringWidth(text),
-							  fontMetrics.getAscent());
-			}
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods
-	////////////////////////////////////////////////////////////////////
-
-		public void setTime(int milliseconds)
-		{
-			String str = OUT_OF_RANGE_STR;
-			if ((milliseconds >= MIN_TIME) && (milliseconds <= MAX_TIME))
-			{
-				int seconds = milliseconds / 1000;
-				int minutes = seconds / 60;
-				int hours = minutes / 60;
-				str = ((hours == 0) ? Integer.toString(minutes)
-									: Integer.toString(hours) + SEPARATOR_STR +
-												NumberUtils.uIntToDecString(minutes % 60, 2, '0')) +
-									SEPARATOR_STR + NumberUtils.uIntToDecString(seconds % 60, 2, '0');
-			}
-			setText(str);
-		}
-
-		//--------------------------------------------------------------
-
-		public void setText(String text)
-		{
-			if (!StringUtils.equal(text, this.text))
-			{
-				this.text = text;
-				repaint();
-			}
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	text;
-
-	}
-
-	//==================================================================
+	private static	Point	location;
 
 ////////////////////////////////////////////////////////////////////////
-//  Member classes : inner classes
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
-
-	// SET INFO CLASS
-
-
-	private class DoSetInfo
-		implements Runnable
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private DoSetInfo(String str,
-						  File   file)
-		{
-			this.str = str;
-			this.file = file;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : Runnable interface
-	////////////////////////////////////////////////////////////////////
-
-		public void run()
-		{
-			if (file == null)
-				infoField.setText(str);
-			else
-			{
-				FontMetrics fontMetrics = infoField.getFontMetrics(infoField.getFont());
-				int maxWidth = infoField.getWidth() -
-												((str == null) ? 0 : fontMetrics.stringWidth(str + " "));
-				String pathname = TextUtils.getLimitedWidthPathname(Utils.getPathname(file),
-																	fontMetrics, maxWidth,
-																	Utils.getFileSeparatorChar());
-				infoField.setText((str == null) ? pathname : str + " " + pathname);
-			}
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	str;
-		private	File	file;
-
-	}
-
-	//==================================================================
-
-
-	// SET PROGRESS CLASS
-
-
-	private class DoSetProgress
-		implements Runnable
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		private static final	int	UPDATE_INTERVAL	= 500;
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private DoSetProgress(double value)
-		{
-			this.value = value;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : Runnable interface
-	////////////////////////////////////////////////////////////////////
-
-		public void run()
-		{
-			if (value < 0.0)
-			{
-				fileProgressBar.setIndeterminate(true);
-
-				timeElapsedField.setText(null);
-				timeRemainingField.setText(null);
-			}
-			else
-			{
-				if (fileProgressBar.isIndeterminate())
-					fileProgressBar.setIndeterminate(false);
-				fileProgressBar.setValue((int)Math.round(value * (double)PROGRESS_BAR_MAX_VALUE));
-
-				boolean reset = (value == 0.0);
-				if (overallProgressBar != null)
-				{
-					reset = reset && (fileLengthOffset == 0);
-					value = (value * (double)fileLength + (double)fileLengthOffset) * fileLengthFactor;
-					overallProgressBar.
-									setValue((int)Math.round(value * (double)PROGRESS_BAR_MAX_VALUE));
-				}
-
-				if (reset)
-				{
-					startTime = System.currentTimeMillis();
-					timeElapsedField.setTime(0);
-					timeRemainingField.setText(null);
-				}
-				else
-				{
-					long currentTime = System.currentTimeMillis();
-					if (currentTime >= updateTime)
-					{
-						long timeElapsed = currentTime - startTime;
-						timeElapsedField.setTime((int)timeElapsed);
-						timeRemainingField.setTime((int)Math.round((1.0 / value - 1.0) *
-																			(double)timeElapsed) + 500);
-						updateTime = currentTime + UPDATE_INTERVAL;
-					}
-				}
-			}
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	double	value;
-
-	}
-
-	//==================================================================
-
-
-	// WINDOW EVENT HANDLER CLASS
-
-
-	private class WindowEventHandler
-		extends WindowAdapter
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private WindowEventHandler()
-		{
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : overriding methods
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		public void windowOpened(WindowEvent event)
-		{
-			Task.setProgressView((TaskProgressDialog)event.getWindow());
-			Task.setException(null, true);
-			Task.setCancelled(false);
-			task.start();
-		}
-
-		//--------------------------------------------------------------
-
-		@Override
-		public void windowClosing(WindowEvent event)
-		{
-			location = getLocation();
-			if (stopped)
-				dispose();
-			else
-				Task.setCancelled(true);
-		}
-
-		//--------------------------------------------------------------
-
-	}
-
-	//==================================================================
+	private	long			fileLength;
+	private	long			fileLengthOffset;
+	private	double			fileLengthFactor;
+	private	Task			task;
+	private	boolean			stopped;
+	private	long			startTime;
+	private	long			updateTime;
+	private	InfoField		infoField;
+	private	JProgressBar	fileProgressBar;
+	private	JProgressBar	overallProgressBar;
+	private	TimeField		timeElapsedField;
+	private	TimeField		timeRemainingField;
+	private	JButton			cancelButton;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -615,7 +255,7 @@ class TaskProgressDialog
 		gbc.gridheight = 1;
 		gbc.weightx = 0.5;
 		gbc.weighty = 0.0;
-		gbc.anchor = GridBagConstraints.CENTER;
+		gbc.anchor = GridBagConstraints.WEST;
 		gbc.fill = GridBagConstraints.NONE;
 		gbc.insets = new Insets(0, 0, 0, 0);
 		gridBag.setConstraints(timePanel, gbc);
@@ -627,7 +267,7 @@ class TaskProgressDialog
 		gbc.gridheight = 1;
 		gbc.weightx = 0.5;
 		gbc.weighty = 0.0;
-		gbc.anchor = GridBagConstraints.CENTER;
+		gbc.anchor = GridBagConstraints.EAST;
 		gbc.fill = GridBagConstraints.NONE;
 		gbc.insets = new Insets(0, 24, 0, 0);
 		gridBag.setConstraints(buttonPanel, gbc);
@@ -851,28 +491,387 @@ class TaskProgressDialog
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Class variables
+//  Member classes : non-inner classes
 ////////////////////////////////////////////////////////////////////////
 
-	private static	Point	location;
+
+	// INFORMATION FIELD CLASS
+
+
+	private static class InfoField
+		extends JComponent
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private InfoField()
+		{
+			AppFont.MAIN.apply(this);
+			setPreferredSize(new Dimension(INFO_FIELD_WIDTH,
+										   getFontMetrics(getFont()).getHeight()));
+			setOpaque(true);
+			setFocusable(false);
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : overriding methods
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		protected void paintComponent(Graphics gr)
+		{
+			// Create copy of graphics context
+			gr = gr.create();
+
+			// Draw background
+			gr.setColor(getBackground());
+			gr.fillRect(0, 0, getWidth(), getHeight());
+
+			// Draw text
+			if (text != null)
+			{
+				// Set rendering hints for text antialiasing and fractional metrics
+				TextRendering.setHints((Graphics2D)gr);
+
+				// Draw text
+				gr.setColor(Color.BLACK);
+				gr.drawString(text, 0, gr.getFontMetrics().getAscent());
+			}
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods
+	////////////////////////////////////////////////////////////////////
+
+		public void setText(String text)
+		{
+			if (!Objects.equals(text, this.text))
+			{
+				this.text = text;
+				repaint();
+			}
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	text;
+
+	}
+
+	//==================================================================
+
+
+	// TIME FIELD CLASS
+
+
+	private static class TimeField
+		extends JComponent
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		private static final	int	MIN_TIME	= 0;
+		private static final	int	MAX_TIME	= 100 * 60 * 60 * 1000 - 1;
+
+		private static final	String	SEPARATOR_STR		= ":";
+		private static final	String	PROTOTYPE_STR		= "00" + SEPARATOR_STR + "00" + SEPARATOR_STR + "00";
+		private static final	String	OUT_OF_RANGE_STR	= "--";
+
+		private static final	Color	TEXT_COLOUR	= new Color(0, 0, 144);
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private TimeField()
+		{
+			AppFont.MAIN.apply(this);
+			FontMetrics fontMetrics = getFontMetrics(getFont());
+			setPreferredSize(new Dimension(fontMetrics.stringWidth(PROTOTYPE_STR),
+										   fontMetrics.getAscent() + fontMetrics.getDescent()));
+			setOpaque(true);
+			setFocusable(false);
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : overriding methods
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		protected void paintComponent(Graphics gr)
+		{
+			// Create copy of graphics context
+			gr = gr.create();
+
+			// Draw background
+			gr.setColor(getBackground());
+			gr.fillRect(0, 0, getWidth(), getHeight());
+
+			// Draw text
+			if (text != null)
+			{
+				// Set rendering hints for text antialiasing and fractional metrics
+				TextRendering.setHints((Graphics2D)gr);
+
+				// Draw text
+				FontMetrics fontMetrics = gr.getFontMetrics();
+				gr.setColor(TEXT_COLOUR);
+				gr.drawString(text, getWidth() - fontMetrics.stringWidth(text),
+							  fontMetrics.getAscent());
+			}
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods
+	////////////////////////////////////////////////////////////////////
+
+		public void setTime(int milliseconds)
+		{
+			String str = OUT_OF_RANGE_STR;
+			if ((milliseconds >= MIN_TIME) && (milliseconds <= MAX_TIME))
+			{
+				int seconds = milliseconds / 1000;
+				int minutes = seconds / 60;
+				int hours = minutes / 60;
+				str = ((hours == 0) ? Integer.toString(minutes)
+									: Integer.toString(hours) + SEPARATOR_STR +
+												NumberUtils.uIntToDecString(minutes % 60, 2, '0')) +
+									SEPARATOR_STR + NumberUtils.uIntToDecString(seconds % 60, 2, '0');
+			}
+			setText(str);
+		}
+
+		//--------------------------------------------------------------
+
+		public void setText(String text)
+		{
+			if (!Objects.equals(text, this.text))
+			{
+				this.text = text;
+				repaint();
+			}
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	text;
+
+	}
+
+	//==================================================================
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance variables
+//  Member classes : inner classes
 ////////////////////////////////////////////////////////////////////////
 
-	private	long			fileLength;
-	private	long			fileLengthOffset;
-	private	double			fileLengthFactor;
-	private	Task			task;
-	private	boolean			stopped;
-	private	long			startTime;
-	private	long			updateTime;
-	private	InfoField		infoField;
-	private	JProgressBar	fileProgressBar;
-	private	JProgressBar	overallProgressBar;
-	private	TimeField		timeElapsedField;
-	private	TimeField		timeRemainingField;
-	private	JButton			cancelButton;
+
+	// SET INFO CLASS
+
+
+	private class DoSetInfo
+		implements Runnable
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private DoSetInfo(String str,
+						  File   file)
+		{
+			this.str = str;
+			this.file = file;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : Runnable interface
+	////////////////////////////////////////////////////////////////////
+
+		public void run()
+		{
+			if (file == null)
+				infoField.setText(str);
+			else
+			{
+				FontMetrics fontMetrics = infoField.getFontMetrics(infoField.getFont());
+				int maxWidth = infoField.getWidth() -
+												((str == null) ? 0 : fontMetrics.stringWidth(str + " "));
+				String pathname = TextUtils.getLimitedWidthPathname(Utils.getPathname(file),
+																	fontMetrics, maxWidth,
+																	Utils.getFileSeparatorChar());
+				infoField.setText((str == null) ? pathname : str + " " + pathname);
+			}
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	str;
+		private	File	file;
+
+	}
+
+	//==================================================================
+
+
+	// SET PROGRESS CLASS
+
+
+	private class DoSetProgress
+		implements Runnable
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		private static final	int	UPDATE_INTERVAL	= 500;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private DoSetProgress(double value)
+		{
+			this.value = value;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : Runnable interface
+	////////////////////////////////////////////////////////////////////
+
+		public void run()
+		{
+			if (value < 0.0)
+			{
+				fileProgressBar.setIndeterminate(true);
+
+				timeElapsedField.setText(null);
+				timeRemainingField.setText(null);
+			}
+			else
+			{
+				if (fileProgressBar.isIndeterminate())
+					fileProgressBar.setIndeterminate(false);
+				fileProgressBar.setValue((int)Math.round(value * (double)PROGRESS_BAR_MAX_VALUE));
+
+				boolean reset = (value == 0.0);
+				if (overallProgressBar != null)
+				{
+					reset = reset && (fileLengthOffset == 0);
+					value = (value * (double)fileLength + (double)fileLengthOffset) * fileLengthFactor;
+					overallProgressBar.
+									setValue((int)Math.round(value * (double)PROGRESS_BAR_MAX_VALUE));
+				}
+
+				if (reset)
+				{
+					startTime = System.currentTimeMillis();
+					timeElapsedField.setTime(0);
+					timeRemainingField.setText(null);
+				}
+				else
+				{
+					long currentTime = System.currentTimeMillis();
+					if (currentTime >= updateTime)
+					{
+						long timeElapsed = currentTime - startTime;
+						timeElapsedField.setTime((int)timeElapsed);
+						timeRemainingField.setTime((int)Math.round((1.0 / value - 1.0) *
+																			(double)timeElapsed) + 500);
+						updateTime = currentTime + UPDATE_INTERVAL;
+					}
+				}
+			}
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	double	value;
+
+	}
+
+	//==================================================================
+
+
+	// WINDOW EVENT HANDLER CLASS
+
+
+	private class WindowEventHandler
+		extends WindowAdapter
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private WindowEventHandler()
+		{
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : overriding methods
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		public void windowOpened(WindowEvent event)
+		{
+			Task.setProgressView((TaskProgressDialog)event.getWindow());
+			Task.setException(null, true);
+			Task.setCancelled(false);
+			task.start();
+		}
+
+		//--------------------------------------------------------------
+
+		@Override
+		public void windowClosing(WindowEvent event)
+		{
+			location = getLocation();
+			if (stopped)
+				dispose();
+			else
+				Task.setCancelled(true);
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
 
 }
 

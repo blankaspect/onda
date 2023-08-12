@@ -29,6 +29,9 @@ import java.util.zip.CRC32;
 
 import uk.blankaspect.common.audio.AudioFile;
 
+import uk.blankaspect.common.bytedata.IByteDataOutputStream;
+import uk.blankaspect.common.bytedata.IByteDataSource;
+
 import uk.blankaspect.common.exception.AppException;
 import uk.blankaspect.common.exception.FileException;
 import uk.blankaspect.common.exception.TaskCancelledException;
@@ -36,9 +39,6 @@ import uk.blankaspect.common.exception.TaskCancelledException;
 import uk.blankaspect.common.iff.Chunk;
 import uk.blankaspect.common.iff.ChunkFilter;
 import uk.blankaspect.common.iff.IffId;
-
-import uk.blankaspect.common.misc.IByteDataOutputStream;
-import uk.blankaspect.common.misc.IByteDataSource;
 
 //----------------------------------------------------------------------
 

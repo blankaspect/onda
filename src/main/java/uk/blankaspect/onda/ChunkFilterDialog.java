@@ -2,7 +2,7 @@
 
 ChunkFilterDialog.java
 
-Chunk filter dialog box class.
+Chunk filter dialog class.
 
 \*====================================================================*/
 
@@ -52,24 +52,25 @@ import javax.swing.KeyStroke;
 import uk.blankaspect.common.iff.ChunkFilter;
 import uk.blankaspect.common.iff.IffId;
 
-import uk.blankaspect.common.swing.action.KeyAction;
+import uk.blankaspect.ui.swing.action.KeyAction;
 
-import uk.blankaspect.common.swing.button.FButton;
+import uk.blankaspect.ui.swing.button.FButton;
 
-import uk.blankaspect.common.swing.colour.Colours;
+import uk.blankaspect.ui.swing.colour.Colours;
 
-import uk.blankaspect.common.swing.font.FontUtils;
+import uk.blankaspect.ui.swing.font.FontUtils;
 
-import uk.blankaspect.common.swing.misc.GuiUtils;
+import uk.blankaspect.ui.swing.misc.GuiConstants;
+import uk.blankaspect.ui.swing.misc.GuiUtils;
 
-import uk.blankaspect.common.swing.text.TextRendering;
+import uk.blankaspect.ui.swing.text.TextRendering;
 
-import uk.blankaspect.common.swing.textfield.ConstrainedTextField;
+import uk.blankaspect.ui.swing.textfield.ConstrainedTextField;
 
 //----------------------------------------------------------------------
 
 
-// CHUNK FILTER DIALOG BOX CLASS
+// CHUNK FILTER DIALOG CLASS
 
 
 class ChunkFilterDialog
@@ -192,8 +193,8 @@ class ChunkFilterDialog
 	//  Constants
 	////////////////////////////////////////////////////////////////////
 
-		private static final	int	VERTICAL_MARGIN		= 5;
-		private static final	int	HORIZONTAL_MARGIN	= 12;
+		private static final	int		VERTICAL_MARGIN		= 5;
+		private static final	int		HORIZONTAL_MARGIN	= 12;
 
 		private static final	Color	TEXT_COLOUR				= Color.WHITE;
 		private static final	Color	BORDER_COLOUR			= Colours.LINE_BORDER;
@@ -253,33 +254,33 @@ class ChunkFilterDialog
 		protected void paintComponent(Graphics gr)
 		{
 			// Create copy of graphics context
-			gr = gr.create();
+			Graphics2D gr2d = GuiUtils.copyGraphicsContext(gr);
 
 			// Fill interior
-			gr.setColor(filterKind.getColour());
-			gr.fillRect(0, 0, width, height);
+			gr2d.setColor(filterKind.getColour());
+			gr2d.fillRect(0, 0, width, height);
 
 			// Set rendering hints for text antialiasing and fractional metrics
-			TextRendering.setHints((Graphics2D)gr);
+			TextRendering.setHints(gr2d);
 
 			// Draw text
-			FontMetrics fontMetrics = gr.getFontMetrics();
+			FontMetrics fontMetrics = gr2d.getFontMetrics();
 			String str = filterKind.toString();
-			gr.setColor(TEXT_COLOUR);
-			gr.drawString(str, (width - fontMetrics.stringWidth(str)) / 2,
-						  FontUtils.getBaselineOffset(height, fontMetrics));
+			gr2d.setColor(TEXT_COLOUR);
+			gr2d.drawString(str, (width - fontMetrics.stringWidth(str)) / 2,
+							FontUtils.getBaselineOffset(height, fontMetrics));
 
 			// Draw border
-			gr.setColor(BORDER_COLOUR);
-			gr.drawRect(0, 0, width - 1, height - 1);
+			gr2d.setColor(BORDER_COLOUR);
+			gr2d.drawRect(0, 0, width - 1, height - 1);
 			if (isFocusOwner())
 			{
-				gr.setColor(FOCUSED_BORDER_COLOUR1);
-				gr.drawRect(1, 1, width - 3, height - 3);
+				gr2d.setColor(FOCUSED_BORDER_COLOUR1);
+				gr2d.drawRect(1, 1, width - 3, height - 3);
 
-				((Graphics2D)gr).setStroke(GuiUtils.getBasicDash());
-				gr.setColor(FOCUSED_BORDER_COLOUR2);
-				gr.drawRect(1, 1, width - 3, height - 3);
+				gr2d.setStroke(GuiConstants.BASIC_DASH);
+				gr2d.setColor(FOCUSED_BORDER_COLOUR2);
+				gr2d.drawRect(1, 1, width - 3, height - 3);
 			}
 		}
 
@@ -291,8 +292,7 @@ class ChunkFilterDialog
 
 		public ChunkFilter.Kind getFilterKind()
 		{
-			return ((filterKind == FilterKind.INCLUDE) ? ChunkFilter.Kind.INCLUDE
-													   : ChunkFilter.Kind.EXCLUDE);
+			return (filterKind == FilterKind.INCLUDE) ? ChunkFilter.Kind.INCLUDE : ChunkFilter.Kind.EXCLUDE;
 		}
 
 		//--------------------------------------------------------------
@@ -428,8 +428,7 @@ class ChunkFilterDialog
 		int gridY = 0;
 
 		// Button: filter kind
-		filterKindButton = new FilterKindButton((filter == null) ? ChunkFilter.Kind.INCLUDE
-																 : filter.getKind());
+		filterKindButton = new FilterKindButton((filter == null) ? ChunkFilter.Kind.INCLUDE : filter.getKind());
 
 		gbc.gridx = 0;
 		gbc.gridy = gridY++;
@@ -629,8 +628,7 @@ class ChunkFilterDialog
 	private int getCurrentIdIndex()
 	{
 		Component component = getFocusOwner();
-		return (((component != null) && (component instanceof IdField)) ? ((IdField)component).getIndex()
-																		: -1);
+		return ((component != null) && (component instanceof IdField)) ? ((IdField)component).getIndex() : -1;
 	}
 
 	//------------------------------------------------------------------

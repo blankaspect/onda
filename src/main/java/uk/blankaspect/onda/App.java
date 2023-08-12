@@ -23,10 +23,6 @@ import java.io.IOException;
 
 import java.nio.charset.Charset;
 
-import java.time.LocalDateTime;
-
-import java.time.format.DateTimeFormatter;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -36,6 +32,8 @@ import java.util.Set;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+
+import uk.blankaspect.common.build.BuildUtils;
 
 import uk.blankaspect.common.cls.ClassUtils;
 
@@ -67,9 +65,9 @@ import uk.blankaspect.common.stdin.InputUtils;
 
 import uk.blankaspect.common.string.StringUtils;
 
-import uk.blankaspect.common.swing.text.TextRendering;
+import uk.blankaspect.ui.swing.text.TextRendering;
 
-import uk.blankaspect.common.swing.textfield.TextFieldUtils;
+import uk.blankaspect.ui.swing.textfield.TextFieldUtils;
 
 //----------------------------------------------------------------------
 
@@ -89,12 +87,6 @@ public class App
 	public static final		String	SHORT_NAME	= "Onda";
 	public static final		String	LONG_NAME	= "Onda lossless audio compressor";
 	public static final		String	NAME_KEY	= "onda";
-
-	private static final	String	VERSION_PROPERTY_KEY	= "version";
-	private static final	String	BUILD_PROPERTY_KEY		= "build";
-	private static final	String	RELEASE_PROPERTY_KEY	= "release";
-
-	private static final	String	VERSION_DATE_TIME_PATTERN	= "uuuuMMdd-HHmmss";
 
 	private static final	String	BUILD_PROPERTIES_FILENAME	= "build.properties";
 
@@ -126,84 +118,85 @@ public class App
 	private static final	String	CQ_OPTION_STR				= "Continue or Quit (C/Q) ? ";
 	private static final	String	RSQ_OPTION_STR				= "Replace, Skip or Quit (R/S/Q) ? ";
 
-	private static final	String	SEPARATOR_STR	= new String(StringUtils.createCharArray('-', 36));
+	private static final	String	SEPARATOR_STR	= "-".repeat(36);
 
 	private static final	String	USAGE_STR	=
-		"Usage: " + NAME_KEY + " command [options] [input-pathnames]\n" +
-		"\n" +
-		"Commands:\n" +
-		"  --compress\n" +
-		"      Compress the files specified by the input pathnames.\n" +
-		"      If an output directory is specified, the compressed files are written to\n" +
-		"      it; otherwise, each compressed file is written to the same directory as\n" +
-		"      its input file.\n" +
-		"  --expand\n" +
-		"      Expand the files specified by the input pathnames.\n" +
-		"      If an output directory is specified, the expanded files are written to\n" +
-		"      it; otherwise, each expanded file is written to the same directory as its\n" +
-		"      input file.\n" +
-		"  --help\n" +
-		"      Display help information.\n" +
-		"  --validate\n" +
-		"      Validate the files specified by the input pathnames.\n" +
-		"  --version\n" +
-		"      Display version information.\n" +
-		"\n" +
-		"Options:\n" +
-		"  --aiff-chunk-filter=(+|-)chunk-ids\n" +
-		"  --wave-chunk-filter=(+|-)chunk-ids\n" +
-		"      When compressing a file of the appropriate kind, preserve or discard\n" +
-		"      ancillary chunks with the identifiers specified by <chunk-ids>.  If this\n" +
-		"      option is not specified, all ancillary chunks are preserved.\n" +
-		"      <chunk-ids> must have either '+' or '-' prefixed to them:\n" +
-		"        If the prefix is '+', the filter is inclusive: a chunk is preserved if\n" +
-		"        its ID is in <chunk-ids>.\n" +
-		"        If the prefix is '-', the filter is exclusive: a chunk is preserved if\n" +
-		"        its ID is not in <chunk-ids>.\n" +
-		"      The first character after the '+' or '-' is taken to be the separator\n" +
-		"      between the identifiers listed in <chunk-ids>.  Trailing spaces are\n" +
-		"      assumed for any identifier that has fewer than four characters.\n" +
-		"      Examples:\n" +
-		"        --wave-chunk-filter=+/bext/cue  preserves the chunks in a WAVE file\n" +
-		"            with IDs 'bext' and 'cue ';\n" +
-		"        --aiff-chunk-filter=-  preserves all the ancillary chunks in an AIFF\n" +
-		"            file (ie, excludes none) (the default);\n" +
-		"        --wave-chunk-filter=+  discards all the ancillary chunks in a WAVE\n" +
-		"            file (ie, includes none).\n" +
-		"  --output-directory=pathname\n" +
-		"      The directory to which output files will be written.  If an input\n" +
-		"      pathname is a directory and the 'recursive' option is present, the\n" +
-		"      directory structure below the input directory will be reproduced in the\n" +
-		"      output directory.\n" +
-		"  --overwrite\n" +
-		"      Overwrite an existing file without seeking confirmation.\n" +
-		"  --recursive\n" +
-		"      Process the input directory recursively.\n" +
-		"  --show-info={none|title|log|result|all}\n" +
-		"      The kinds of information that will be written to standard output.\n" +
-		"      Multiple kinds may be specified, separated by ','.  The default value is\n" +
-		"      'log,result'.\n" +
-		"\n" +
-		"If an option takes an argument, the key and argument of the option may be\n" +
-		"separated either by whitespace or by a single '='.\n" +
-		"\n" +
-		"If an input pathname has the prefix '@', it denotes a file that contains a list\n" +
-		"of input pathnames and, optionally, output directories.  Each non-empty line of\n" +
-		"the file is expected to contain a single input pathname, which may be followed\n" +
-		"by one or more tab characters (U+0009) and the pathname of an output directory.\n" +
-		"\n" +
-		"The last component of an input pathname may contain the wildcards '?' and '*'.\n" +
-		"\n" +
-		"If an input pathname has the prefix '+', the prefix is ignored.  The prefix can\n" +
-		"be used to prevent the expansion of patterns such as '*' on the Java command\n" +
-		"line and to allow pathnames that start with a literal '@'.  A literal '+' at\n" +
-		"the start of a pathname must be escaped by prefixing '+' to it.\n" +
-		"\n" +
-		"A pathname may contain Java system properties or environment variables enclosed\n" +
-		"between '${' and '}'; eg, ${HOME}.  A Java system property takes precedence\n" +
-		"over an environment variable with the same name.  A Java system property can be\n" +
-		"specified by prefixing 'sys.' to it (eg, ${sys.user.home}), and an environment\n" +
-		"variable can be specified by prefixing 'env.' to it (eg, ${env.HOME}).";
+			"Usage: " + NAME_KEY + " command [options] [input-pathnames]\n\n" +
+			"""
+			Commands:
+			  --compress
+			      Compress the files specified by the input pathnames.
+			      If an output directory is specified, the compressed files are written to
+			      it; otherwise, each compressed file is written to the same directory as
+			      its input file.
+			  --expand
+			      Expand the files specified by the input pathnames.
+			      If an output directory is specified, the expanded files are written to
+			      it; otherwise, each expanded file is written to the same directory as its
+			      input file.
+			  --help
+			      Display help information.
+			  --validate
+			      Validate the files specified by the input pathnames.
+			  --version
+			      Display version information.
+
+			Options:
+			  --aiff-chunk-filter=(+|-)chunk-ids
+			  --wave-chunk-filter=(+|-)chunk-ids
+			      When compressing a file of the appropriate kind, preserve or discard
+			      ancillary chunks with the identifiers specified by <chunk-ids>.  If this
+			      option is not specified, all ancillary chunks are preserved.
+			      <chunk-ids> must have either '+' or '-' prefixed to them:
+			        If the prefix is '+', the filter is inclusive: a chunk is preserved if
+			        its ID is in <chunk-ids>.
+			        If the prefix is '-', the filter is exclusive: a chunk is preserved if
+			        its ID is not in <chunk-ids>.
+			      The first character after the '+' or '-' is taken to be the separator
+			      between the identifiers listed in <chunk-ids>.  Trailing spaces are
+			      assumed for any identifier that has fewer than four characters.
+			      Examples:
+			        --wave-chunk-filter=+/bext/cue  preserves the chunks in a WAVE file
+			            with IDs 'bext' and 'cue ';
+			        --aiff-chunk-filter=-  preserves all the ancillary chunks in an AIFF
+			            file (ie, excludes none) (the default);
+			        --wave-chunk-filter=+  discards all the ancillary chunks in a WAVE
+			            file (ie, includes none).
+			  --output-directory=pathname
+			      The directory to which output files will be written.  If an input
+			      pathname is a directory and the 'recursive' option is present, the
+			      directory structure below the input directory will be reproduced in the
+			      output directory.
+			  --overwrite
+			      Overwrite an existing file without seeking confirmation.
+			  --recursive
+			      Process the input directory recursively.
+			  --show-info={none|title|log|result|all}
+			      The kinds of information that will be written to standard output.
+			      Multiple kinds may be specified, separated by ','.  The default value is
+			      'log,result'.
+
+			If an option takes an argument, the key and argument of the option may be
+			separated either by whitespace or by a single '='.
+
+			If an input pathname has the prefix '@', it denotes a file that contains a list
+			of input pathnames and, optionally, output directories.  Each non-empty line of
+			the file is expected to contain a single input pathname, which may be followed
+			by one or more tab characters (U+0009) and the pathname of an output directory.
+
+			The last component of an input pathname may contain the wildcards '?' and '*'.
+
+			If an input pathname has the prefix '+', the prefix is ignored.  The prefix can
+			be used to prevent the expansion of patterns such as '*' on the Java command
+			line and to allow pathnames that start with a literal '@'.  A literal '+' at
+			the start of a pathname must be escaped by prefixing '+' to it.
+
+			A pathname may contain Java system properties or environment variables enclosed
+			between '${' and '}'; eg, ${HOME}.  A Java system property takes precedence
+			over an environment variable with the same name.  A Java system property can be
+			specified by prefixing 'sys.' to it (eg, ${sys.user.home}), and an environment
+			variable can be specified by prefixing 'env.' to it (eg, ${env.HOME}).
+			""";
 
 	private enum Command
 	{
@@ -221,289 +214,17 @@ public class App
 	}
 
 ////////////////////////////////////////////////////////////////////////
-//  Enumerated types
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
-
-	// COMMAND-LINE OPTIONS
-
-
-	private enum Option
-		implements CommandLine.IOption<Option>
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		AIFF_CHUNK_FILTER   ("aiff-chunk-filter", true),
-		COMPRESS            ("compress",          false),
-		EXPAND              ("expand",            false),
-		HELP                ("help",              false),
-		OUTPUT_DIRECTORY    ("output-directory",  true),
-		OVERWRITE           ("overwrite",         false),
-		RECURSIVE           ("recursive",         false),
-		SHOW_INFO           ("show-info",         true),
-		VALIDATE            ("validate",          false),
-		VERSION             ("version",           false),
-		WAVE_CHUNK_FILTER   ("wave-chunk-filter", true);
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private Option(String  name,
-					   boolean hasArgument)
-		{
-			this.name = name;
-			this.hasArgument = hasArgument;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : CommandLine.IOption interface
-	////////////////////////////////////////////////////////////////////
-
-		public Option getKey()
-		{
-			return this;
-		}
-
-		//--------------------------------------------------------------
-
-		public String getName()
-		{
-			return name;
-		}
-
-		//--------------------------------------------------------------
-
-		public boolean hasArgument()
-		{
-			return hasArgument;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	name;
-		private	boolean	hasArgument;
-
-	}
-
-	//==================================================================
-
-
-	// ERROR IDENTIFIERS
-
-
-	private enum ErrorId
-		implements AppException.IId
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		INVALID_OPTION_ARGUMENT
-		("'%1' is not a valid argument for the '%2' option."),
-
-		CONFLICTING_OPTION_ARGUMENTS
-		("The '%1' option was specified more than once with different arguments."),
-
-		NO_COMMAND
-		("No command was specified."),
-
-		MULTIPLE_COMMANDS
-		("More than one command was specified."),
-
-		NO_INPUT_FILE_OR_DIRECTORY
-		("No input file or directory was specified."),
-
-		INVALID_OUTPUT_DIRECTORY
-		("The output directory is invalid."),
-
-		INVALID_AIFF_CHUNK_FILTER
-		("The AIFF chunk filter is invalid."),
-
-		INVALID_WAVE_CHUNK_FILTER
-		("The WAVE chunk filter is invalid."),
-
-		INCONSISTENT_INFO_KINDS
-		("The arguments of the 'show-info' option are inconsistent."),
-
-		LIST_FILE_OR_DIRECTORY_DOES_NOT_EXIST
-		("The file or directory specified by this pathname in the list file does not exist."),
-
-		LIST_FILE_PATHNAME_IS_A_FILE
-		("The output pathname in the list file denotes a file."),
-
-		FILE_OR_DIRECTORY_ACCESS_NOT_PERMITTED
-		("Access to the file or directory specified in the list file was not permitted."),
-
-		NOT_A_FILE
-		("The pathname does not denote a normal file."),
-
-		FILE_DOES_NOT_EXIST
-		("The file does not exist."),
-
-		FAILED_TO_CREATE_DIRECTORY
-		("Failed to create the directory."),
-
-		FAILED_TO_LIST_DIRECTORY_ENTRIES
-		("Failed to get a list of directory entries.");
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private ErrorId(String message)
-		{
-			this.message = message;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : AppException.IId interface
-	////////////////////////////////////////////////////////////////////
-
-		public String getMessage()
-		{
-			return message;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	message;
-
-	}
-
-	//==================================================================
-
-////////////////////////////////////////////////////////////////////////
-//  Member classes : non-inner classes
-////////////////////////////////////////////////////////////////////////
-
-
-	// COMMAND-LINE ARGUMENT EXCEPTION CLASS
-
-
-	private static class ArgumentException
-		extends AppException
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private ArgumentException(ErrorId                     id,
-								  CommandLine.Element<Option> element)
-		{
-			super(id);
-			prefix = element.getOptionString() + "=" + element.getValue() + "\n";
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : overriding methods
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		protected String getPrefix()
-		{
-			return prefix;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	prefix;
-
-	}
-
-	//==================================================================
-
-
-	// COMMAND-LINE USAGE EXCEPTION CLASS
-
-
-	private static class UsageException
-		extends AppException
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private UsageException(ErrorId id)
-		{
-			super(id);
-			suffix = "\n" + USAGE_STR;
-		}
-
-		//--------------------------------------------------------------
-
-		private UsageException(ErrorId   id,
-							   String... strs)
-		{
-			super(id, strs);
-			suffix = "\n" + USAGE_STR;
-		}
-
-		//--------------------------------------------------------------
-
-		private UsageException(ErrorId                     id,
-							   CommandLine.Element<Option> element)
-		{
-			this(id);
-			prefix = element.getOptionString() + " " + element.getValue() + "\n";
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : overriding methods
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		protected String getPrefix()
-		{
-			return prefix;
-		}
-
-		//--------------------------------------------------------------
-
-		@Override
-		protected String getSuffix()
-		{
-			return suffix;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	prefix;
-		private	String	suffix;
-
-	}
-
-	//==================================================================
+	private	ResourceProperties	buildProperties;
+	private	String				versionStr;
+	private	MainWindow			mainWindow;
+	private	boolean				hasGui;
+	private	boolean				titleShown;
+	private	boolean				overwrite;
+	private	Set<InfoKind>		infoKinds;
+	private	long				fileLengthOffset;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -592,51 +313,6 @@ public class App
 	public MainWindow getMainWindow()
 	{
 		return mainWindow;
-	}
-
-	//------------------------------------------------------------------
-
-	/**
-	 * Returns a string representation of the version of this application.  If this class was loaded from a JAR, the
-	 * string is created from the values of properties that are defined in a resource named 'build.properties';
-	 * otherwise, the string is created from the date and time when this method is first called.
-	 *
-	 * @return a string representation of the version of this application.
-	 */
-
-	public String getVersionString()
-	{
-		if (versionStr == null)
-		{
-			StringBuilder buffer = new StringBuilder(32);
-			if (ClassUtils.isFromJar(getClass()))
-			{
-				// Append version number
-				String str = buildProperties.get(VERSION_PROPERTY_KEY);
-				if (str != null)
-					buffer.append(str);
-
-				// If this is not a release, append build
-				boolean release = Boolean.parseBoolean(buildProperties.get(RELEASE_PROPERTY_KEY));
-				if (!release)
-				{
-					str = buildProperties.get(BUILD_PROPERTY_KEY);
-					if (str != null)
-					{
-						if (buffer.length() > 0)
-							buffer.append(' ');
-						buffer.append(str);
-					}
-				}
-			}
-			else
-			{
-				buffer.append('b');
-				buffer.append(DateTimeFormatter.ofPattern(VERSION_DATE_TIME_PATTERN).format(LocalDateTime.now()));
-			}
-			versionStr = buffer.toString();
-		}
-		return versionStr;
 	}
 
 	//------------------------------------------------------------------
@@ -877,10 +553,11 @@ public class App
 			});
 		}
 
-		// Read build properties
+		// Read build properties and initialise version string
 		try
 		{
-			buildProperties = new ResourceProperties(ResourceUtils.absoluteName(getClass(), BUILD_PROPERTIES_FILENAME));
+			buildProperties = new ResourceProperties(ResourceUtils.normalisedPathname(getClass(), BUILD_PROPERTIES_FILENAME));
+			versionStr = BuildUtils.versionString(getClass(), buildProperties);
 		}
 		catch (LocationException e)
 		{
@@ -935,7 +612,7 @@ public class App
 			{
 				public void run()
 				{
-					mainWindow = new MainWindow(LONG_NAME + " " + getVersionString());
+					mainWindow = new MainWindow(LONG_NAME + " " + versionStr);
 				}
 			});
 		}
@@ -957,7 +634,7 @@ public class App
 			{
 				// Write title
 				if (!titleShown)
-					System.err.println(SHORT_NAME + " " + getVersionString());
+					System.err.println(SHORT_NAME + " " + versionStr);
 
 				// Write string representation of exception
 				System.err.println(e);
@@ -969,10 +646,10 @@ public class App
 			{
 				// Write title
 				if (!titleShown)
-					System.err.println(SHORT_NAME + " " + getVersionString());
+					System.err.println(SHORT_NAME + " " + versionStr);
 
-				// Write detail message of exception
-				System.err.println(e.getMessage());
+				// Write exception
+				System.err.println(e);
 
 				// Write causes of exception
 				String causeStr = ExceptionUtils.getCompositeCauseString(e.getCause(), EXCEPTION_CAUSE_PREFIX);
@@ -1174,7 +851,7 @@ public class App
 	{
 		if (!titleShown)
 		{
-			System.out.println(SHORT_NAME + " " + getVersionString());
+			System.out.println(SHORT_NAME + " " + versionStr);
 			titleShown = true;
 		}
 	}
@@ -1452,8 +1129,7 @@ public class App
 		}
 		else
 		{
-			String[] filenameParts = StringUtils.splitAtFirst(filename, '.',
-															  StringUtils.SplitMode.SUFFIX);
+			String[] filenameParts = StringUtils.splitAtFirst(filename, '.', StringUtils.SplitMode.SUFFIX);
 			filename = filenameParts[0];
 			int index = 1;
 			while (true)
@@ -1477,8 +1153,7 @@ public class App
 			if (audioFileKind == null)
 			{
 				// Ask user for kind of output file
-				audioFileKind = hasGui ? AudioFileKindDialog.showDialog(mainWindow)
-									   : AudioFileKindDialog.showPrompt();
+				audioFileKind = hasGui ? AudioFileKindDialog.showDialog(mainWindow) : AudioFileKindDialog.showPrompt();
 				if (audioFileKind == null)
 					throw new TaskCancelledException();
 			}
@@ -1661,17 +1336,347 @@ public class App
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance variables
+//  Enumerated types
 ////////////////////////////////////////////////////////////////////////
 
-	private	ResourceProperties	buildProperties;
-	private	String				versionStr;
-	private	MainWindow			mainWindow;
-	private	boolean				hasGui;
-	private	boolean				titleShown;
-	private	boolean				overwrite;
-	private	Set<InfoKind>		infoKinds;
-	private	long				fileLengthOffset;
+
+	// COMMAND-LINE OPTIONS
+
+
+	private enum Option
+		implements CommandLine.IOption<Option>
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		AIFF_CHUNK_FILTER
+		(
+			"aiff-chunk-filter",
+			true
+		),
+
+		COMPRESS
+		(
+			"compress",
+			false
+		),
+
+		EXPAND
+		(
+			"expand",
+			false
+		),
+
+		HELP
+		(
+			"help",
+			false
+		),
+
+		OUTPUT_DIRECTORY
+		(
+			"output-directory",
+			true
+		),
+
+		OVERWRITE
+		(
+			"overwrite",
+			false
+		),
+
+		RECURSIVE
+		(
+			"recursive",
+			false
+		),
+
+		SHOW_INFO
+		(
+			"show-info",
+			true
+		),
+
+		VALIDATE
+		(
+			"validate",
+			false
+		),
+
+		VERSION
+		(
+			"version",
+			false
+		),
+
+		WAVE_CHUNK_FILTER
+		(
+			"wave-chunk-filter",
+			true
+		);
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	name;
+		private	boolean	hasArgument;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private Option(String  name,
+					   boolean hasArgument)
+		{
+			this.name = name;
+			this.hasArgument = hasArgument;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : CommandLine.IOption interface
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		public Option getKey()
+		{
+			return this;
+		}
+
+		//--------------------------------------------------------------
+
+		@Override
+		public String getName()
+		{
+			return name;
+		}
+
+		//--------------------------------------------------------------
+
+		@Override
+		public boolean hasArgument()
+		{
+			return hasArgument;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
+
+
+	// ERROR IDENTIFIERS
+
+
+	private enum ErrorId
+		implements AppException.IId
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		INVALID_OPTION_ARGUMENT
+		("'%1' is not a valid argument for the '%2' option."),
+
+		CONFLICTING_OPTION_ARGUMENTS
+		("The '%1' option was specified more than once with different arguments."),
+
+		NO_COMMAND
+		("No command was specified."),
+
+		MULTIPLE_COMMANDS
+		("More than one command was specified."),
+
+		NO_INPUT_FILE_OR_DIRECTORY
+		("No input file or directory was specified."),
+
+		INVALID_OUTPUT_DIRECTORY
+		("The output directory is invalid."),
+
+		INVALID_AIFF_CHUNK_FILTER
+		("The AIFF chunk filter is invalid."),
+
+		INVALID_WAVE_CHUNK_FILTER
+		("The WAVE chunk filter is invalid."),
+
+		INCONSISTENT_INFO_KINDS
+		("The arguments of the 'show-info' option are inconsistent."),
+
+		LIST_FILE_OR_DIRECTORY_DOES_NOT_EXIST
+		("The file or directory denoted by this pathname in the list file does not exist."),
+
+		LIST_FILE_PATHNAME_IS_A_FILE
+		("The output pathname in the list file denotes a file."),
+
+		FILE_OR_DIRECTORY_ACCESS_NOT_PERMITTED
+		("Access to the file or directory specified in the list file was not permitted."),
+
+		NOT_A_FILE
+		("The pathname does not denote a normal file."),
+
+		FILE_DOES_NOT_EXIST
+		("The file does not exist."),
+
+		FAILED_TO_CREATE_DIRECTORY
+		("Failed to create the directory."),
+
+		FAILED_TO_LIST_DIRECTORY_ENTRIES
+		("Failed to get a list of directory entries.");
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	message;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private ErrorId(String message)
+		{
+			this.message = message;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : AppException.IId interface
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		public String getMessage()
+		{
+			return message;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
+
+////////////////////////////////////////////////////////////////////////
+//  Member classes : non-inner classes
+////////////////////////////////////////////////////////////////////////
+
+
+	// COMMAND-LINE ARGUMENT EXCEPTION CLASS
+
+
+	private static class ArgumentException
+		extends AppException
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	prefix;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private ArgumentException(ErrorId                     id,
+								  CommandLine.Element<Option> element)
+		{
+			super(id);
+			prefix = element.getOptionString() + "=" + element.getValue() + "\n";
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : overriding methods
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		protected String getPrefix()
+		{
+			return prefix;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
+
+
+	// COMMAND-LINE USAGE EXCEPTION CLASS
+
+
+	private static class UsageException
+		extends AppException
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	prefix;
+		private	String	suffix;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private UsageException(ErrorId id)
+		{
+			super(id);
+			suffix = "\n" + USAGE_STR;
+		}
+
+		//--------------------------------------------------------------
+
+		private UsageException(ErrorId   id,
+							   String... strs)
+		{
+			super(id, strs);
+			suffix = "\n" + USAGE_STR;
+		}
+
+		//--------------------------------------------------------------
+
+		private UsageException(ErrorId                     id,
+							   CommandLine.Element<Option> element)
+		{
+			this(id);
+			prefix = element.getOptionString() + " " + element.getValue() + "\n";
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : overriding methods
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		protected String getPrefix()
+		{
+			return prefix;
+		}
+
+		//--------------------------------------------------------------
+
+		@Override
+		protected String getSuffix()
+		{
+			return suffix;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
 
 }
 

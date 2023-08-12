@@ -18,7 +18,7 @@ package uk.blankaspect.onda;
 // IMPORTS
 
 
-import uk.blankaspect.common.swing.combobox.PathnameComboBox;
+import uk.blankaspect.ui.swing.combobox.PathnameComboBox;
 
 //----------------------------------------------------------------------
 

@@ -44,9 +44,6 @@ interface AppConstants
 	String	REPLACE_STR			= "Replace";
 	String	ALREADY_EXISTS_STR	= "\nThe file already exists.\nDo you want to replace it?";
 
-	// Temporary-file prefix
-	String	TEMP_FILE_PREFIX	= "_$_";
-
 	// Filename suffixes
 	String		AIFF_FILE_SUFFIX1		= ".aif";
 	String		AIFF_FILE_SUFFIX2		= ".aiff";

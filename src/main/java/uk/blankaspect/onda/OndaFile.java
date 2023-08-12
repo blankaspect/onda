@@ -25,11 +25,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.blankaspect.common.bytedata.IByteDataOutputStream;
+import uk.blankaspect.common.bytedata.IByteDataSource;
+
 import uk.blankaspect.common.exception.AppException;
 import uk.blankaspect.common.exception.FileException;
-
-import uk.blankaspect.common.misc.IByteDataOutputStream;
-import uk.blankaspect.common.misc.IByteDataSource;
 
 import uk.blankaspect.common.nlf.Chunk;
 import uk.blankaspect.common.nlf.ChunkList;
@@ -37,7 +37,7 @@ import uk.blankaspect.common.nlf.Document;
 import uk.blankaspect.common.nlf.Id;
 import uk.blankaspect.common.nlf.NlfException;
 
-import uk.blankaspect.common.number.NumberUtils;
+import uk.blankaspect.common.number.NumberCodec;
 
 //----------------------------------------------------------------------
 
@@ -53,38 +53,38 @@ class OndaFile
 //  Constants
 ////////////////////////////////////////////////////////////////////////
 
-	public static final		int	MIN_NUM_CHANNELS	= 1;
-	public static final		int	MAX_NUM_CHANNELS	= 128;
+	public static final		int		MIN_NUM_CHANNELS	= 1;
+	public static final		int		MAX_NUM_CHANNELS	= 128;
 
-	public static final		int	MIN_BITS_PER_SAMPLE	= 1;
-	public static final		int	MAX_BITS_PER_SAMPLE	= 32;
+	public static final		int		MIN_BITS_PER_SAMPLE	= 1;
+	public static final		int		MAX_BITS_PER_SAMPLE	= 32;
 
-	public static final		int	MIN_SAMPLE_RATE	= 1;
-	public static final		int	MAX_SAMPLE_RATE	= Integer.MAX_VALUE;
+	public static final		int		MIN_SAMPLE_RATE	= 1;
+	public static final		int		MAX_SAMPLE_RATE	= Integer.MAX_VALUE;
 
 	public static final		long	MIN_NUM_SAMPLE_FRAMES	= 0;
 	public static final		long	MAX_NUM_SAMPLE_FRAMES	= (1L << 62) - 1;
 
-	public static final		int	MIN_KEY_LENGTH	= 1;
-	public static final		int	MAX_KEY_LENGTH	= 5;
+	public static final		int		MIN_KEY_LENGTH	= 1;
+	public static final		int		MAX_KEY_LENGTH	= 5;
 
-	public static final		int	MIN_BLOCK_LENGTH		= 1;
-	public static final		int	MAX_BLOCK_LENGTH		= 1 << 16;
-	public static final		int	DEFAULT_BLOCK_LENGTH	= 256;
+	public static final		int		MIN_BLOCK_LENGTH		= 1;
+	public static final		int		MAX_BLOCK_LENGTH		= 1 << 16;
+	public static final		int		DEFAULT_BLOCK_LENGTH	= 256;
 
-	public static final		int	MIN_SUPPORTED_VERSION	= 0;
-	public static final		int	MAX_SUPPORTED_VERSION	= 1;
+	public static final		int		MIN_SUPPORTED_VERSION	= 0;
+	public static final		int		MAX_SUPPORTED_VERSION	= 1;
 
-	private static final	Id	ONDA_ID				= new Id("Onda");
-	private static final	Id	ATTRIBUTES_ID		= new Id("attributes");
-	private static final	Id	PRIVATE_DATA_ID		= new Id("privateData");
+	private static final	Id		ONDA_ID				= new Id("Onda");
+	private static final	Id		ATTRIBUTES_ID		= new Id("attributes");
+	private static final	Id		PRIVATE_DATA_ID		= new Id("privateData");
 	@SuppressWarnings("unused")
-	private static final	Id	DATA_BLOCK_SIZE_ID	= new Id("dataBlockSize");
-	private static final	Id	DATA_ID				= new Id("data");
+	private static final	Id		DATA_BLOCK_SIZE_ID	= new Id("dataBlockSize");
+	private static final	Id		DATA_ID				= new Id("data");
 
-	private static final	int	READ_ATTRIBUTES		= 1 << 0;
-	private static final	int	READ_PRIVATE_DATA	= 1 << 1;
-	private static final	int	READ_DATA			= 1 << 2;
+	private static final	int		READ_ATTRIBUTES		= 1 << 0;
+	private static final	int		READ_PRIVATE_DATA	= 1 << 1;
+	private static final	int		READ_DATA			= 1 << 2;
 
 	private static final	String	NAMESPACE_NAME			= "http://ns.blankaspect.uk/onda-1";
 	private static final	String	NAMESPACE_NAME_REGEX	= "http://ns\\.[a-z.]+/onda-1";
@@ -295,47 +295,47 @@ class OndaFile
 			throws AppException
 		{
 			// Version number
-			version = NumberUtils.bytesToIntBE(data, offset, VERSION_SIZE);
+			version = NumberCodec.bytesToUIntBE(data, offset, VERSION_SIZE);
 			offset += VERSION_SIZE;
 			if ((version < MIN_SUPPORTED_VERSION) || (version > MAX_SUPPORTED_VERSION))
 				throw new AppException(ErrorId.UNSUPPORTED_VERSION, Integer.toString(version));
 
 			// Number of channels
-			numChannels = NumberUtils.bytesToIntBE(data, offset, NUM_CHANNELS_SIZE);
+			numChannels = NumberCodec.bytesToUIntBE(data, offset, NUM_CHANNELS_SIZE);
 			offset += NUM_CHANNELS_SIZE;
 			if ((numChannels < MIN_NUM_CHANNELS) || (numChannels > MAX_NUM_CHANNELS))
 				throw new AppException(ErrorId.NUM_CHANNELS_OUT_OF_BOUNDS);
 
 			// Bits per sample
-			bitsPerSample = NumberUtils.bytesToIntBE(data, offset, BITS_PER_SAMPLE_SIZE);
+			bitsPerSample = NumberCodec.bytesToUIntBE(data, offset, BITS_PER_SAMPLE_SIZE);
 			offset += BITS_PER_SAMPLE_SIZE;
 			if ((bitsPerSample < MIN_BITS_PER_SAMPLE) || (bitsPerSample > MAX_BITS_PER_SAMPLE))
 				throw new AppException(ErrorId.BITS_PER_SAMPLE_OUT_OF_BOUNDS);
 
 			// Sample rate
-			sampleRate = NumberUtils.bytesToIntBE(data, offset, SAMPLE_RATE_SIZE);
+			sampleRate = NumberCodec.bytesToUIntBE(data, offset, SAMPLE_RATE_SIZE);
 			offset += SAMPLE_RATE_SIZE;
 			if ((sampleRate < MIN_SAMPLE_RATE) || (sampleRate > MAX_SAMPLE_RATE))
 				throw new AppException(ErrorId.SAMPLE_RATE_OUT_OF_BOUNDS);
 
 			// Number of sample frames
-			numSampleFrames = NumberUtils.bytesToLongBE(data, offset, NUM_SAMPLE_FRAMES_SIZE);
+			numSampleFrames = NumberCodec.bytesToULongBE(data, offset, NUM_SAMPLE_FRAMES_SIZE);
 			offset += NUM_SAMPLE_FRAMES_SIZE;
 			if ((numSampleFrames < MIN_NUM_SAMPLE_FRAMES) || (numSampleFrames > MAX_NUM_SAMPLE_FRAMES))
 				throw new AppException(ErrorId.NUM_SAMPLE_FRAMES_OUT_OF_BOUNDS);
 
 			// CRC value
-			crcValue = NumberUtils.bytesToLongBE(data, offset, CRC_SIZE) & 0xFFFFFFFFL;
+			crcValue = NumberCodec.bytesToULongBE(data, offset, CRC_SIZE) & 0xFFFFFFFFL;
 			offset += CRC_SIZE;
 
 			// Key length
-			keyLength = NumberUtils.bytesToIntBE(data, offset, KEY_LENGTH_SIZE);
+			keyLength = NumberCodec.bytesToUIntBE(data, offset, KEY_LENGTH_SIZE);
 			offset += KEY_LENGTH_SIZE;
 			if ((keyLength < MIN_KEY_LENGTH) || (keyLength > MAX_KEY_LENGTH))
 				throw new AppException(ErrorId.KEY_LENGTH_OUT_OF_BOUNDS);
 
 			// Block length
-			blockLength = NumberUtils.bytesToIntBE(data, offset, BLOCK_LENGTH_SIZE);
+			blockLength = NumberCodec.bytesToUIntBE(data, offset, BLOCK_LENGTH_SIZE);
 			offset += BLOCK_LENGTH_SIZE;
 			if ((blockLength < MIN_BLOCK_LENGTH) || (blockLength > MAX_BLOCK_LENGTH))
 				throw new AppException(ErrorId.BLOCK_LENGTH_OUT_OF_BOUNDS);
@@ -366,21 +366,21 @@ class OndaFile
 			byte[] buffer = new byte[SIZE];
 
 			int offset = 0;
-			NumberUtils.intToBytesBE(version, buffer, offset, VERSION_SIZE);
+			NumberCodec.uIntToBytesBE(version, buffer, offset, VERSION_SIZE);
 			offset += VERSION_SIZE;
-			NumberUtils.intToBytesBE(numChannels, buffer, offset, NUM_CHANNELS_SIZE);
+			NumberCodec.uIntToBytesBE(numChannels, buffer, offset, NUM_CHANNELS_SIZE);
 			offset += NUM_CHANNELS_SIZE;
-			NumberUtils.intToBytesBE(bitsPerSample, buffer, offset, BITS_PER_SAMPLE_SIZE);
+			NumberCodec.uIntToBytesBE(bitsPerSample, buffer, offset, BITS_PER_SAMPLE_SIZE);
 			offset += BITS_PER_SAMPLE_SIZE;
-			NumberUtils.intToBytesBE(sampleRate, buffer, offset, SAMPLE_RATE_SIZE);
+			NumberCodec.uIntToBytesBE(sampleRate, buffer, offset, SAMPLE_RATE_SIZE);
 			offset += SAMPLE_RATE_SIZE;
-			NumberUtils.longToBytesBE(numSampleFrames, buffer, offset, NUM_SAMPLE_FRAMES_SIZE);
+			NumberCodec.uLongToBytesBE(numSampleFrames, buffer, offset, NUM_SAMPLE_FRAMES_SIZE);
 			offset += NUM_SAMPLE_FRAMES_SIZE;
-			NumberUtils.longToBytesBE(crcValue, buffer, offset, CRC_SIZE);
+			NumberCodec.uLongToBytesBE(crcValue, buffer, offset, CRC_SIZE);
 			offset += CRC_SIZE;
-			NumberUtils.intToBytesBE(keyLength, buffer, offset, KEY_LENGTH_SIZE);
+			NumberCodec.uIntToBytesBE(keyLength, buffer, offset, KEY_LENGTH_SIZE);
 			offset += KEY_LENGTH_SIZE;
-			NumberUtils.intToBytesBE(blockLength, buffer, offset, BLOCK_LENGTH_SIZE);
+			NumberCodec.uIntToBytesBE(blockLength, buffer, offset, BLOCK_LENGTH_SIZE);
 			offset += BLOCK_LENGTH_SIZE;
 
 			return buffer;
@@ -572,7 +572,7 @@ class OndaFile
 				int endOffset = offset + data.length;
 				while (offset < endOffset)
 				{
-					buffer[index++] = NumberUtils.bytesToIntLE(data.data, offset, bytesPerSample);
+					buffer[index++] = NumberCodec.bytesToIntLE(data.data, offset, bytesPerSample);
 					offset += bytesPerSample;
 				}
 				compressedDataOutput.writeBlock(buffer, 0, index);
@@ -640,7 +640,7 @@ class OndaFile
 		String message = exception.getMessage();
 		if (message != null)
 		{
-			if (buffer.length() > 0)
+			if (!buffer.isEmpty())
 				buffer.append('\n');
 			buffer.append(message);
 		}
@@ -882,7 +882,7 @@ class OndaFile
 			throw new FileException(ErrorId.INVALID_ATTRIBUTES_CHUNK, file);
 		byte[] buffer = new byte[Attributes.SIZE];
 		chunk.getReader().getDataInput().readFully(buffer, 0, Attributes.VERSION_SIZE);
-		int version = NumberUtils.bytesToIntBE(buffer, 0, Attributes.VERSION_SIZE);
+		int version = NumberCodec.bytesToIntBE(buffer, 0, Attributes.VERSION_SIZE);
 		if ((version < MIN_SUPPORTED_VERSION) || (version > MAX_SUPPORTED_VERSION))
 			throw new FileException(ErrorId.UNSUPPORTED_VERSION, file, Integer.toString(version));
 

@@ -35,7 +35,7 @@ import uk.blankaspect.common.iff.ChunkFilter;
 import uk.blankaspect.common.iff.FormFile;
 import uk.blankaspect.common.iff.IffId;
 
-import uk.blankaspect.common.number.NumberUtils;
+import uk.blankaspect.common.number.NumberCodec;
 
 //----------------------------------------------------------------------
 
@@ -341,11 +341,11 @@ class PrivateData
 
 		// Set header in buffer
 		int offset = 0;
-		NumberUtils.intToBytesBE(sourceKind.ordinal(), buffer, offset, SOURCE_KIND_SIZE);
+		NumberCodec.uIntToBytesBE(sourceKind.ordinal(), buffer, offset, SOURCE_KIND_SIZE);
 		offset += SOURCE_KIND_SIZE;
-		NumberUtils.intToBytesBE(adler32, buffer, offset, ADLER32_SIZE);
+		NumberCodec.uIntToBytesBE(adler32, buffer, offset, ADLER32_SIZE);
 		offset += ADLER32_SIZE;
-		NumberUtils.intToBytesBE(sourceChunks.size(), buffer, offset, NUM_CHUNKS_SIZE);
+		NumberCodec.uIntToBytesBE(sourceChunks.size(), buffer, offset, NUM_CHUNKS_SIZE);
 		offset += NUM_CHUNKS_SIZE;
 
 		// Set list of chunks in buffer
@@ -353,7 +353,7 @@ class PrivateData
 		{
 			element.id.put(buffer, offset);
 			offset += IffId.SIZE;
-			NumberUtils.intToBytesBE(element.size, buffer, offset, Chunk.SIZE_SIZE);
+			NumberCodec.uIntToBytesBE(element.size, buffer, offset, Chunk.SIZE_SIZE);
 			offset += Chunk.SIZE_SIZE;
 		}
 
@@ -395,16 +395,16 @@ class PrivateData
 			throw new AppException(ErrorId.MALFORMED_DATA);
 
 		int offset = 0;
-		int sourceKindIndex = NumberUtils.bytesToIntBE(data, offset, SOURCE_KIND_SIZE);
+		int sourceKindIndex = NumberCodec.bytesToUIntBE(data, offset, SOURCE_KIND_SIZE);
 		offset += SOURCE_KIND_SIZE;
 		if ((sourceKindIndex < 0) || (sourceKindIndex >= AudioFileKind.values().length))
 			throw new AppException(ErrorId.UNRECOGNISED_SOURCE_FILE_KIND);
 		sourceKind = AudioFileKind.values()[sourceKindIndex];
 
-		int adler32 = NumberUtils.bytesToIntBE(data, offset, ADLER32_SIZE);
+		int adler32 = NumberCodec.bytesToUIntBE(data, offset, ADLER32_SIZE);
 		offset += ADLER32_SIZE;
 
-		int numChunks = NumberUtils.bytesToIntBE(data, offset, NUM_CHUNKS_SIZE);
+		int numChunks = NumberCodec.bytesToUIntBE(data, offset, NUM_CHUNKS_SIZE);
 		offset += NUM_CHUNKS_SIZE;
 		if (numChunks < 0)
 			throw new AppException(ErrorId.INVALID_NUM_CHUNKS);
@@ -418,7 +418,7 @@ class PrivateData
 		{
 			IffId id = new IffId(data, offset);
 			offset += IffId.SIZE;
-			int size = NumberUtils.bytesToIntBE(data, offset, Chunk.SIZE_SIZE);
+			int size = NumberCodec.bytesToUIntBE(data, offset, Chunk.SIZE_SIZE);
 			offset += Chunk.SIZE_SIZE;
 			sourceChunks.add(new SourceChunk(id, size));
 			length += size;

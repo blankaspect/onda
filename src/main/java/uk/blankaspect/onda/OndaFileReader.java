@@ -20,9 +20,9 @@ package uk.blankaspect.onda;
 
 import java.io.File;
 
-import uk.blankaspect.common.exception.AppException;
+import uk.blankaspect.common.bytedata.IByteDataOutputStream;
 
-import uk.blankaspect.common.misc.IByteDataOutputStream;
+import uk.blankaspect.common.exception.AppException;
 
 //----------------------------------------------------------------------
 

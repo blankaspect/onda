@@ -71,25 +71,25 @@ import uk.blankaspect.common.iff.ChunkFilter;
 import uk.blankaspect.common.misc.FilenameSuffixFilter;
 import uk.blankaspect.common.misc.SystemUtils;
 
-import uk.blankaspect.common.swing.action.KeyAction;
+import uk.blankaspect.ui.swing.action.KeyAction;
 
-import uk.blankaspect.common.swing.button.FButton;
+import uk.blankaspect.ui.swing.button.FButton;
 
-import uk.blankaspect.common.swing.checkbox.FCheckBox;
+import uk.blankaspect.ui.swing.checkbox.FCheckBox;
 
-import uk.blankaspect.common.swing.combobox.FComboBox;
+import uk.blankaspect.ui.swing.combobox.FComboBox;
 
-import uk.blankaspect.common.swing.container.PathnamePanel;
+import uk.blankaspect.ui.swing.container.PathnamePanel;
 
-import uk.blankaspect.common.swing.dialog.NonEditableTextPaneDialog;
+import uk.blankaspect.ui.swing.dialog.NonEditableTextPaneDialog;
 
-import uk.blankaspect.common.swing.label.FLabel;
+import uk.blankaspect.ui.swing.label.FLabel;
 
-import uk.blankaspect.common.swing.menu.FMenuItem;
+import uk.blankaspect.ui.swing.menu.FMenuItem;
 
-import uk.blankaspect.common.swing.misc.GuiUtils;
+import uk.blankaspect.ui.swing.misc.GuiUtils;
 
-import uk.blankaspect.common.swing.transfer.DataImporter;
+import uk.blankaspect.ui.swing.transfer.DataImporter;
 
 //----------------------------------------------------------------------
 
@@ -147,311 +147,19 @@ class MainWindow
 	}
 
 ////////////////////////////////////////////////////////////////////////
-//  Enumerated types
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
-
-	// INPUT MODE
-
-
-	private enum InputMode
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		DIRECT  ("Direct"),
-		LIST    ("List");
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private InputMode(String text)
-		{
-			this.text = text;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : overriding methods
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		public String toString()
-		{
-			return text;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	text;
-
-	}
-
-	//==================================================================
-
-
-	// ERROR IDENTIFIERS
-
-
-	private enum ErrorId
-		implements AppException.IId
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		FILE_TRANSFER_NOT_SUPPORTED
-		("File transfer is not supported."),
-
-		ERROR_TRANSFERRING_DATA
-		("An error occurred while transferring data."),
-
-		NO_FILES_TRANSFERRED
-		("The transfer did not include any files."),
-
-		INPUT_FILE_OR_DIRECTORY_DOES_NOT_EXIST
-		("The input file or directory does not exist."),
-
-		NOT_A_DIRECTORY
-		("The output pathname does not denote a directory."),
-
-		NO_CHUNK_FILTER
-		("No %1 chunk filter has been specified.");
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private ErrorId(String message)
-		{
-			this.message = message;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : AppException.IId interface
-	////////////////////////////////////////////////////////////////////
-
-		public String getMessage()
-		{
-			return message;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	message;
-
-	}
-
-	//==================================================================
-
-////////////////////////////////////////////////////////////////////////
-//  Member classes : non-inner classes
-////////////////////////////////////////////////////////////////////////
-
-
-	// LOG DIALOG BOX CLASS
-
-
-	private static class LogDialog
-		extends NonEditableTextPaneDialog
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		private static final	int	NUM_COLUMNS	= 72;
-		private static final	int	NUM_ROWS	= 24;
-
-		private static final	String	KEY	= LogDialog.class.getCanonicalName();
-
-		private static final	String	ERROR_STYLE_KEY		= "error";
-		private static final	Color	ERROR_STYLE_COLOUR	= new Color(208, 0, 0);
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private LogDialog(Window         owner,
-						  String         titleStr,
-						  List<Log.Line> lines)
-		{
-			// Call superclass constructor
-			super(owner, titleStr, KEY, NUM_COLUMNS, NUM_ROWS, true);
-
-			// Initialise instance variables
-			this.lines = lines;
-
-			// Add error style
-			Style style = addStyle(ERROR_STYLE_KEY);
-			StyleConstants.setForeground(style, ERROR_STYLE_COLOUR);
-
-			// Set text
-			for (Log.Line line : lines)
-			{
-				Paragraph paragraph = new Paragraph(StyleContext.DEFAULT_STYLE);
-				paragraph.add(new Span(line.str,
-									   (line.kind == Log.Line.Kind.INFO) ? StyleContext.DEFAULT_STYLE
-																		 : ERROR_STYLE_KEY));
-				append(paragraph);
-			}
-			setCaretToEnd();
-
-			// Show dialog
-			setVisible(true);
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Class methods
-	////////////////////////////////////////////////////////////////////
-
-		public static LogDialog showDialog(Component      parent,
-										   String         titleStr,
-										   List<Log.Line> lines)
-		{
-			return new LogDialog(GuiUtils.getWindow(parent), titleStr, lines);
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : overriding methods
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		protected String getText()
-		{
-			StringBuilder buffer = new StringBuilder(lines.size() * 80);
-			for (Log.Line line : lines)
-			{
-				if (line.kind == Log.Line.Kind.ERROR)
-					buffer.append(Log.ERROR_PREFIX);
-				buffer.append(line.str);
-				buffer.append('\n');
-			}
-			return buffer.toString();
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	List<Log.Line>	lines;
-
-	}
-
-	//==================================================================
-
-////////////////////////////////////////////////////////////////////////
-//  Member classes : inner classes
-////////////////////////////////////////////////////////////////////////
-
-
-	// FILE TRANSFER HANDLER CLASS
-
-
-	private class FileTransferHandler
-		extends TransferHandler
-		implements Runnable
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		public FileTransferHandler()
-		{
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : Runnable interface
-	////////////////////////////////////////////////////////////////////
-
-		public void run()
-		{
-			AppCommand.IMPORT_FILES.execute();
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : overriding methods
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		public boolean canImport(TransferHandler.TransferSupport support)
-		{
-			boolean supported = !support.isDrop() || ((support.getSourceDropActions() & COPY) == COPY);
-			if (supported)
-				supported = DataImporter.isFileList(support.getDataFlavors());
-			if (support.isDrop() && supported)
-				support.setDropAction(COPY);
-			return supported;
-		}
-
-		//--------------------------------------------------------------
-
-		@Override
-		public boolean importData(TransferHandler.TransferSupport support)
-		{
-			if (canImport(support))
-			{
-				try
-				{
-					try
-					{
-						List<File> files = DataImporter.getFiles(support.getTransferable());
-						if (!files.isEmpty())
-						{
-							toFront();
-							AppCommand.IMPORT_FILES.putValue(AppCommand.Property.FILES, files);
-							SwingUtilities.invokeLater(this);
-							return true;
-						}
-					}
-					catch (UnsupportedFlavorException e)
-					{
-						throw new AppException(ErrorId.FILE_TRANSFER_NOT_SUPPORTED);
-					}
-					catch (IOException e)
-					{
-						throw new AppException(ErrorId.ERROR_TRANSFERRING_DATA);
-					}
-				}
-				catch (AppException e)
-				{
-					App.INSTANCE.showErrorMessage(App.SHORT_NAME, e);
-				}
-			}
-			return false;
-		}
-
-		//--------------------------------------------------------------
-
-	}
-
-	//==================================================================
+	private	FComboBox<InputMode>	inputModeComboBox;
+	private	JCheckBox				recursiveCheckBox;
+	private	FPathnameComboBox		inPathnameComboBox;
+	private	FPathnameComboBox		outDirectoryComboBox;
+	private	JFileChooser			inPathnameChooser;
+	private	JFileChooser			outDirectoryChooser;
+	private	JFileChooser			compressFileChooser;
+	private	JFileChooser			expandFileChooser;
+	private	JFileChooser			validateFileChooser;
+	private	JPopupMenu				contextMenu;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -459,7 +167,6 @@ class MainWindow
 
 	public MainWindow(String titleStr)
 	{
-
 		// Call superclass constructor
 		super(titleStr);
 
@@ -774,15 +481,15 @@ class MainWindow
 		pack();
 
 		// Set location of window
-		if (config.isMainWindowLocation())
-			setLocation(GuiUtils.getLocationWithinScreen(this, config.getMainWindowLocation()));
+		setLocation(config.isMainWindowLocation()
+								? GuiUtils.getLocationWithinScreen(this, config.getMainWindowLocation())
+								: GuiUtils.getComponentLocation(this));
 
 		// Set focus
 		inPathnameComboBox.requestFocusInWindow();
 
 		// Make window visible
 		setVisible(true);
-
 	}
 
 	//------------------------------------------------------------------
@@ -791,6 +498,7 @@ class MainWindow
 //  Instance methods : ActionListener interface
 ////////////////////////////////////////////////////////////////////////
 
+	@Override
 	public void actionPerformed(ActionEvent event)
 	{
 		String command = event.getActionCommand();
@@ -817,6 +525,7 @@ class MainWindow
 //  Instance methods : MouseListener interface
 ////////////////////////////////////////////////////////////////////////
 
+	@Override
 	public void mouseClicked(MouseEvent event)
 	{
 		// do nothing
@@ -824,6 +533,7 @@ class MainWindow
 
 	//------------------------------------------------------------------
 
+	@Override
 	public void mouseEntered(MouseEvent event)
 	{
 		// do nothing
@@ -831,6 +541,7 @@ class MainWindow
 
 	//------------------------------------------------------------------
 
+	@Override
 	public void mouseExited(MouseEvent event)
 	{
 		// do nothing
@@ -838,6 +549,7 @@ class MainWindow
 
 	//------------------------------------------------------------------
 
+	@Override
 	public void mousePressed(MouseEvent event)
 	{
 		showContextMenu(event);
@@ -845,6 +557,7 @@ class MainWindow
 
 	//------------------------------------------------------------------
 
+	@Override
 	public void mouseReleased(MouseEvent event)
 	{
 		showContextMenu(event);
@@ -1336,19 +1049,312 @@ class MainWindow
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance variables
+//  Enumerated types
 ////////////////////////////////////////////////////////////////////////
 
-	private	FComboBox<InputMode>	inputModeComboBox;
-	private	JCheckBox				recursiveCheckBox;
-	private	FPathnameComboBox		inPathnameComboBox;
-	private	FPathnameComboBox		outDirectoryComboBox;
-	private	JFileChooser			inPathnameChooser;
-	private	JFileChooser			outDirectoryChooser;
-	private	JFileChooser			compressFileChooser;
-	private	JFileChooser			expandFileChooser;
-	private	JFileChooser			validateFileChooser;
-	private	JPopupMenu				contextMenu;
+
+	// INPUT MODE
+
+
+	private enum InputMode
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		DIRECT  ("Direct"),
+		LIST    ("List");
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	text;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private InputMode(String text)
+		{
+			this.text = text;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : overriding methods
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		public String toString()
+		{
+			return text;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
+
+
+	// ERROR IDENTIFIERS
+
+
+	private enum ErrorId
+		implements AppException.IId
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		FILE_TRANSFER_NOT_SUPPORTED
+		("File transfer is not supported."),
+
+		ERROR_TRANSFERRING_DATA
+		("An error occurred while transferring data."),
+
+		NO_FILES_TRANSFERRED
+		("The transfer did not include any files."),
+
+		INPUT_FILE_OR_DIRECTORY_DOES_NOT_EXIST
+		("The input file or directory does not exist."),
+
+		NOT_A_DIRECTORY
+		("The output pathname does not denote a directory."),
+
+		NO_CHUNK_FILTER
+		("No %1 chunk filter has been specified.");
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	message;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private ErrorId(String message)
+		{
+			this.message = message;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : AppException.IId interface
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		public String getMessage()
+		{
+			return message;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
+
+////////////////////////////////////////////////////////////////////////
+//  Member classes : non-inner classes
+////////////////////////////////////////////////////////////////////////
+
+
+	// LOG DIALOG CLASS
+
+
+	private static class LogDialog
+		extends NonEditableTextPaneDialog
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		private static final	int	NUM_COLUMNS	= 72;
+		private static final	int	NUM_ROWS	= 24;
+
+		private static final	String	KEY	= LogDialog.class.getCanonicalName();
+
+		private static final	String	ERROR_STYLE_KEY		= "error";
+		private static final	Color	ERROR_STYLE_COLOUR	= new Color(208, 0, 0);
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	List<Log.Line>	lines;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private LogDialog(Window         owner,
+						  String         titleStr,
+						  List<Log.Line> lines)
+		{
+			// Call superclass constructor
+			super(owner, titleStr, KEY, NUM_COLUMNS, NUM_ROWS, true);
+
+			// Initialise instance variables
+			this.lines = lines;
+
+			// Add error style
+			Style style = addStyle(ERROR_STYLE_KEY);
+			StyleConstants.setForeground(style, ERROR_STYLE_COLOUR);
+
+			// Set text
+			for (Log.Line line : lines)
+			{
+				Paragraph paragraph = new Paragraph(StyleContext.DEFAULT_STYLE);
+				paragraph.add(new Span(line.str,
+									   (line.kind == Log.Line.Kind.INFO) ? StyleContext.DEFAULT_STYLE
+																		 : ERROR_STYLE_KEY));
+				append(paragraph);
+			}
+			setCaretToEnd();
+
+			// Show dialog
+			setVisible(true);
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Class methods
+	////////////////////////////////////////////////////////////////////
+
+		public static LogDialog showDialog(Component      parent,
+										   String         titleStr,
+										   List<Log.Line> lines)
+		{
+			return new LogDialog(GuiUtils.getWindow(parent), titleStr, lines);
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : overriding methods
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		protected String getText()
+		{
+			StringBuilder buffer = new StringBuilder(lines.size() * 80);
+			for (Log.Line line : lines)
+			{
+				if (line.kind == Log.Line.Kind.ERROR)
+					buffer.append(Log.ERROR_PREFIX);
+				buffer.append(line.str);
+				buffer.append('\n');
+			}
+			return buffer.toString();
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
+
+////////////////////////////////////////////////////////////////////////
+//  Member classes : inner classes
+////////////////////////////////////////////////////////////////////////
+
+
+	// FILE TRANSFER HANDLER CLASS
+
+
+	private class FileTransferHandler
+		extends TransferHandler
+		implements Runnable
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		public FileTransferHandler()
+		{
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : Runnable interface
+	////////////////////////////////////////////////////////////////////
+
+		public void run()
+		{
+			AppCommand.IMPORT_FILES.execute();
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : overriding methods
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		public boolean canImport(TransferHandler.TransferSupport support)
+		{
+			boolean supported = !support.isDrop() || ((support.getSourceDropActions() & COPY) == COPY);
+			if (supported)
+				supported = DataImporter.isFileList(support.getDataFlavors());
+			if (support.isDrop() && supported)
+				support.setDropAction(COPY);
+			return supported;
+		}
+
+		//--------------------------------------------------------------
+
+		@Override
+		public boolean importData(TransferHandler.TransferSupport support)
+		{
+			if (canImport(support))
+			{
+				try
+				{
+					try
+					{
+						List<File> files = DataImporter.getFiles(support.getTransferable());
+						if (!files.isEmpty())
+						{
+							toFront();
+							AppCommand.IMPORT_FILES.putValue(AppCommand.Property.FILES, files);
+							SwingUtilities.invokeLater(this);
+							return true;
+						}
+					}
+					catch (UnsupportedFlavorException e)
+					{
+						throw new AppException(ErrorId.FILE_TRANSFER_NOT_SUPPORTED);
+					}
+					catch (IOException e)
+					{
+						throw new AppException(ErrorId.ERROR_TRANSFERRING_DATA);
+					}
+				}
+				catch (AppException e)
+				{
+					App.INSTANCE.showErrorMessage(App.SHORT_NAME, e);
+				}
+			}
+			return false;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
 
 }
 

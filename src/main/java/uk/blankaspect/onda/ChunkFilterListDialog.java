@@ -2,7 +2,7 @@
 
 ChunkFilterListDialog.java
 
-Chunk filter list dialog box class.
+Chunk filter list dialog class.
 
 \*====================================================================*/
 
@@ -57,22 +57,22 @@ import javax.swing.event.ListSelectionListener;
 
 import uk.blankaspect.common.iff.ChunkFilter;
 
-import uk.blankaspect.common.swing.action.KeyAction;
+import uk.blankaspect.ui.swing.action.KeyAction;
 
-import uk.blankaspect.common.swing.button.FButton;
+import uk.blankaspect.ui.swing.button.FButton;
 
-import uk.blankaspect.common.swing.font.FontUtils;
+import uk.blankaspect.ui.swing.font.FontUtils;
 
-import uk.blankaspect.common.swing.list.SingleSelectionList;
+import uk.blankaspect.ui.swing.list.SingleSelectionList;
 
-import uk.blankaspect.common.swing.misc.GuiUtils;
+import uk.blankaspect.ui.swing.misc.GuiUtils;
 
-import uk.blankaspect.common.swing.text.TextRendering;
+import uk.blankaspect.ui.swing.text.TextRendering;
 
 //----------------------------------------------------------------------
 
 
-// CHUNK FILTER LIST DIALOG BOX CLASS
+// CHUNK FILTER LIST DIALOG CLASS
 
 
 class ChunkFilterListDialog

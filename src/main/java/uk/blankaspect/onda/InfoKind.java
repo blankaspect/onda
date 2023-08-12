@@ -18,8 +18,9 @@ package uk.blankaspect.onda;
 // IMPORTS
 
 
-import java.util.Arrays;
 import java.util.Collection;
+
+import java.util.stream.Stream;
 
 //----------------------------------------------------------------------
 
@@ -62,9 +63,9 @@ public enum InfoKind
 		@Override
 		public void addTo(Collection<InfoKind> infoKinds)
 		{
-			infoKinds.add(TITLE);
-			infoKinds.add(LOG);
-			infoKinds.add(RESULT);
+			Stream.of(values())
+					.filter(value -> !((value == NONE) || (value == ALL)))
+					.forEach(value -> infoKinds.add(value));
 		}
 	};
 
@@ -91,7 +92,7 @@ public enum InfoKind
 
 	public static InfoKind forKey(String key)
 	{
-		return Arrays.stream(values())
+		return Stream.of(values())
 						.filter(value -> value.key.equals(key))
 						.findFirst()
 						.orElse(null);

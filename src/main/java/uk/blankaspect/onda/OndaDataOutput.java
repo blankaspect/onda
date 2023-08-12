@@ -24,22 +24,21 @@ import java.io.IOException;
 //----------------------------------------------------------------------
 
 
-// ONDA LOSSLESS AUDIO COMPRESSION DATA OUTPUT CLASS
+// CLASS: ONDA LOSSLESS AUDIO COMPRESSION DATA OUTPUT
 
 
 /**
- * This class implements a data output for compressing blocks of data with the Onda lossless audio
- * compression algorithm.  Blocks of compressed data are written to an underlying data destination in the
- * form specified by the <a href="http://onda.sourceforge.net/ondaAlgorithmAndFileFormats.html">Onda
- * algorithm</a>.
+ * This class implements a data output for compressing blocks of data with the Onda lossless audio  compression
+ * algorithm.  Blocks of compressed data are written to an underlying data destination in the form specified by the
+ * <a href="https://blankaspect.github.io/onda/algorithm/ondaAlgorithmAndFileFormats.html">Onda algorithm</a>.
  * <p>
- * The underlying data destination for this output is an instance of {@code java.io.DataOutput}.  Data that
- * are written to the data destination are buffered to improve efficiency.
+ * The underlying data destination for this output is an instance of {@code java.io.DataOutput}.  Data that are written
+ * to the data destination are buffered to improve efficiency.
  * </p>
  * <p>
- * The implementation of this class in the Onda application works only for integer sample values of up to 24
- * bits per sample.  Above 24 bits per sample, the type of the instance variable {@code bitBuffer} must be
- * changed from {@code int} to {@code long} to accommodate the extra bits.
+ * The implementation of this class in the Onda application works only for integer sample values of up to 24 bits per
+ * sample.  Above 24 bits per sample, the type of the instance variable {@code bitBuffer} must be changed from {@code
+ * int} to {@code long} to accommodate the extra bits.
  * </p>
  *
  * @see OndaDataInput
@@ -55,23 +54,48 @@ public class OndaDataOutput
 	private static final	int	BUFFER_SIZE	= 1 << 13;  // 8192
 
 ////////////////////////////////////////////////////////////////////////
+//  Instance variables
+////////////////////////////////////////////////////////////////////////
+
+	private	DataOutput	dataOutput;
+	private	int			numChannels;
+	private	int			sampleLength;
+	private	int			minEncodingLength;
+	private	int			keyLength;
+	private	int			bitBuffer;
+	private	int			bitDataLength;
+	private	int			outBufferIndex;
+	private	byte[]		outBuffer;
+	private	int[]		encodingBounds;
+	private	int[]		negEncodingBounds;
+	private	int[]		posEncodingBounds;
+	private	int[]		encodingLengths;
+	private	int[]		excessCodes;
+	private	long		outLength;
+
+////////////////////////////////////////////////////////////////////////
 //  Constructors
 ////////////////////////////////////////////////////////////////////////
 
 	/**
-	 * Constructs an {@code OndaDataOutput} that has an instance of {@code java.io.DataOutput} as its
-	 * underlying data destination.
+	 * Constructs an {@code OndaDataOutput} that has an instance of {@code java.io.DataOutput} as its underlying data
+	 * destination.
 	 *
-	 * @param numChannels   the number of audio channels in the sample data.
-	 * @param sampleLength  the length (in bits) of a sample value.
-	 * @param keyLength     the length (in bits) of an encoding key.
-	 * @param dataOutput    the underlying destination to which compressed data is to be written.
+	 * @param numChannels
+	 *          the number of audio channels in the sample data.
+	 * @param sampleLength
+	 *          the length (in bits) of a sample value.
+	 * @param keyLength
+	 *          the length (in bits) of an encoding key.
+	 * @param dataOutput
+	 *          the underlying destination to which compressed data is to be written.
 	 */
 
-	public OndaDataOutput(int        numChannels,
-						  int        sampleLength,
-						  int        keyLength,
-						  DataOutput dataOutput)
+	public OndaDataOutput(
+		int			numChannels,
+		int			sampleLength,
+		int			keyLength,
+		DataOutput	dataOutput)
 	{
 		this.numChannels = numChannels;
 		this.sampleLength = sampleLength;
@@ -97,8 +121,8 @@ public class OndaDataOutput
 	/**
 	 * Returns the length of data that has been written to the underlying data destination.
 	 *
-	 * @return the length of data that has been written to the underlying data destination since the data
-	 *         output was opened.
+	 * @return the length of data that has been written to the underlying data destination since the data output was
+	 *         opened.
 	 */
 
 	public long getOutLength()
@@ -109,11 +133,11 @@ public class OndaDataOutput
 	//------------------------------------------------------------------
 
 	/**
-	 * Closes the data output.  Any unwritten compressed data is written to the data destination.  This
-	 * method does not close the underlying data destination.
+	 * Closes the data output.  Any unwritten compressed data is written to the data destination.  This method does not
+	 * close the underlying data destination.
 	 *
 	 * @throws IOException
-	 *           if an error occurs while attempting to write to the data destination.
+	 *           if an error occurred while attempting to write to the data destination.
 	 */
 
 	public void close()
@@ -134,16 +158,19 @@ public class OndaDataOutput
 	//------------------------------------------------------------------
 
 	/**
-	 * Compresses a block of sample data and writes the compressed data to the data destination.  The output
-	 * data is written in the form of a data block of an Onda file (ie, a compression key for each channel,
-	 * followed by interleaved encoded data).
+	 * Compresses a block of sample data and writes the compressed data to the data destination.  The output data is
+	 * written in the form of a data block of an Onda file (ie, a compression key for each channel, followed by
+	 * interleaved encoded data).
 	 * <p>
 	 * The samples for multiple audio channels must be interleaved in the input data.
 	 * </p>
 	 *
-	 * @param  data    the data that is to be compressed and written.
-	 * @param  offset  the start offset of the sample data in {@code data}.
-	 * @param  length  the number of samples that are to be written.
+	 * @param  data
+	 *           the data that is to be compressed and written.
+	 * @param  offset
+	 *           the start offset of the sample data in {@code data}.
+	 * @param  length
+	 *           the number of samples that are to be written.
 	 * @throws IllegalArgumentException
 	 *           if
 	 *           <ul>
@@ -153,12 +180,13 @@ public class OndaDataOutput
 	 * @throws IndexOutOfBoundsException
 	 *           if {@code (offset < 0)} or {@code (offset > data.length)}.
 	 * @throws IOException
-	 *           if an error occurs while attempting to write to the data destination.
+	 *           if an error occurred while attempting to write to the data destination.
 	 */
 
-	public void writeBlock(int[] data,
-						   int   offset,
-						   int   length)
+	public void writeBlock(
+		int[]	data,
+		int		offset,
+		int		length)
 		throws IOException
 	{
 		// Validate arguments
@@ -264,16 +292,19 @@ public class OndaDataOutput
 	//------------------------------------------------------------------
 
 	/**
-	 * Writes a bit string of a specified length to the data destination.
+	 * Writes a bit array of a specified length to the data destination.
 	 *
-	 * @param  value   the bit string that is to be written.
-	 * @param  length  the number of low-order bits of {@code value} to write.
+	 * @param  value
+	 *           the bit array that is to be written.
+	 * @param  length
+	 *           the number of low-order bits of {@code value} to write.
 	 * @throws IOException
-	 *           if an error occurs while attempting to write to the data destination.
+	 *           if an error occurred while attempting to write to the data destination.
 	 */
 
-	private void write(int value,
-					   int length)
+	private void write(
+		int	value,
+		int	length)
 		throws IOException
 	{
 		bitBuffer <<= length;
@@ -293,26 +324,6 @@ public class OndaDataOutput
 	}
 
 	//------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////
-//  Instance variables
-////////////////////////////////////////////////////////////////////////
-
-	private	DataOutput	dataOutput;
-	private	int			numChannels;
-	private	int			sampleLength;
-	private	int			minEncodingLength;
-	private	int			keyLength;
-	private	int			bitBuffer;
-	private	int			bitDataLength;
-	private	int			outBufferIndex;
-	private	byte[]		outBuffer;
-	private	int[]		encodingBounds;
-	private	int[]		negEncodingBounds;
-	private	int[]		posEncodingBounds;
-	private	int[]		encodingLengths;
-	private	int[]		excessCodes;
-	private	long		outLength;
 
 }
 

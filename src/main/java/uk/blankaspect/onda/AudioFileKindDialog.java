@@ -2,7 +2,7 @@
 
 AudioFileKindDialog.java
 
-Audio file kind dialog box class.
+Audio file kind dialog class.
 
 \*====================================================================*/
 
@@ -43,20 +43,20 @@ import javax.swing.KeyStroke;
 
 import uk.blankaspect.common.stdin.InputUtils;
 
-import uk.blankaspect.common.swing.action.KeyAction;
+import uk.blankaspect.ui.swing.action.KeyAction;
 
-import uk.blankaspect.common.swing.button.FButton;
+import uk.blankaspect.ui.swing.button.FButton;
 
-import uk.blankaspect.common.swing.combobox.FComboBox;
+import uk.blankaspect.ui.swing.combobox.FComboBox;
 
-import uk.blankaspect.common.swing.label.FLabel;
+import uk.blankaspect.ui.swing.label.FLabel;
 
-import uk.blankaspect.common.swing.misc.GuiUtils;
+import uk.blankaspect.ui.swing.misc.GuiUtils;
 
 //----------------------------------------------------------------------
 
 
-// AUDIO FILE KIND DIALOG BOX CLASS
+// AUDIO FILE KIND DIALOG CLASS
 
 
 class AudioFileKindDialog

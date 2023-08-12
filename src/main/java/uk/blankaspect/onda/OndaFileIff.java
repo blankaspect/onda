@@ -23,9 +23,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import java.nio.channels.OverlappingFileLockException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import uk.blankaspect.common.bytedata.IByteDataOutputStream;
 
 import uk.blankaspect.common.exception.AppException;
 import uk.blankaspect.common.exception.FileException;
@@ -34,11 +38,9 @@ import uk.blankaspect.common.iff.FormFile;
 import uk.blankaspect.common.iff.IffFormFile;
 import uk.blankaspect.common.iff.IffId;
 
-import uk.blankaspect.common.misc.IByteDataOutputStream;
-
 import uk.blankaspect.common.nlf.Document;
 
-import uk.blankaspect.common.number.NumberUtils;
+import uk.blankaspect.common.number.NumberCodec;
 
 //----------------------------------------------------------------------
 
@@ -277,7 +279,7 @@ class OndaFileIff
 				throw new FileException(ErrorId.INVALID_ATTRIBUTES_CHUNK, file);
 			byte[] buffer = new byte[OndaFile.Attributes.SIZE];
 			raFile.readFully(buffer, 0, OndaFile.Attributes.VERSION_SIZE);
-			int version = NumberUtils.bytesToIntBE(buffer, 0, OndaFile.Attributes.VERSION_SIZE);
+			int version = NumberCodec.bytesToIntBE(buffer, 0, OndaFile.Attributes.VERSION_SIZE);
 			if ((version < OndaFile.MIN_SUPPORTED_VERSION) || (version > OndaFile.MAX_SUPPORTED_VERSION))
 				throw new FileException(ErrorId.UNSUPPORTED_VERSION, file, Integer.toString(version));
 
@@ -417,7 +419,11 @@ class OndaFileIff
 				if (raFile.getChannel().tryLock(0, Long.MAX_VALUE, true) == null)
 					throw new FileException(ErrorId.FAILED_TO_LOCK_FILE, file);
 			}
-			catch (Exception e)
+			catch (OverlappingFileLockException e)
+			{
+				// ignore
+			}
+			catch (IOException e)
 			{
 				throw new FileException(ErrorId.FAILED_TO_LOCK_FILE, file, e);
 			}
