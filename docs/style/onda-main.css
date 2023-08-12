@@ -1,0 +1,31 @@
+/**********************************************************************\
+
+Styles for Onda project page
+
+\**********************************************************************/
+
+@import url("blankaspect-project.css");
+
+div#nlf
+{
+  padding-bottom: 0.8em;
+}
+
+h3
+{
+  padding-bottom: 0.4em;
+  border-bottom: 1px solid #B4B8C8;
+}
+
+h4
+{
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid #B4B8C8;
+}
+
+ul.list li
+{
+  margin-left: -0.5em;
+}
+
+/*--------------------------------------------------------------------*/

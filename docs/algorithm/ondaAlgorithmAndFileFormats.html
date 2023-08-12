@@ -1,0 +1,1593 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html
+   PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+   "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html
+   xmlns="http://www.w3.org/1999/xhtml"
+   xml:lang="en">
+
+  <head>
+    <meta
+       http-equiv="content-type"
+       content="application/xhtml+xml;charset=UTF-8"/>
+    <meta
+       content="initial-scale=1"
+       name="viewport"/>
+    <title>Onda compression algorithm &amp; Onda file formats</title>
+    <link
+       href="style/blankaspect-common.css"
+       media="screen"
+       rel="stylesheet"
+       type="text/css"/>
+    <link
+       href="style/ondaAlgorithmAndFileFormats.css"
+       media="screen"
+       rel="stylesheet"
+       type="text/css"/>
+    <link
+       href="images/icon-48x48.png"
+       rel="icon"/>
+    <script
+       src="scripts/Toc.js"
+       type="text/javascript">
+    </script>
+    <script
+       src="scripts/init.js"
+       type="text/javascript">
+    </script>
+  </head>
+
+  <body>
+
+    <!-- Title -->
+
+    <div id="title">
+      <div>
+        <img alt="Icon" src="images/icon-48x48.png"/>
+      </div>
+      <div>
+        Onda lossless audio compression algorithm &nbsp;&bull;&nbsp; Onda file formats
+      </div>
+    </div>
+
+    <!--=====================================================================================-->
+
+    <!-- Table of contents -->
+
+    <div class="section">
+      <h2 id="toc">Table of contents</h2>
+      <div id="tocRoot">
+        <div class="wrap" id="tocPlaceholder">
+          You must have JavaScript enabled in your browser to generate the table of contents.
+        </div>
+      </div>
+    </div>
+
+    <!--=====================================================================================-->
+
+    <!-- Onda lossless audio compression algorithm -->
+
+    <div class="section">
+      <h2 id="section1">1&nbsp; Onda lossless audio compression algorithm</h2>
+      <p class="tocLink">
+        [ <a href="#toc">Table of contents</a> ]
+      </p>
+
+      <h3 id="section1-1">1.1&nbsp; Overview</h3>
+
+      <p class="wrap">
+        The Onda algorithm is very simple: it works by encoding the <i>second difference</i> of
+        successive sample values from each audio channel.  The first difference is the
+        difference between successive sample values; the second difference is the difference
+        between successive first differences &mdash; the discrete analogue of the second
+        derivative.  If <i>S</i><sub><i>t&minus;2</i></sub> ,
+        <i>S</i><sub><i>t&minus;1</i></sub> and <i>S</i><sub><i>t</i></sub> are three successive
+        sample values, the second difference at <i>t</i>,
+        &Delta;&Delta;<i>S</i><sub><i>t</i></sub> , is given by
+      </p>
+
+      <table class="equation">
+        <tr>
+          <td>
+            &Delta;&Delta;<i>S</i><sub><i>t</i></sub>
+          </td>
+          <td>
+            =&nbsp;&Delta;<i>S</i><sub><i>t</i></sub>&nbsp;&minus;&nbsp;&Delta;<i>S</i><sub><i>t&minus;1</i></sub>
+          </td>
+        </tr>
+        <tr>
+          <td/>
+          <td>
+            =&nbsp;(<i>S</i><sub><i>t</i></sub>&nbsp;&minus;&nbsp;<i>S</i><sub><i>t&minus;1</i></sub>)&nbsp;&minus;&nbsp;(<i>S</i><sub><i>t&minus;1</i></sub>&nbsp;&minus;&nbsp;<i>S</i><sub><i>t&minus;2</i></sub>)
+          </td>
+        </tr>
+        <tr>
+          <td/>
+          <td>
+            =&nbsp;<i>S</i><sub><i>t</i></sub>&nbsp;&minus;&nbsp;2<i>S</i><sub><i>t&minus;1</i></sub>&nbsp;+&nbsp;<i>S</i><sub><i>t&minus;2</i></sub> .
+          </td>
+        </tr>
+      </table>
+      <p class="wrap">
+        General-purpose compression algorithms such as Huffman encoding work poorly on sampled
+        sound data because the data values are widely distributed.  Compression of sound data
+        usually involves some sort of prediction; in the case of the Onda algorithm, prediction
+        is based on a crude model of a waveform in which the differences between successive
+        sample values &mdash; and the differences between the differences &mdash; are expected
+        to be significantly smaller than the values themselves.  From tests with various genres
+        of music, it was found that encoding the second difference generally resulted in greater
+        compression than encoding the first difference, with only a small reduction in the
+        efficiency of the algorithm.
+      </p>
+      <p class="wrap">
+        The following terms are used in the remainder of this section:
+      </p>
+
+      <dl class="terminology">
+        <dt id="defBlock">block</dt>
+        <dd class="wrap">
+          A group of contiguous <a class="definition" href="#defSampleFrame">sample frame</a>s
+          that is treated as an independent logical entity by the Onda algorithm.  Input data
+          are encoded in blocks of an arbitrary length.
+        </dd>
+
+        <dt id="defBlockChannel">block channel</dt>
+        <dd class="wrap">
+          The sequence of sample values that comprise a single audio channel within a <a
+          class="definition" href="#defBlock">block</a>.
+        </dd>
+
+        <dt id="defBlockLength">block length</dt>
+        <dd class="wrap">
+          The number of <a class="definition" href="#defSampleFrame">sample frame</a>s in a <a
+          class="definition" href="#defBlock">block</a>.  Block length is arbitrary and can vary
+          throughout a file.  The length of a block must be known before it can be encoded or
+          decoded.
+        </dd>
+
+        <dt id="defDelta">delta</dt>
+        <dd class="wrap">
+          A <i>first difference</i>: the difference between successive sample values from the
+          same <a class="definition" href="#defBlockChannel">block channel</a>.
+        </dd>
+
+        <dt id="defEncodingKey">encoding key</dt>
+        <dd class="wrap">
+          A representation of the <a class="definition" href="#defEncodingLength">encoding
+          length</a> that is used to encode a <a class="definition"
+          href="#defBlockChannel">block channel</a>.
+        </dd>
+
+        <dt id="defEncodingLength">encoding length</dt>
+        <dd class="wrap">
+          The length of the bit string that is used to encode an <a class="definition"
+          href="#defEpsilon">epsilon</a>.  It must be in the range [1 ..
+          <i>sampleLength</i>&nbsp;&minus;&nbsp;1].
+        </dd>
+
+        <dt id="defEncodingBound">encoding bound</dt>
+        <dd class="wrap">
+          For a given <a class="definition" href="#defEncodingLength">encoding length</a>, the
+          maximum absolute value of an <a class="definition" href="#defEpsilon">epsilon</a>,
+          2<sup><i>encodingLength</i>&nbsp;&minus;&nbsp;1</sup>&nbsp;&minus;&nbsp;1 .
+        </dd>
+
+        <dt id="defEpsilon">epsilon</dt>
+        <dd class="wrap">
+          A <i>second difference</i>: the difference between successive first differences (<a
+          class="definition" href="#defDelta">delta</a>s) from the same <a class="definition"
+          href="#defBlockChannel">block channel</a>.
+        </dd>
+
+        <dt id="defExcessCode">excess code</dt>
+        <dd class="wrap">
+          For a given <a class="definition" href="#defEncodingLength">encoding length</a>, the
+          value 2<sup><i>encodingLength</i></sup>&nbsp;&minus;&nbsp;1 (a bit string of all 1s),
+          which is used as a prefix to an explicit sample value in place of an <a
+          class="definition" href="#defEpsilon">epsilon</a> that exceeds the <a
+          class="definition" href="#defEncodingBound">encoding bound</a>.
+        </dd>
+
+        <dt id="defExcessCount">excess count</dt>
+        <dd class="wrap">
+          For a given <a class="definition" href="#defEncodingLength">encoding length</a>, the
+          number of <a class="definition" href="#defEpsilon">epsilon</a>s in a <a
+          class="definition" href="#defBlockChannel">block channel</a> whose absolute value
+          exceeds the <a class="definition" href="#defEncodingBound">encoding bound</a>.
+        </dd>
+
+        <dt id="defSampleFrame">sample frame</dt>
+        <dd class="wrap">
+          A synchronous group of sample values: one sample value for each audio channel of the
+          input data at a point in time.  For example, a sample frame from stereo (2-channel)
+          input data at time <i>t</i> consists of a pair of sample values: the sample value for
+          the left channel at <i>t</i>, and the sample value for the right channel at <i>t</i>.
+        </dd>
+
+        <dt id="defSampleLength">sample length</dt>
+        <dd class="wrap">
+          The bit length of sample values in the input data, which is also the length of the bit
+          string that is used by the Onda algorithm to encode explicit sample values.  The term
+          <i>sample length</i> is used in preference to alternative terms to emphasise the
+          relationship to <a class="definition" href="#defEncodingLength">encoding length</a>.
+        </dd>
+      </dl>
+
+      <p class="wrap">
+        In broad terms, the Onda algorithm works by dividing the input data into blocks of
+        arbitrary length, then encoding the second differences (epsilons) for each block channel
+        with bit strings of the optimum length.  The algorithm has two stages: optimisation and
+        encoding.  Although optimisation is performed before encoding, the encoding algorithm is
+        described first so that the aim of optimisation may be more readily understood.
+      </p>
+
+      <h3 id="section1-2">1.2&nbsp; Encoding</h3>
+
+      <p class="wrap">
+        The method by which a block of sample data is encoded with a specified encoding length
+        is described in pseudocode by the ONDA-ENCODE algorithm below.  It is a simplified
+        description, applying only to sample data from a single audio channel, but it can be
+        generalised to any number of channels since the Onda algorithm treats each audio channel
+        independently.
+      </p>
+      <p class="wrap">
+        The ONDA-ENCODE algorithm forms the essential (and prescriptive) part of the Onda
+        compression algorithm.  It assumes bit-oriented binary data and two&apos;s-complement
+        signed integer arithmetic.  The <a href="#algorithmOndaCompress">ONDA-COMPRESS
+        algorithm</a>, which is based on the ONDA-ENCODE algorithm, introduces implementation
+        details that are not specified by the ONDA-ENCODE algorithm.  (For instance, block
+        channels are interleaved in the compressed data.)
+      </p>
+      <p class="wrap">
+        A block channel is encoded in one of two ways depending on the encoding length:
+      </p>
+
+      <ol class="continuationList decimal">
+        <li class="spaced wrap">
+          If the encoding length of a block channel is equal to the sample length, all the
+          sample values for that channel are written to the output without modification (ie,
+          each sample value is encoded as a bit string whose length is the sample length).  The
+          size of data encoded in this way is the size of the input data plus a few extra bits
+          for the encoding key, which means that the worst-case compression ratio for the Onda
+          algorithm is around 100.1%.
+        </li>
+        <li class="spaced">
+          If the encoding length of a block channel is less than the sample length,
+          the sample values for that channel are encoded in one of three ways:
+          <ol class="lowerAlpha">
+            <li class="wrap">
+              The first sample value of each block channel is always encoded without
+              modification, as a bit string whose length is the sample length.  This enables
+              each block to be compressed or expanded independently from other blocks in a file,
+              but at the cost of an output that is around 0.2% larger than it would be if the
+              first sample value were encoded as a continuation of the previous block.
+            </li>
+            <li class="wrap">
+              Apart from the first sample in the block, a sample value is encoded as an epsilon
+              if the absolute value of the epsilon is less than or equal to the encoding bound,
+              2<sup><i>encodingLength</i>&nbsp;&minus;&nbsp;1</sup>&nbsp;&minus;&nbsp;1.  The
+              length of an epsilon bit string is the encoding length.
+            </li>
+            <li class="wrap">
+              If a sample value cannot be encoded as an epsilon because the absolute value of
+              the epsilon is greater than the encoding bound, the sample value is encoded as an
+              excess code (a bit string of all 1s whose length is the encoding length) followed
+              by the unmodified sample value (a bit string whose length is the sample length).
+              The excess code for a given encoding length is not a valid epsilon value; when it
+              is encountered during decompression, it indicates that an explicit sample value
+              follows.
+            </li>
+          </ol>
+        </li>
+      </ol>
+      <p class="wrap">
+        Each encoded bit string, regardless of its length, is a two&apos;s-complement signed
+        integer.
+      </p>
+
+      <div class="algorithm">
+        <p class="wrap">
+          <strong>Algorithm:</strong> ONDA-ENCODE
+        </p>
+        <p class="indent wrap">
+          <strong>Input:</strong> <i>sampleLength</i>, <i>encodingLength</i>, <i>blockLength</i>
+        </p>
+
+        <div class="auxiliaryOps">
+          <p class="wrap">
+            <strong>Auxiliary operations:</strong>
+          </p>
+          <dl class="noTopMargin">
+            <dt>Read(&nbsp;)</dt>
+            <dd class="wrap">
+              Reads and returns the next sample value from the input.
+            </dd>
+
+            <dt>Write(&nbsp;<i>value</i>,&nbsp;<i>length</i>&nbsp;)</dt>
+            <dd class="wrap">
+              Writes the <i>length</i> low-order bits of <i>value</i> to the output.
+            </dd>
+          </dl>
+        </div>
+
+        <p class="indent">
+          {--- Start of pseudocode ---}
+        </p>
+
+        <ul class="pseudocode">
+          <li><i>excessCode</i>&nbsp;:=&nbsp;2<sup><i>encodingLength</i></sup>&nbsp;&minus;&nbsp;1</li>
+          <li><i>encodingBound</i>&nbsp;:=&nbsp;<i>excessCode</i>&nbsp;&minus;&nbsp;1</li>
+          <li><i>prevSampleValue</i>&nbsp;:=&nbsp;0</li>
+          <li><i>prevDelta</i>&nbsp;:=&nbsp;0</li>
+          <li><strong>for</strong>&nbsp;<i>i</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>blockLength</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+            <ul class="pseudocode">
+              <li><i>sampleValue</i>&nbsp;:=&nbsp;Read(&nbsp;)</li>
+              <li><i>delta</i>&nbsp;:=&nbsp;<i>sampleValue</i>&nbsp;&minus;&nbsp;<i>prevSampleValue</i></li>
+              <li><strong>if</strong>&nbsp;(<i>i</i>&nbsp;=&nbsp;0)&nbsp;or&nbsp;(<i>encodingLength</i>&nbsp;=&nbsp;<i>sampleLength</i>)&nbsp;<strong>then</strong>
+                <ul class="pseudocode">
+                  <li>Write(&nbsp;<i>sampleValue</i>,&nbsp;<i>sampleLength</i>&nbsp;)</li>
+                </ul>
+              </li>
+              <li><strong>else</strong>
+                <ul class="pseudocode">
+                  <li><i>epsilon</i>&nbsp;:=&nbsp;<i>delta</i>&nbsp;&minus;&nbsp;<i>prevDelta</i></li>
+                  <li><strong>if</strong>&nbsp;|<i>epsilon</i>|&nbsp;&gt;&nbsp;<i>encodingBound</i>&nbsp;<strong>then</strong>
+                    <ul class="pseudocode">
+                      <li>Write(&nbsp;<i>excessCode</i>,&nbsp;<i>encodingLength</i>&nbsp;)</li>
+                      <li>Write(&nbsp;<i>sampleValue</i>,&nbsp;<i>sampleLength</i>&nbsp;)</li>
+                    </ul>
+                  </li>
+                  <li><strong>else</strong>
+                    <ul class="pseudocode">
+                      <li>Write(&nbsp;<i>epsilon</i>,&nbsp;<i>encodingLength</i>&nbsp;)</li>
+                    </ul>
+                  </li>
+                  <li><strong>if-end</strong></li>
+                </ul>
+              </li>
+              <li><strong>if-end</strong></li>
+              <li><i>prevSampleValue</i>&nbsp;:=&nbsp;<i>sampleValue</i></li>
+              <li><i>prevDelta</i>&nbsp;:=&nbsp;<i>delta</i></li>
+            </ul>
+          </li>
+          <li><strong>for-end</strong></li>
+        </ul>
+
+        <p class="indent">
+          {--- End of pseudocode ---}
+        </p>
+      </div>
+
+      <p class="wrap">
+        Table 1.1 below shows the deltas, epsilons and output values from the encoding of four
+        stereo sample frames of arbitrary sample values at the start of a block.  The sample
+        length is 16 bits and the encoding length is 13 bits, which gives an encoding bound of
+        4095.  (The optimum encoding length for the input values is 14; a suboptimal encoding
+        length was chosen to illustrate the use of excess codes.  The suboptimal encoding length
+        of 13 results in an output that is larger than the input.)  The encoded data are shown
+        in figure 1.1, with channels interleaved.
+      </p>
+      <table class="encoding">
+        <tr>
+          <th class="alignCentre" colspan="2">#</th>
+          <th>Input value</th>
+          <th>Delta</th>
+          <th>Epsilon</th>
+          <th colspan="2">Output value [length]</th>
+        </tr>
+        <tr>
+          <td class="shaded" rowspan="2">0</td>
+          <td class="alignLeft shaded">L</td>
+          <td>-2345 (0xF6D7)</td>
+          <td>-2345</td>
+          <td>-2345</td>
+          <td class="left">0xF6D7 [16]</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td class="alignLeft shaded">R</td>
+          <td>-887 (0xFC89)</td>
+          <td>-887</td>
+          <td>-887</td>
+          <td class="right">0xFC89 [16]</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td class="shaded" rowspan="2">1</td>
+          <td class="alignLeft shaded">L</td>
+          <td>1284 (0x0504)</td>
+          <td>3629</td>
+          <td>5974</td>
+          <td class="left">0x1000 [13]</td>
+          <td class="left">0x0504 [16]</td>
+        </tr>
+        <tr>
+          <td class="alignLeft shaded">R</td>
+          <td>906 (0x038A)</td>
+          <td>1793</td>
+          <td>2680</td>
+          <td class="right">0x0A78 [13]</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td class="shaded" rowspan="2">2</td>
+          <td class="alignLeft shaded">L</td>
+          <td>7331 (0x1CA3)</td>
+          <td>6047</td>
+          <td>2418</td>
+          <td class="left">0x0972 [13]</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td class="alignLeft shaded">R</td>
+          <td>8425 (0x20E9)</td>
+          <td>7519</td>
+          <td>5726</td>
+          <td class="right">0x1000 [13]</td>
+          <td class="right">0x20E9 [16]</td>
+        </tr>
+        <tr>
+          <td class="shaded" rowspan="2">3</td>
+          <td class="alignLeft shaded">L</td>
+          <td>12236 (0x2FCC)</td>
+          <td>4905</td>
+          <td>-1142</td>
+          <td class="left">0x1B8A [13]</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td class="alignLeft shaded">R</td>
+          <td>14170 (0x375A)</td>
+          <td>5745</td>
+          <td>-1774</td>
+          <td class="right">0x1912 [13]</td>
+          <td>&nbsp;</td>
+        </tr>
+      </table>
+      <p class="tableId">
+        Table 1.1
+      </p>
+
+      <div class="figure">
+        <img alt="encoding" src="images/exampleEncoding-744x84.png"/>
+        <p>Figure 1.1</p>
+      </div>
+
+      <h3 id="section1-3">1.3&nbsp; Optimisation</h3>
+
+      <p class="wrap">
+        Optimisation of the encoding of a block channel entails determining, from an arbitrary
+        set of valid encoding lengths, the encoding length that results in the smallest output;
+        the optimum encoding length is then used to encode the block channel.  An encoding
+        length must be in the range [1 .. <i>sampleLength</i>&nbsp;&minus;&nbsp;1].  If the set
+        of candidate encoding lengths for optimisation includes all valid encoding lengths for a
+        given sample length, the encoding length is <i>fully optimised</i>.
+      </p>
+      <p class="wrap">
+        The <a href="#algorithmOndaCompress">ONDA-COMPRESS algorithm</a> determines the optimum
+        encoding length from a range whose lower bound depends on the length of the encoding
+        key, <i>keyLength</i>.  The encoding lengths used by the algorithm are fully optimised
+        if
+        <i>keyLength</i>&nbsp;&ge;&nbsp;&lfloor;log<sub>2</sub>(&nbsp;<i>sampleLength</i>&nbsp;&minus;&nbsp;1)&rfloor;
+        .
+      </p>
+      <p class="wrap">
+        The following procedure determines the optimum encoding length for a single block
+        channel from a set of encoding lengths, <i>L</i>:
+      </p>
+
+      <div class="algorithm">
+        <ul class="pseudocode">
+          <li class="wrap">
+            { Initialise the output length with its upper bound, which corresponds to an
+            encoding length equal to the sample length }
+          </li>
+          <li><i>optEncodingLength</i>&nbsp;:=&nbsp;<i>sampleLength</i></li>
+          <li><i>minOutputLength</i>&nbsp;:=&nbsp;<i>blockLength</i>&nbsp;&times;&nbsp;<i>sampleLength</i></li>
+          <li class="spaceAbove wrap">
+            { Determine the encoding length that results in the smallest output length }
+          </li>
+          <li><strong>for</strong>&nbsp;each&nbsp;<i>encodingLength</i>&nbsp;in&nbsp;<i>L</i>&nbsp;<strong>do</strong>
+            <ul class="pseudocode">
+              <li>get&nbsp;the&nbsp;<a class="definition" href="#defExcessCount">excess&nbsp;count</a>,&nbsp;<i>excessCount</i></li>
+              <li><i>outputLength</i>&nbsp;:=&nbsp;(<i>blockLength</i>&nbsp;&minus;&nbsp;1)&nbsp;&times;&nbsp;<i>encodingLength</i>&nbsp;+&nbsp;(<i>excessCount</i>&nbsp;+&nbsp;1)&nbsp;&times;&nbsp;<i>sampleLength</i></li>
+              <li><strong>if</strong>&nbsp;<i>minOutputLength</i>&nbsp;&gt;&nbsp;<i>outputLength</i>&nbsp;<strong>then</strong>
+                <ul class="pseudocode">
+                  <li><i>minOutputLength</i>&nbsp;:=&nbsp;<i>outputLength</i></li>
+                  <li><i>optEncodingLength</i>&nbsp;:=&nbsp;<i>encodingLength</i></li>
+                </ul>
+              </li>
+              <li><strong>if-end</strong></li>
+            </ul>
+          </li>
+          <li><strong>for-end</strong></li>
+        </ul>
+      </div>
+
+      <h3 id="section1-4">1.4&nbsp; Compression</h3>
+
+      <p class="wrap">
+        The ONDA-COMPRESS algorithm extends the ONDA-ENCODE algorithm to multiple audio channels
+        and introduces some implementation details that are not specified by ONDA-ENCODE:
+      </p>
+      <ul class="list">
+        <li class="wrap">
+          Block length is constant for the entire input data.
+        </li>
+        <li class="wrap">
+          The optimum encoding length is determined from values in the range [max(1,
+          <i>sampleLength</i> &minus; 2<sup><i>keyLength</i></sup> + 1) .. <i>sampleLength</i>
+          &minus; 1].
+        </li>
+        <li>
+          <div class="wrap">
+            The encoding keys, one per channel, are given by
+          </div>
+          <div class="wrap">
+            &nbsp;&nbsp;<i>encodingKey<sub>channel</sub></i>&nbsp;=&nbsp;<i>sampleLength</i>&nbsp;&minus;&nbsp;<i>encodingLength<sub>channel</sub></i>,
+          </div>
+          <div class="wrap">
+            and are written to the output before the compressed data.
+          </div>          
+        </li>
+        <li class="wrap">
+          Block channels are interleaved in the compressed data.
+        </li>
+      </ul>
+
+      <p class="wrap">
+        These details correspond to the implementation of the compression algorithm in the Onda
+        application.
+      </p>
+
+      <div class="algorithm" id="algorithmOndaCompress">
+        <p class="wrap">
+          <strong>Algorithm:</strong> ONDA-COMPRESS
+        </p>
+        <p class="indent wrap">
+          <strong>Input:</strong> <i>numChannels</i>, <i>sampleLength</i>,
+          <i>numSampleFrames</i>, <i>keyLength</i>, <i>blockLength</i>
+        </p>
+
+        <div class="auxiliaryOps">
+          <p class="wrap">
+            <strong>Auxiliary operations:</strong>
+          </p>
+          <dl class="noTopMargin">
+            <dt>Read(&nbsp;)</dt>
+            <dd class="wrap">
+              Reads and returns the next sample frame from the input.
+            </dd>
+
+            <dt>Write(&nbsp;<i>value</i>,&nbsp;<i>length</i>&nbsp;)</dt>
+            <dd class="wrap">
+              Writes the <i>length</i> lowest bits of <i>value</i> to the output.
+            </dd>
+          </dl>
+        </div>
+
+        <p class="indent">
+          {--- Start of pseudocode ---}
+        </p>
+
+        <ul class="pseudocode">
+          <li class="wrap">
+            { Allocate arrays }
+          </li>
+          <li>allocate&nbsp;<i>encodingLengths</i>[<i>numChannels</i>]</li>
+          <li>allocate&nbsp;<i>encodingBounds</i>[<i>numChannels</i>]</li>
+          <li>allocate&nbsp;<i>excessCodes</i>[<i>numChannels</i>]</li>
+          <li>allocate&nbsp;<i>excessCounts</i>[<i>numChannels</i>][<i>sampleLength</i>]</li>
+          <li>allocate&nbsp;<i>prevSampleValues</i>[<i>numChannels</i>]</li>
+          <li>allocate&nbsp;<i>prevDeltas</i>[<i>numChannels</i>]</li>
+
+          <li class="spaceAbove wrap">
+            { Initialise variables }
+          </li>
+          <li><i>minEncodingLength</i>&nbsp;:=&nbsp;max(&nbsp;1,&nbsp;<i>sampleLength</i>&nbsp;&minus;&nbsp;2<sup><i>keyLength</i></sup>&nbsp;+&nbsp;1&nbsp;)</li>
+          <li>allocate <i>optEncodingBounds</i>[<i>sampleLength</i>]</li>
+          <li><strong>for</strong>&nbsp;<i>i</i>&nbsp;:=&nbsp;<i>minEncodingLength</i>&nbsp;<strong>to</strong>&nbsp;<i>sampleLength</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+            <ul class="pseudocode">
+              <li><i>optEncodingBounds</i>[<i>i</i>]&nbsp;:=&nbsp;2<sup><i>i</i>&nbsp;&minus;&nbsp;1</sup>&nbsp;&minus;&nbsp;1</li>
+            </ul>
+          </li>
+          <li><strong>for-end</strong></li>
+
+          <li class="spaceAbove wrap">
+            { Encode }
+          </li>
+          <li><i>numSampleFramesRemaining</i>&nbsp;:=&nbsp;<i>numSampleFrames</i></li>
+          <li><strong>while</strong>&nbsp;<i>numSampleFramesRemaining</i>&nbsp;&gt;&nbsp;0&nbsp;<strong>do</strong>
+
+            <ul class="pseudocode">
+              <li class="spaceAbove wrap">
+                { Read a block of sample frames from the input file }
+              </li>
+              <li><i>length</i>&nbsp;:=&nbsp;min(&nbsp;<i>blockLength</i>,&nbsp;<i>numSampleFramesRemaining</i>&nbsp;)</li>
+              <li>allocate <i>sampleValues</i>[<i>length</i>][<i>numChannels</i>]</li>
+              <li><strong>for</strong>&nbsp;<i>i</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>length</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                <ul class="pseudocode">
+                  <li><i>sampleFrame</i>&nbsp;:=&nbsp;Read(&nbsp;)</li>
+                  <li><strong>for</strong>&nbsp;<i>j</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>numChannels</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                    <ul class="pseudocode">
+                      <li><i>sampleValues</i>[<i>i</i>][<i>j</i>]&nbsp;:=&nbsp;<i>sampleFrame</i>[<i>j</i>]</li>
+                    </ul>
+                  </li>
+                  <li><strong>for-end</strong></li>
+                </ul>
+              </li>
+              <li><strong>for-end</strong></li>
+              <li><i>numSampleFramesRemaining</i>&nbsp;:=&nbsp;<i>numSampleFramesRemaining</i>&nbsp;&minus;&nbsp;<i>length</i></li>
+
+              <li class="spaceAbove wrap">
+                { Reset all excess counts, previous sample values and previous deltas }
+              </li>
+              <li><strong>for</strong>&nbsp;<i>i</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>numChannels</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                <ul class="pseudocode">
+                  <li><strong>for</strong>&nbsp;<i>j</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>sampleLength</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                    <ul class="pseudocode">
+                      <li><i>excessCounts</i>[<i>i</i>][<i>j</i>]&nbsp;:=&nbsp;0</li>
+                    </ul>
+                  </li>
+                  <li><strong>for-end</strong></li>
+                  <li><i>prevSampleValues</i>[<i>i</i>]&nbsp;:=&nbsp;0</li>
+                  <li><i>prevDeltas</i>[<i>i</i>]&nbsp;:=&nbsp;0</li>
+                </ul>
+              </li>
+              <li><strong>for-end</strong></li>
+
+              <li class="spaceAbove wrap">
+                { Get the excess count for each encoding length }
+              </li>
+              <li><strong>for</strong>&nbsp;<i>i</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>length</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                <ul class="pseudocode">
+                  <li><strong>for</strong>&nbsp;<i>j</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>numChannels</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                    <ul class="pseudocode">
+                      <li><i>delta</i>&nbsp;:=&nbsp;<i>sampleValues</i>[<i>i</i>][<i>j</i>]&nbsp;&minus;&nbsp;<i>prevSampleValues</i>[<i>j</i>]</li>
+                      <li><strong>if</strong>&nbsp;<i>i</i>&nbsp;&gt;&nbsp;0&nbsp;<strong>then</strong>
+                        <ul class="pseudocode">
+                          <li><i>absEpsilon</i>&nbsp;:=&nbsp;|<i>delta</i>&nbsp;&minus;&nbsp;<i>prevDeltas</i>[<i>j</i>]|</li>
+                          <li><strong>for</strong>&nbsp;<i>k</i>&nbsp;:=&nbsp;<i>sampleLength</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>downto</strong>&nbsp;<i>minEncodingLength</i>&nbsp;<strong>do</strong>
+                            <ul class="pseudocode">
+                              <li><strong>if</strong>&nbsp;<i>absEpsilon</i>&nbsp;&gt;&nbsp;<i>optEncodingBounds</i>[<i>k</i>]&nbsp;<strong>then</strong>
+                                <ul class="pseudocode">
+                                  <li><strong>while</strong>&nbsp;<i>k</i>&nbsp;&ge;&nbsp;<i>minEncodingLength</i>&nbsp;<strong>do</strong>
+                                    <ul class="pseudocode">
+                                      <li><i>excessCounts</i>[<i>j</i>][<i>k</i>]&nbsp;:=&nbsp;<i>excessCounts</i>[<i>j</i>][<i>k</i>]&nbsp;+&nbsp;1</li>
+                                      <li><i>k</i>&nbsp;:=&nbsp;<i>k</i>&nbsp;&minus;&nbsp;1</li>
+                                    </ul>
+                                  </li>
+                                  <li><strong>while-end</strong></li>
+                                </ul>
+                              </li>
+                              <li><strong>if-end</strong></li>
+                            </ul>
+                          </li>
+                          <li><strong>for-end</strong></li>
+                        </ul>
+                      </li>
+                      <li><strong>if-end</strong></li>
+                      <li><i>prevSampleValues</i>[<i>j</i>]&nbsp;:=&nbsp;<i>sampleValues</i>[<i>i</i>][<i>j</i>]</li>
+                      <li><i>prevDeltas</i>[<i>j</i>]&nbsp;:=&nbsp;<i>delta</i></li>
+                    </ul>
+                  </li>
+                  <li><strong>for-end</strong></li>
+                </ul>
+              </li>
+              <li><strong>for-end</strong></li>
+
+              <li class="spaceAbove wrap">
+                { Determine the optimum encoding length, ie, the encoding length that results in
+                the smallest output }
+              </li>
+              <li><strong>for</strong>&nbsp;<i>i</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>numChannels</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                <ul class="pseudocode">
+                  <li><i>encodingLengths</i>[<i>i</i>]&nbsp;:=&nbsp;<i>sampleLength</i></li>
+                  <li><i>minOutputLength</i>&nbsp;:=&nbsp;<i>length</i>&nbsp;&times;&nbsp;<i>sampleLength</i></li>
+                  <li><strong>for</strong>&nbsp;<i>j</i>&nbsp;:=&nbsp;<i>minEncodingLength</i>&nbsp;<strong>to</strong>&nbsp;<i>sampleLength</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                    <ul class="pseudocode">
+                      <li><i>outputLength</i>&nbsp;:=&nbsp;(<i>length</i>&nbsp;&minus;&nbsp;1)&nbsp;&times;&nbsp;<i>j</i>&nbsp;+&nbsp;(<i>excessCounts</i>[<i>i</i>][<i>j</i>]&nbsp;+&nbsp;1)&nbsp;&times;&nbsp;<i>sampleLength</i></li>
+                      <li><strong>if</strong>&nbsp;<i>minOutputLength</i>&nbsp;&gt;&nbsp;<i>outputLength</i>&nbsp;<strong>then</strong>
+                        <ul class="pseudocode">
+                          <li><i>minOutputLength</i>&nbsp;:=&nbsp;<i>outputLength</i></li>
+                          <li><i>encodingLengths</i>[<i>i</i>]&nbsp;:=&nbsp;<i>j</i></li>
+                        </ul>
+                      </li>
+                      <li><strong>if-end</strong></li>
+                    </ul>
+                  </li>
+                  <li><strong>for-end</strong></li>
+                  </ul>
+              </li>
+              <li><strong>for-end</strong></li>
+
+              <li class="spaceAbove wrap">
+                { Write the encoding key for each channel }
+              </li>
+              <li><strong>for</strong>&nbsp;<i>i</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>numChannels</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                <ul class="pseudocode">
+                  <li>Write(&nbsp;<i>sampleLength</i>&nbsp;&minus;&nbsp;<i>encodingLengths</i>[<i>i</i>],&nbsp;<i>keyLength</i>&nbsp;)</li>
+                </ul>
+              </li>
+              <li><strong>for-end</strong></li>
+
+              <li class="spaceAbove wrap">
+                { Initialise per-channel encoding variables }
+              </li>
+              <li><strong>for</strong>&nbsp;<i>i</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>numChannels</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                <ul class="pseudocode">
+                  <li><i>prevSampleValues</i>[<i>i</i>]&nbsp;:=&nbsp;0</li>
+                  <li><i>prevDeltas</i>[<i>i</i>]&nbsp;:=&nbsp;0</li>
+                  <li><i>excessCodes</i>[<i>i</i>]&nbsp;:=&nbsp;2<sup><i>encodingLengths</i>[<i>i</i>]&nbsp;&minus;&nbsp;1</sup></li>
+                  <li><i>encodingBounds</i>[<i>i</i>]&nbsp;:=&nbsp;<i>excessCodes</i>[<i>i</i>]&nbsp;&minus;&nbsp;1</li>
+                </ul>
+              </li>
+              <li><strong>for-end</strong></li>
+
+              <li class="spaceAbove wrap">
+                { Encode the input sample data and write them to the output }
+              </li>
+              <li><strong>for</strong>&nbsp;<i>i</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>length</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                <ul class="pseudocode">
+                  <li><strong>for</strong>&nbsp;<i>j</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>numChannels</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                    <ul class="pseudocode">
+                      <li><i>sampleValue</i>&nbsp;:=&nbsp;<i>sampleValues</i>[<i>i</i>][<i>j</i>]</li>
+                      <li><i>delta</i>&nbsp;:=&nbsp;<i>sampleValue</i>&nbsp;&minus;&nbsp;<i>prevSampleValues</i>[<i>j</i>]</li>
+                      <li><strong>if</strong>&nbsp;(<i>i</i>&nbsp;=&nbsp;0)&nbsp;or&nbsp;(<i>encodingLengths</i>[<i>j</i>]&nbsp;=&nbsp;<i>sampleLength</i>)&nbsp;<strong>then</strong>
+                        <ul class="pseudocode">
+                          <li>Write(&nbsp;<i>sampleValue</i>,&nbsp;<i>sampleLength</i>&nbsp;)</li>
+                        </ul>
+                      </li>
+                      <li><strong>else</strong>
+                        <ul class="pseudocode">
+                          <li><i>epsilon</i>&nbsp;:=&nbsp;<i>delta</i>&nbsp;&minus;&nbsp;<i>prevDeltas</i>[<i>j</i>]</li>
+                          <li><strong>if</strong>&nbsp;|<i>epsilon</i>|&nbsp;&gt;&nbsp;<i>encodingBounds</i>[<i>j</i>]&nbsp;<strong>then</strong>
+                            <ul class="pseudocode">
+                              <li>Write(&nbsp;<i>excessCodes</i>[<i>j</i>],&nbsp;<i>encodingLengths</i>[<i>j</i>]&nbsp;)</li>
+                              <li>Write(&nbsp;<i>sampleValue</i>,&nbsp;<i>sampleLength</i>&nbsp;)</li>
+                            </ul>
+                          </li>
+                          <li><strong>else</strong>
+                            <ul class="pseudocode">
+                              <li>Write(&nbsp;<i>epsilon</i>,&nbsp;<i>encodingLengths</i>[<i>j</i>]&nbsp;)</li>
+                            </ul>
+                          </li>
+                          <li><strong>if-end</strong></li>
+                        </ul>
+                      </li>
+                      <li><strong>if-end</strong></li>
+                      <li><i>prevSampleValues</i>[<i>j</i>]&nbsp;:=&nbsp;<i>sampleValue</i></li>
+                      <li><i>prevDeltas</i>[<i>j</i>]&nbsp;:=&nbsp;<i>delta</i></li>
+                    </ul>
+                  </li>
+                  <li><strong>for-end</strong></li>
+                </ul>
+              </li>
+              <li><strong>for-end</strong></li>
+
+            </ul>
+          </li>
+          <li class="spaceAbove"><strong>while-end</strong></li>
+        </ul>
+
+        <p class="indent">
+          {--- End of pseudocode ---}
+        </p>
+      </div>
+
+      <h3 id="section1-5">1.5&nbsp; Decompression</h3>
+
+      <p class="wrap">
+        The ONDA-DECOMPRESS algorithm decompresses data that were encoded with the <a
+        href="#algorithmOndaCompress">ONDA-COMPRESS algorithm</a>.  It makes the following
+        assumptions, which correspond to implementation details introduced by ONDA-COMPRESS:
+      </p>
+      <ul class="list">
+        <li class="wrap">
+          Block length is constant for the entire input data.
+        </li>
+        <li>
+          <div class="wrap">
+            The encoding keys, one per channel, appear in the input data before the compressed
+            data.  An encoding length is obtained from its corresponding encoding key by
+          </div>
+          <div class="wrap">
+            &nbsp;&nbsp;<i>encodingLength<sub>channel</sub></i>&nbsp;=&nbsp;<i>sampleLength</i>&nbsp;&minus;&nbsp;<i>encodingKey<sub>channel</sub></i>
+            .
+          </div>
+        </li>
+        <li class="wrap">
+          Block channels are interleaved in the compressed data.
+        </li>
+      </ul>
+
+      <div class="algorithm">
+        <p class="wrap">
+          <strong>Algorithm:</strong> ONDA-DECOMPRESS
+        </p>
+        <p class="indent wrap">
+          <strong>Input:</strong> <i>numChannels</i>, <i>sampleLength</i>,
+          <i>numSampleFrames</i>, <i>keyLength</i>, <i>blockLength</i>
+        </p>
+
+        <div class="auxiliaryOps">
+          <p class="wrap">
+            <strong>Auxiliary operations:</strong>
+          </p>
+          <dl class="noTopMargin">
+            <dt>ReadSigned(&nbsp;<i>length</i>&nbsp;)</dt>
+            <dd class="wrap">
+              Reads <i>length</i> bits from the input, extends the assumed sign bit (the bit at
+              index <i>length</i>&nbsp;&minus;&nbsp;1) to the higher-order bits, then returns
+              the value as an signed integer.
+            </dd>
+
+            <dt>ReadUnsigned(&nbsp;<i>length</i>&nbsp;)</dt>
+            <dd class="wrap">
+              Reads <i>length</i> bits from the input and returns the value as an unsigned
+              integer.
+            </dd>
+
+            <dt>Write(&nbsp;<i>sampleFrame</i>[&nbsp;]&nbsp;)</dt>
+            <dd class="wrap">
+              Writes the synchronous sample values in <i>sampleFrame</i> to the output.
+            </dd>
+          </dl>
+        </div>
+
+        <p class="indent">
+          {--- Start of pseudocode ---}
+        </p>
+
+        <ul class="pseudocode">
+          <li class="wrap">
+            { Allocate arrays }
+          </li>
+          <li>allocate&nbsp;<i>encodingLengths</i>[<i>numChannels</i>]</li>
+          <li>allocate&nbsp;<i>excessCodes</i>[<i>numChannels</i>]</li>
+          <li>allocate&nbsp;<i>prevSampleValues</i>[<i>numChannels</i>]</li>
+          <li>allocate&nbsp;<i>prevDeltas</i>[<i>numChannels</i>]</li>
+          <li>allocate&nbsp;<i>sampleFrame</i>[<i>numChannels</i>]</li>
+
+          <li class="spaceAbove wrap">
+            { Decode }
+          </li>
+          <li><i>numSampleFramesRemaining</i>&nbsp;:=&nbsp;<i>numSampleFrames</i></li>
+          <li><strong>while</strong>&nbsp;<i>numSampleFramesRemaining</i>&nbsp;&gt;&nbsp;0&nbsp;<strong>do</strong>
+
+            <ul class="pseudocode">
+              <li class="spaceAbove wrap">
+                { Get the actual block length }
+              </li>
+              <li><i>length</i>&nbsp;:=&nbsp;min(&nbsp;<i>blockLength</i>,&nbsp;<i>numSampleFramesRemaining</i>&nbsp;)</li>
+              <li><i>numSampleFramesRemaining</i>&nbsp;:=&nbsp;<i>numSampleFramesRemaining</i>&nbsp;&minus;&nbsp;<i>length</i></li>
+
+              <li class="spaceAbove wrap">
+                { Get the encoding length for each channel from the key }
+              </li>
+              <li><strong>for</strong>&nbsp;<i>i</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>numChannels</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                <ul class="pseudocode">
+                  <li><i>encodingLengths</i>[<i>i</i>]&nbsp;:=&nbsp;<i>sampleLength</i>&nbsp;&minus;&nbsp;ReadUnsigned(&nbsp;<i>keyLength</i>&nbsp;)</li>
+                </ul>
+              </li>
+              <li><strong>for-end</strong></li>
+
+              <li class="spaceAbove wrap">
+                { Initialise per-channel encoding variables }
+              </li>
+              <li><strong>for</strong>&nbsp;<i>i</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>numChannels</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                <ul class="pseudocode">
+                  <li><i>excessCodes</i>[<i>i</i>]&nbsp;:=&nbsp;&minus;(2<sup><i>encodingLengths</i>[<i>i</i>]&nbsp;&minus;&nbsp;1</sup>)</li>
+                  <li><i>prevSampleValues</i>[<i>i</i>]&nbsp;:=&nbsp;0</li>
+                  <li><i>prevDeltas</i>[<i>i</i>]&nbsp;:=&nbsp;0</li>
+                </ul>
+              </li>
+              <li><strong>for-end</strong></li>
+
+              <li class="spaceAbove wrap">
+                { Read sample data from the input file, decode them and write them to the output
+                }
+              </li>
+              <li><i>delta</i>&nbsp;:=&nbsp;0</li>
+              <li><i>sampleValueExpected</i>&nbsp;:=&nbsp;false</li>
+              <li><strong>for</strong>&nbsp;<i>i</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>length</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                <ul class="pseudocode">
+                  <li><strong>for</strong>&nbsp;<i>j</i>&nbsp;:=&nbsp;0&nbsp;<strong>to</strong>&nbsp;<i>numChannels</i>&nbsp;&minus;&nbsp;1&nbsp;<strong>do</strong>
+                    <ul class="pseudocode">
+                      <li><strong>if</strong>&nbsp;(<i>i</i>&nbsp;=&nbsp;0)&nbsp;or&nbsp;(<i>encodingLengths</i>[<i>j</i>]&nbsp;=&nbsp;<i>sampleLength</i>)&nbsp;<strong>then</strong>
+                        <ul class="pseudocode">
+                          <li><i>sampleValue</i>&nbsp;:=&nbsp;ReadSigned(&nbsp;<i>sampleLength</i>&nbsp;)</li>
+                        </ul>
+                      </li>
+                      <li><strong>else</strong>
+                        <ul class="pseudocode">
+                          <li><i>done</i>&nbsp;:=&nbsp;false</li>
+                          <li><strong>while</strong>&nbsp;<i>done</i>&nbsp;=&nbsp;false&nbsp;<strong>do</strong>
+                            <ul class="pseudocode">
+                              <li><strong>if</strong>&nbsp;<i>sampleValueExpected</i>&nbsp;=&nbsp;true&nbsp;<strong>then</strong>
+                                <ul class="pseudocode">
+                                  <li><i><i>sampleValue</i></i>&nbsp;:=&nbsp;ReadSigned(&nbsp;<i><i>sampleLength</i></i>&nbsp;)</li>
+                                  <li><i><i>sampleValueExpected</i></i>&nbsp;:=&nbsp;false</li>
+                                  <li><i><i>done</i></i>&nbsp;:=&nbsp;true</li>
+                                </ul>
+                              </li>
+                              <li><strong>else</strong>
+                                <ul class="pseudocode">
+                                  <li><i>epsilon</i>&nbsp;:=&nbsp;ReadSigned(&nbsp;<i>encodingLengths</i>[<i>j</i>]&nbsp;)</li>
+                                  <li><strong>if</strong>&nbsp;<i>epsilon</i>&nbsp;=&nbsp;<i>excessCodes</i>[<i>j</i>]&nbsp;<strong>then</strong>
+                                    <ul class="pseudocode">
+                                      <li><i>sampleValueExpected</i>&nbsp;:=&nbsp;true</li>
+                                    </ul>
+                                  </li>
+                                  <li><strong>else</strong>
+                                    <ul class="pseudocode">
+                                      <li><i>delta</i>&nbsp;:=&nbsp;<i>prevDeltas</i>[<i>j</i>]&nbsp;+&nbsp;<i>epsilon</i></li>
+                                      <li><i>sampleValue</i>&nbsp;:=&nbsp;<i>prevSampleValues</i>[<i>j</i>]&nbsp;+&nbsp;<i>delta</i></li>
+                                      <li><i>done</i>&nbsp;:=&nbsp;true</li>
+                                    </ul>
+                                  </li>
+                                  <li><strong>if-end</strong></li>
+                                </ul>
+                              </li>
+                              <li><strong>if-end</strong></li>
+                            </ul>
+                          </li>
+                          <li><strong>while-end</strong></li>
+                        </ul>
+                      </li>
+                      <li><strong>if-end</strong></li>
+                      <li><i>prevDeltas</i>[<i>j</i>]&nbsp;:=&nbsp;<i>sampleValue</i>&nbsp;&minus;&nbsp;<i>prevSampleValues</i>[<i>j</i>]</li>
+                      <li><i>prevSampleValues</i>[<i>j</i>]&nbsp;:=&nbsp;<i>sampleValue</i></li>
+                      <li><i>sampleFrame</i>[<i>j</i>]&nbsp;:=&nbsp;<i>sampleValue</i></li>
+                    </ul>
+                  </li>
+                  <li><strong>for-end</strong></li>
+                  <li>Write(&nbsp;<i>sampleFrame</i>&nbsp;)</li>
+                </ul>
+              </li>
+              <li><strong>for-end</strong></li>
+
+            </ul>
+          </li>
+          <li class="spaceAbove"><strong>while-end</strong></li>
+        </ul>
+
+        <p class="indent">
+          {--- End of pseudocode ---}
+        </p>
+      </div>
+
+    </div>
+
+    <!--=====================================================================================-->
+
+    <!-- Old (IFF) ONDA file format -->
+
+    <div class="section">
+      <h2 id="section2">2&nbsp; Old (IFF) ONDA file format</h2>
+      <p class="tocLink">
+        [ <a href="#toc">Table of contents</a> ]
+      </p>
+
+      <p class="wrap">
+        The <a href="https://blankaspect.github.io/onda/">Onda application</a> has used two
+        formats for its compressed audio files.  The formats are referred to in this document as
+        the old (or IFF) format and the new (or NLF) format.  The old format was used for the
+        compressed files that were written by the Onda application up to and including version
+        1.2.  From version 1.3, compressed files are written in the new format.  All versions of
+        the Onda application can read the old file format, but the new format can be read by the
+        application only from version 1.3 onwards.
+      </p>
+
+      <h3 id="section2-1">2.1&nbsp; ONDA FORM chunk</h3>
+
+      <p class="wrap">
+        An ONDA file conforms to the Electronic Arts <a class="external"
+        href="https://en.wikipedia.org/wiki/Interchange_File_Format">Interchange File Format</a>
+        (EA IFF 1985) standard.  It consists of a single IFF <code>FORM</code> group chunk that
+        contains two required chunks (<a href="#section3-2">attributes</a> and <a
+        href="#section3-3">data</a>), and may contain two optional chunks (<a
+        href="#section3-4">private data</a> and <a href="#section3-5">data block size</a>).  The
+        order of the chunks within the <code>FORM</code> group is specified in <a
+        href="#table2-1">table 2.1</a>.
+      </p>
+      <p class="wrap">
+        Although the <em>form</em> of the chunks in a new Onda file is different from the form
+        of the chunks in an old ONDA file, the <em>content</em> of the chunks in an ONDA
+        <code>FORM</code> is the same as that of the chunks in the root list of the <a
+        href="#section3">new Onda file format</a>.  For details of the chunks in the old format,
+        refer to the relevant sections in the specification of the new format, substituting the
+        IFF identifiers of the chunks in <a href="#table2-1">table 2.1</a> for those of the new
+        format.
+      </p>
+      <p class="wrap">
+        The amount of sample data that can be stored in an ONDA file is limited by the upper
+        bound of the size of an IFF chunk (2 GiB).  The data type of the size of chunks in the
+        IFF and <a class="external"
+        href="https://en.wikipedia.org/wiki/Resource_Interchange_File_Format">RIFF</a> is a
+        problematic subject that is discussed in <a href="#sectionA">Appendix A</a>.
+      </p>
+      <p class="wrap">
+        <strong>Note:</strong>&nbsp; All integer values in an ONDA file are big-endian and
+        unsigned.
+      </p>
+
+      <table class="dataStructure" id="table2-1">
+        <tr>
+          <th class="shaded1" colspan="3">
+            <div>ONDA <code>FORM</code> group</div>
+            <div>ID = <code>ONDA</code></div>
+          </th>
+        </tr>
+        <tr>
+          <th class="shaded2">Multiplicity</th>
+          <th class="shaded2">Description</th>
+          <th class="shaded2">Identifier</th>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>Attributes chunk</td>
+          <td><code>ATTR</code></td>
+        </tr>
+        <tr>
+          <td>0..1</td>
+          <td>Private data chunk</td>
+          <td><code>PRVT</code></td>
+        </tr>
+        <tr>
+          <td>0..1</td>
+          <td>Data block size chunk</td>
+          <td><code>DBSZ</code></td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>Data chunk</td>
+          <td><code>DATA</code></td>
+        </tr>
+      </table>
+      <p class="tableId">
+        Table 2.1
+      </p>
+
+    </div>
+
+    <!--=====================================================================================-->
+
+    <!-- New (NLF) Onda file format -->
+
+    <div class="section">
+      <h2 id="section3">3&nbsp; New (NLF) Onda file format</h2>
+      <p class="tocLink">
+        [ <a href="#toc">Table of contents</a> ]
+      </p>
+
+      <p class="wrap">
+        The new Onda file format &mdash; the title-case &quot;Onda&quot;, like the upper-case
+        &quot;ONDA&quot; of the old format, comes from the identifier of the top-level container
+        of the file &mdash; was introduced in version 1.3 of the <a
+        href="https://blankaspect.github.io/onda/">Onda application</a> to allow for larger
+        compressed files.  From version 1.3, the application can read files in both the old and
+        new formats, but compressed files are written only in the new format.
+      </p>
+      <p class="wrap">
+        The Onda application has been &mdash; and is likely to continue to be &mdash; of very
+        little general interest, so the introduction of a new file format would seem to be a
+        waste of effort.  The development of a new format was motivated by a perceived need to
+        replace the old Electronic Arts Interchange File Format (EA IFF 1985) with a general,
+        chunk-based file format for binary data that could accommodate a larger chunk size.  The
+        result was the Nested-List File (NLF) format (also likely to be of minimal general
+        interest).
+      </p>
+
+      <h3 id="section3-1">3.1&nbsp; Onda list</h3>
+
+      <p class="wrap">
+        An Onda file conforms to the Nested-List File format.  Its root list (list-instance ID =
+        &quot;<code>Onda</code>&quot;) contains two required chunks (<a
+        href="#section3-2">attributes</a> and <a href="#section3-3">data</a>), and may contain
+        two optional chunks (<a href="#section3-4">private data</a> and <a
+        href="#section3-5">data block size</a>).  The order of the chunks within the list is
+        specified in <a href="#table3-1">table 3.1</a>.
+      </p>
+      <p class="wrap">
+        The capacity of an Onda file is limited to about 2<sup>62</sup> bytes by the upper bound
+        of an NLF chunk.
+      </p>
+      <p class="wrap">
+        <strong>Note:</strong>&nbsp; All integer values in an Onda file (ie, values in chunk
+        headers and chunk content) are big-endian and unsigned.
+      </p>
+
+      <table class="dataStructure" id="table3-1">
+        <tr>
+          <th class="shaded1" colspan="3">
+            <div>Onda list</div>
+            <div>List-instance ID = <span class="monospace">Onda</span></div>
+          </th>
+        </tr>
+        <tr>
+          <th class="shaded2">Multiplicity</th>
+          <th class="shaded2">Description</th>
+          <th class="shaded2">Identifier</th>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>Attributes chunk</td>
+          <td><code>attributes</code></td>
+        </tr>
+        <tr>
+          <td>0..1</td>
+          <td>Private data chunk</td>
+          <td><code>privateData</code></td>
+        </tr>
+        <tr>
+          <td>0..1</td>
+          <td>Data block size chunk</td>
+          <td><code>dataBlockSize</code></td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>Data chunk</td>
+          <td><code>data</code></td>
+        </tr>
+      </table>
+      <p class="tableId">
+        Table 3.1
+      </p>
+
+
+      <h3 id="section3-2">3.2&nbsp; Attributes chunk (required)</h3>
+
+      <p class="wrap">
+        An Onda file must contain one attributes chunk, whose identifier is
+        &quot;<code>attributes</code>&quot;. The first two bytes of the attributes chunk are the
+        version number of the file format, from which the structure of the attributes chunk can
+        be inferred.
+      </p>
+      <p class="wrap">
+        Only versions 0 and 1 are currently defined; the structure of the attributes chunk is
+        the same for both versions.  Files of version 1 contain a <a href="#section3-4">private
+        data chunk</a>; files of version 0 do not.
+      </p>
+      <p class="wrap">
+        The attributes chunk contains values that are required to expand the data in the data
+        chunk, and to validate the expanded sample data.  The entries in the <i>Values</i>
+        column in table 3.2 are the ranges that are considered valid by the current Onda
+        application, though it does not necessarily support all values in the range.  (For
+        example, it currently supports only 16 and 24 bits per sample.)
+      </p>
+      <p class="wrap">
+        Note that the attributes chunk in an Onda file is a application-specific chunk,
+        <em>not</em> the special attributes chunk (ID = &quot;<code>$ATTR</code>&quot;) of a
+        list in a Nested-List File.  The unfortunate ambiguity in terminology is a legacy of the
+        attributes chunk in the old ONDA file format.
+      </p>
+
+      <table class="dataStructure" id="table3-2">
+        <tr>
+          <th class="shaded1" colspan="5">
+            <div>Attributes chunk, version 0 or 1</div>
+            <div>ID = <code>attributes</code></div>
+          </th>
+        </tr>
+        <tr>
+          <th class="shaded2">Multiplicity</th>
+          <th class="shaded2">Name</th>
+          <th class="shaded2">Description</th>
+          <th class="shaded2">Values</th>
+          <th class="shaded2 alignRight">Size</th>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td class="name">version</td>
+          <td>Version number</td>
+          <td>0..32767</td>
+          <td class="alignRight">2 bytes</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td class="name">numChannels</td>
+          <td>Number of channels</td>
+          <td>1..128</td>
+          <td class="alignRight">2 bytes</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td class="name">bitsPerSample</td>
+          <td>Number of bits per sample</td>
+          <td>1..32</td>
+          <td class="alignRight">2 bytes</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td class="name">sampleRate</td>
+          <td>Sample rate, Hz</td>
+          <td>1..2<sup>31</sup>&minus;1</td>
+          <td class="alignRight">4 bytes</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td class="name">numSampleFrames</td>
+          <td>Number of sample frames</td>
+          <td>0..2<sup>62</sup>&minus;1</td>
+          <td class="alignRight">8 bytes</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td class="name">crcValue</td>
+          <td>32-bit CRC value</td>
+          <td>&nbsp;</td>
+          <td class="alignRight">4 bytes</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td class="name">keyLength</td>
+          <td>Key length, bits</td>
+          <td>1..5</td>
+          <td class="alignRight">2 bytes</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td class="name">blockLength</td>
+          <td>Block length, sample frames</td>
+          <td>1..65536</td>
+          <td class="alignRight">4 bytes</td>
+        </tr>
+        <tr>
+          <td class="alignRight" colspan="4">
+            <i>Total size</i>
+          </td>
+          <td class="alignRight">
+            <i>28 bytes</i>
+          </td>
+        </tr>
+      </table>
+      <p class="tableId">
+        Table 3.2
+      </p>
+
+      <h3 id="section3-3">3.3&nbsp; Data chunk (required)</h3>
+
+      <p class="wrap">
+        An Onda file must contain one data chunk, whose identifier is
+        &quot;<code>data</code>&quot;.
+      </p>
+      <p class="noBottomMargin wrap">
+        The number of data blocks (the value of <i>n</i> in <a href="#table3-3">table 3.3</a>
+        and <a href="#table3-6">table 3.6</a>) is given by
+      </p>
+      <p class="noTopMargin wrap">
+        &nbsp;&nbsp;<i>n</i>&nbsp;=&nbsp;&lfloor;(<i>numSampleFrames</i>&nbsp;+&nbsp;<i>blockLength</i>&nbsp;&minus;&nbsp;1)&nbsp;/&nbsp;<i>blockLength</i>&rfloor;
+        .
+      </p>
+      <p class="wrap">
+        The compressed sample data are stored in the data chunk as zero or more data blocks.
+        The contents of the data chunk are bit-oriented; that is, the data (and data blocks) are
+        of variable bit lengths and are not aligned on byte boundaries.  A data block encodes a
+        number of contiguous sample frames from a multi-channel audio source.  A sample frame
+        consists of the sample value for each audio channel at a point in time, with channels
+        interleaved as in a <a class="external"
+        href="https://en.wikipedia.org/wiki/WAV">WAVE</a> or <a class="external"
+        href="https://en.wikipedia.org/wiki/Audio_Interchange_File_Format">AIFF</a> file.  The
+        number of sample frames in a data block is denoted by the <i>blockLength</i> attribute:
+        in a file containing <i>n</i> data blocks, the first <i>n</i>&nbsp;&minus;&nbsp;1 blocks
+        contain <i>blockLength</i> sample frames, and the last data block contains
+        <i>numSampleFrames</i>&nbsp;&minus;&nbsp;(<i>n</i>&nbsp;&minus;&nbsp;1)&nbsp;&times;&nbsp;<i>blockLength</i>
+        sample frames.
+      </p>
+
+      <table class="dataStructure" id="table3-3">
+        <tr>
+          <th class="shaded1" colspan="2">
+            <div>Data chunk</div>
+            <div>ID = <code>data</code></div>
+          </th>
+        </tr>
+        <tr>
+          <th class="shaded2">Multiplicity</th>
+          <th class="shaded2">Description</th>
+        </tr>
+        <tr>
+          <td><i>n</i></td>
+          <td>Compressed sample data blocks (see <a href="#table3-4">table 3.4</a>)</td>
+        </tr>
+      </table>
+      <p class="tableId">
+        Table 3.3
+      </p>
+
+      <p class="wrap">
+        The bit-oriented data in a data block are in two parts: the first part comprises the
+        compression keys for each audio channel; the second part comprises the compressed sample
+        data, arranged as contiguous sample frames.  While the length of the compression keys is
+        known beforehand, the size of the compressed sample data (and thence the size of the
+        data block) is variable and cannot be obtained without parsing the data, although full
+        decompression is not necessary.  Thus, the version of the Onda file format specified in
+        this document does not allow random access to data blocks.  The Onda compression
+        algorithm, on the other hand, does allow random access to data blocks because the data
+        blocks are independent of each other, so random access can be achieved by including a <a
+        href="#section3-5">data block size chunk</a> in the Onda file.
+      </p>
+
+      <table class="dataStructure" id="table3-4">
+        <tr>
+          <th class="shaded1" colspan="3">
+            Data block
+          </th>
+        </tr>
+        <tr>
+          <th class="shaded2">Multiplicity</th>
+          <th class="shaded2">Description</th>
+          <th class="shaded2 alignRight">Size</th>
+        </tr>
+        <tr>
+          <td><i>numChannels</i></td>
+          <td>Compression keys</td>
+          <td class="alignRight"><i>numChannels</i> &times; <i>keyLength</i> bits</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>Compressed sample data, interleaved</td>
+          <td class="alignRight"><i>d</i> bits</td>
+        </tr>
+      </table>
+      <p class="tableId">
+        Table 3.4
+      </p>
+
+
+      <h3 id="section3-4">3.4&nbsp; Private data chunk (optional)</h3>
+
+      <p class="wrap">
+        An Onda file may contain one private data chunk, whose identifier is
+        &quot;<code>privateData</code>&quot;.
+      </p>
+      <p class="wrap">
+        A private data chunk contains private data from the original audio file that have been
+        compressed with the <a class="external"
+        href="https://en.wikipedia.org/wiki/DEFLATE">DEFLATE</a> algorithm.  For an AIFF or WAVE
+        file, private data refers to the content of ancillary chunks within the file.
+      </p>
+      <p class="wrap">
+        The version field in the <a href="#section3-2">attributes chunk</a> should be set to 1
+        if the file contains a private data chunk, and set to 0 otherwise.
+      </p>
+
+      <table class="dataStructure" id="table3-5">
+        <tr>
+          <th class="shaded1" colspan="5">
+            <div>Private data chunk</div>
+            <div>ID = <code>privateData</code></div>
+          </th>
+        </tr>
+        <tr>
+          <th class="shaded2">Multiplicity</th>
+          <th class="shaded2">Name</th>
+          <th class="shaded2">Description</th>
+          <th class="shaded2">Values</th>
+          <th class="shaded2 alignRight">Size</th>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td><i>sourceType</i></td>
+          <td>Type of source file</td>
+          <td>
+            <div>0 = AIFF</div>
+            <div>1 = WAVE</div>
+          </td>
+          <td class="alignRight">2 bytes</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td><i>adler32</i></td>
+          <td>Adler-32 checksum of private data</td>
+          <td>&nbsp;</td>
+          <td class="alignRight">4 bytes</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td><i>numSourceChunks</i></td>
+          <td>Number of <i>sourceChunk</i>s that follow</td>
+          <td>1..2<sup>31</sup>&minus;1</td>
+          <td class="alignRight">4 bytes</td>
+        </tr>
+        <tr>
+          <td rowspan="2">1..*</td>
+          <td rowspan="2"><i>sourceChunk</i></td>
+          <td>Chunk ID</td>
+          <td>&nbsp;</td>
+          <td class="alignRight">4 bytes</td>
+        </tr>
+        <tr>
+          <td>Chunk size</td>
+          <td>0..2<sup>31</sup>&minus;1</td>
+          <td class="alignRight">4 bytes</td>
+        </tr>
+        <tr>
+          <td>0..1</td>
+          <td><i>data</i></td>
+          <td>Compressed private data</td>
+          <td>&nbsp;</td>
+          <td class="alignRight"><i>n</i> bytes</td>
+        </tr>
+      </table>
+      <p class="tableId">
+        Table 3.5
+      </p>
+      <p class="wrap">
+        Although the content of critical chunks is not included in the private data chunk, the
+        chunks are included in the list of <i>sourceChunk</i>s with their size set to zero, so
+        that their position relative to the ancillary chunks is known when the ONDA file is
+        expanded.
+      </p>
+
+
+      <h3 id="section3-5">3.5&nbsp; Data block size chunk (optional)</h3>
+
+      <p class="wrap">
+        An Onda file may contain one data block size chunk, whose identifier is
+        &quot;<code>dataBlockSize</code>&quot;.
+      </p>
+      <p class="wrap">
+        The data block size chunk contains the sizes of the data blocks in the data chunk.  The
+        block sizes can be converted to offsets to allow the data blocks to be accessed
+        randomly.  They are not required for expanding the compressed sample data, so the
+        <code>dataBlockSize</code> chunk can be omitted from an Onda file that is to be used
+        only for archival purposes.
+      </p>
+      <p class="wrap">
+        To reduce the size of a <code>dataBlockSize</code> chunk, the sizes of the data blocks
+        (in bits) are stored as an array of differences (<i>deltaSizes</i>) from a base size
+        (<i>baseSize</i>).  Each element in the <i>deltaSizes</i> array is a signed integer
+        value, which, when added to <i>baseSize</i>, gives the size in bits of the corresponding
+        data block in the data chunk.  If random access to the data blocks in an Onda file is
+        required, an array of offsets to the data blocks can be constructed from the
+        <i>deltaSizes</i> array when the file is read.
+      </p>
+      <p class="wrap">
+        The Onda application does not currently generate <code>dataBlockSize</code> chunks.
+      </p>
+
+      <table class="dataStructure" id="table3-6">
+        <tr>
+          <th class="shaded1" colspan="4">
+            <div>Data block size chunk</div>
+            <div>ID = <code>dataBlockSize</code></div>
+          </th>
+        </tr>
+        <tr>
+          <th class="shaded2">Multiplicity</th>
+          <th class="shaded2">Name</th>
+          <th class="shaded2">Description</th>
+          <th class="shaded2 alignRight">Size</th>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td class="name">baseSize</td>
+          <td>Base size of data blocks, bits</td>
+          <td class="alignRight">2 bytes</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td class="name">elementSize</td>
+          <td>Size of elements in <i>deltaSizes</i> array, bytes</td>
+          <td class="alignRight">2 bytes</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td class="name">deltaSizes</td>
+          <td class="wrap">
+            Array of <i>n</i> differences between block sizes and <i>baseSize</i>, bits
+          </td>
+          <td class="alignRight"><i>n</i> &times; <i>elementSize</i> bytes</td>
+        </tr>
+      </table>
+      <p class="tableId">
+        Table 3.6
+      </p>
+
+    </div>
+
+    <!--=====================================================================================-->
+
+    <!-- Chunk size in IFF and RIFF files -->
+
+    <div class="section">
+      <h2 id="sectionA">Appendix A:&nbsp; Chunk size in IFF and RIFF files</h2>
+      <p class="tocLink">
+        [ <a href="#toc">Table of contents</a> ]
+      </p>
+
+      <p class="wrap">
+        The <a class="external"
+        href="https://en.wikipedia.org/wiki/Interchange_File_Format">IFF</a> and <a
+        class="external"
+        href="https://en.wikipedia.org/wiki/Resource_Interchange_File_Format">RIFF</a> are
+        similar formats: an RIFF file (type ID = &quot;<code>RIFF</code>&quot;) appears to be
+        the same as an IFF form file (type ID = &quot;<code>FORM</code>&quot;) with the byte
+        order of the chunk size reversed.  However, there is another important difference: the
+        chunk size in an IFF file is a 32-bit <em>signed</em> integer, whereas the chunk size in
+        an RIFF file is a 32-bit <em>unsigned</em> integer.
+      </p>
+      <p class="wrap">
+        The author discovered the difference in the data type of the chunk size only after the
+        initial release of the Onda application, which incorrectly treats the chunk size in RIFF
+        (WAVE) files as a signed value.  The mistake arose from information on WAVE files that
+        the author obtained several years ago from an erroneous &mdash; and widely disseminated
+        &mdash; source on the Web.  (Along with other sources, it also incorrectly gave the data
+        type of the chunk size of an IFF file as an unsigned value &mdash; a sort of
+        complementary error to balance things out.)
+      </p>
+      <p class="wrap">
+        Previous versions of this appendix contained links to &quot;the definitive sources&quot;
+        of information on IFF and RIFF files (pages from Apple&apos;s and Microsoft&apos;s
+        websites).  The Apple web page no longer exists, and the Microsoft page has been
+        replaced with several RIFF-related pages, all of reduced usefulness.
+      </p>
+      <table id="chunkSize">
+        <tr>
+          <th>File format</th>
+          <th>Data type of chunk size</th>
+          <th>Source of information</th>
+        </tr>
+        <tr>
+          <td>IFF</td>
+          <td>32-bit signed integer</td>
+          <td>
+            <div class="wrap">
+              (a) The specification of IFF by Electronic Arts (<i>&quot;EA IFF 85&quot; Standard
+              for Interchange Format Files</i>), widely available on the Web.
+            </div>
+            <div class="wrap">
+              (b) Archived <a class="external"
+              href="http://web.archive.org/web/20071219035740/http://www.cnpbagwell.com/aiff-c.txt">Audio
+              Interchange File Format (AIFF)</a> specification.
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>RIFF</td>
+          <td>32-bit unsigned integer</td>
+          <td class="wrap">
+            Microsoft, developer of the <a class="external"
+            href="http://msdn.microsoft.com/en-us/library/windows/desktop/dd798636%28v=vs.85%29.aspx">Resource
+            Interchange File Format (RIFF)</a>.
+          </td>
+        </tr>
+      </table>
+
+      <p class="wrap">
+        One reason that the false information has survived for so long on the Web is that it
+        becomes a practical problem for developers only when their software encounters IFF or
+        RIFF files that are larger than 2 GiB.
+      </p>
+      <p class="wrap">
+        The Onda application, which is written in Java, uses library routines for IFF and RIFF
+        files that assume the size of a chunk to be a signed integer in both formats.  As a
+        consequence, it will not allow the compression of audio files that are larger than 2
+        GiB.  (The old ONDA file format, which conforms to the IFF specification, is similarly
+        limited to 2 GiB.)
+      </p>
+
+    </div>
+
+    <!--=====================================================================================-->
+
+    <!-- Footer -->
+
+    <div id="lastModified">
+      <div>
+        <div>
+          Last modified: 2023-08-12
+        </div>
+        <div class="image">
+          <a class="hideHover" href="http://validator.w3.org/check?uri=referer">
+            <img alt="XHTML 1.1" src="images/valid-xhtml11-blue.png"/>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>

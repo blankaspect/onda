@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html
+   PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+   "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html
+   xmlns="http://www.w3.org/1999/xhtml"
+   xml:lang="en">
+
+  <head>
+    <meta
+       http-equiv="content-type"
+       content="application/xhtml+xml;charset=UTF-8"/>
+    <meta
+       content="initial-scale=1"
+       name="viewport"/>
+    <title>Onda : project page</title>
+    <link
+       href="style/blankaspect-common.css"
+       media="screen"
+       rel="stylesheet"
+       type="text/css"/>
+    <link
+       href="style/blankaspect-project.css"
+       media="screen"
+       rel="stylesheet"
+       type="text/css"/>
+    <link
+       href="style/onda-main.css"
+       media="screen"
+       rel="stylesheet"
+       type="text/css"/>
+    <link
+       href="images/icon-48x48.png"
+       rel="icon"/>
+  </head>
+
+  <body>
+
+    <!-- Title -->
+
+    <div id="title">
+      <div>
+        <img alt="Icon" src="images/icon-48x48.png"/>
+      </div>
+      <div>
+        Onda
+      </div>
+    </div>
+
+
+    <!-- Description -->
+
+    <div class="section" id="description">
+      <p class="wrap">
+        Onda is a Java <a class="external"
+        href="https://en.wikipedia.org/wiki/Swing_(Java)">Swing</a> and console application that
+        compresses 16-bit and 24-bit AIFF and WAVE audio files using the Onda lossless audio
+        compression (LAC) algorithm.  The Onda algorithm doesn&apos;t perform as well as some
+        other open-source LAC algorithms in terms of either speed or compression ratio; its
+        virtue, if it can be said to have one, is that it is easy to understand and to
+        implement, involving no mathematics beyond a bit of arithmetic.
+      </p>
+      <p class="wrap">
+        The motivation for publishing the <a
+        href="ondaAlgorithmAndFileFormats.html#section1">Onda algorithm</a> is that there may be
+        circumstances in which a mediocre but simple LAC algorithm that&apos;s easy to implement
+        is preferable to a good but complex algorithm.  There is a diminishing return on the
+        complexity of LAC algorithms; each extra percentage point of compression becomes
+        increasingly difficult to achieve.  The Onda algorithm is content with the easy
+        pickings: it gives up the struggle for extra compression when the going gets tough, with
+        the expectation that its less-than-stellar performance will be sufficient for some
+        purposes.
+      </p>
+
+      <h4>Features</h4>
+      <ul class="list">
+        <li class="spaced wrap">
+          It can compress 16-bit and 24-bit AIFF and WAVE audio files, and can validate and
+          expand files that it has compressed.
+        </li>
+        <li class="spaced wrap">
+          It can be used as a command-line (console) application or with a graphical user
+          interface (GUI).
+        </li>
+        <li class="spaced wrap">
+          It can operate on single files or on all the files in a directory, with optional
+          recursion.  Input files and directories can be specified directly or as a list of
+          pathnames in a text file.
+        </li>
+        <li class="spaced wrap">
+          When it is run as a GUI application, input files and directories can be specified by
+          drag-and-drop on systems that support it.
+        </li>
+        <li class="spaced wrap">
+          It can preserve the ancillary chunks of AIFF and WAVE files (eg, the <code>bext</code>
+          chunk used in BWF files), using a filter to specify the chunks that should be included
+          in or excluded from a compressed file.
+        </li>
+      </ul>
+
+      <h4>Links</h4>
+      <ul class="list">
+        <li class="spaced">
+          <a href="https://github.com/blankaspect/onda">Source code</a>
+        </li>
+        <li class="spaced">
+          <div>
+            <a href="manual/manual.html">Manual</a> &nbsp;(Single HTML file)
+          </div>
+          <div class="smallText1 wrap">
+            (JavaScript must be enabled in your browser in order to generate the manual&apos;s
+            table of contents.)
+          </div>
+        </li>
+        <li class="spaced">
+          <a href="images/screenshot-679x187.png">Screenshot of Onda</a>
+        </li>
+        <li class="spaced">
+          <div>
+            <a href="algorithm/ondaAlgorithmAndFileFormats.html">
+              Details of the Onda algorithm and Onda file formats</a> &nbsp;(Single HTML file)
+          </div>
+          <div class="smallText1 wrap">
+            (JavaScript must be enabled in your browser in order to generate the document&apos;s
+            table of contents.)
+          </div>
+        </li>
+      </ul>
+
+      <h4>Licence</h4>
+      <ul class="list">
+        <li class="spaced wrap">
+          The contents of the <code>uk.blankaspect.onda</code> package (including resources) may
+          be used under the terms of version 3 of the <a class="external"
+          href="https://www.gnu.org/licenses/gpl-3.0.html">GNU General Public License</a>.
+        </li>
+        <li class="spaced wrap">
+          All other contents of the <a
+          href="https://github.com/blankaspect/onda">blankaspect/onda</a> repository may be used
+          under the terms of the <a class="external" href="https://mit-license.org/">MIT
+          License</a>.
+        </li>
+      </ul>
+    </div>
+
+
+    <!-- Footer -->
+
+    <div id="lastModified">
+      <div>
+        <div>
+          Last modified: 2023-08-12
+        </div>
+        <div class="image">
+          <a class="hideHover" href="http://validator.w3.org/check?uri=referer">
+            <img alt="XHTML 1.1" src="images/valid-xhtml11-blue.png"/>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </body>
+
+</html>

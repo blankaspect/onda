@@ -1,0 +1,169 @@
+/**********************************************************************\
+
+Styles for ondaAlgorithmAndFileFormats.html
+
+\**********************************************************************/
+
+@import url("blankaspect-manual.css");
+
+a
+{
+  color: #0000A0;
+}
+a.definition
+{
+  text-decoration: none;
+  color: #804018;
+}
+
+div.algorithm
+{
+  background-color: #EAF0EA;
+  border: 1px solid #D8E0D8;
+  margin-top: 1.0em;
+  margin-bottom: 1.0em;
+  padding: 0.1em 0.5em;
+}
+
+div.auxiliaryOps
+{
+  margin-left: 1.0em;
+}
+div.auxiliaryOps dd
+{
+  margin-left: 2.0em;
+}
+div.auxiliaryOps dt
+{
+  margin-top: 0.5em;
+  margin-left: 1.0em;
+}
+
+dl.terminology
+{
+  background-color: #FCFAE8;
+  border: 1px solid #E8E6CC;
+  margin-top: 1.0em;
+  margin-bottom: 1.0em;
+  padding: 0.3em 1.0em;
+}
+dl.terminology dt
+{
+  color: #804018;
+  font-weight: bold;
+  padding: 0.3em 0.2em 0 0.2em;
+}
+dl.terminology dd
+{
+  margin: 0 2.0em;
+  padding: 0 0.2em 0.3em 0.2em;
+}
+
+p.indent
+{
+  margin-left: 1.0em;
+}
+
+p.tocLink a
+{
+  color: #700000;
+}
+
+table#chunkSize td
+{
+  border: 1px solid #B4B8C8;
+  padding: 0.2em 0.6em;
+}
+table#chunkSize th
+{
+  line-height: 120%;
+}
+
+table.dataStructure
+{
+  line-height: 125%;
+  margin: 1.0em 2.5% 0.8em 2.5%;
+}
+table.dataStructure .shaded1
+{
+  background-color: #DEE2F0;
+  vertical-align: top;
+  white-space: nowrap;
+}
+table.dataStructure .shaded2
+{
+  vertical-align: top;
+  background-color: #ECF0F8;
+  white-space: nowrap;
+}
+table.dataStructure code
+{
+  background-color: transparent;
+}
+table.dataStructure td
+{
+  border: 1px solid #B4B8C8;
+  padding: 0.2em 0.6em;
+}
+table.dataStructure td.name
+{
+  font-style: italic;
+}
+table.dataStructure th
+{
+  padding: 0.2em 0.6em;
+}
+
+table.encoding
+{
+  margin: 1.0em 2.5% 0.8em 2.5%;
+  text-align: right;
+}
+table.encoding .shaded
+{
+  background-color: #E4E4E4;
+}
+table.encoding td
+{
+  border: 1px solid #B4B8C8;
+  padding: 0.1em 0.6em;
+}
+table.encoding td.left
+{
+  background-color: #D0E8DC;
+}
+table.encoding td.right
+{
+  background-color: #ECD4D0;
+}
+table.encoding th
+{
+  border: 1px solid #B4B8C8;
+  padding: 0.1em 0.6em;
+}
+
+table.equation
+{
+  margin: 0 0 0.5em 2.0em;
+}
+table.equation td
+{
+  padding: 0.2em;
+}
+
+ul.pseudocode
+{
+  list-style: none;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+ul.pseudocode li
+{
+  margin-left: -1.0em;
+}
+ul.pseudocode li.spaceAbove
+{
+  margin-top: 1.0em;
+}
+
+/*--------------------------------------------------------------------*/
