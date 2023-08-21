@@ -7,7 +7,7 @@ Gradle build script : Onda
 // Plug-ins
 
 plugins {
-	java
+    java
 }
 
 //----------------------------------------------------------------------
@@ -15,7 +15,7 @@ plugins {
 // Functions
 
 fun _path(vararg components : String) : String =
-		components.map { it.replace('/', File.separatorChar) }.joinToString(separator = File.separator)
+        components.map { it.replace('/', File.separatorChar) }.joinToString(separator = File.separator)
 
 //----------------------------------------------------------------------
 
@@ -23,18 +23,19 @@ fun _path(vararg components : String) : String =
 
 val javaVersion = 17
 
-val packageName		= "onda"
-val mainClassName	= "uk.blankaspect.${packageName}.App"
+val packageName     = "onda"
+val mainClassName   = "uk.blankaspect.${packageName}.App"
 
-val jarDir		= _path("${buildDir}", "bin")
-val jarFilename	= "onda.jar"
+val buildDir    = layout.buildDirectory.get().getAsFile().toString()
+val jarDir      = _path(buildDir, "bin")
+val jarFilename = "onda.jar"
 
 //----------------------------------------------------------------------
 
 // Compile
 
 tasks.compileJava {
-	options.release.set(javaVersion)
+    options.release.set(javaVersion)
 }
 
 //----------------------------------------------------------------------
@@ -42,14 +43,14 @@ tasks.compileJava {
 // Create executable JAR
 
 tasks.jar {
-	destinationDirectory.set(file(jarDir))
-	archiveFileName.set(jarFilename)
-	manifest {
-		attributes(
-			"Application-Name" to project.name,
-			"Main-Class"       to mainClassName
-		)
-	}
+    destinationDirectory.set(file(jarDir))
+    archiveFileName.set(jarFilename)
+    manifest {
+        attributes(
+            "Application-Name" to project.name,
+            "Main-Class"       to mainClassName
+        )
+    }
 }
 
 //----------------------------------------------------------------------
@@ -57,8 +58,8 @@ tasks.jar {
 // Run main class
 
 tasks.register<JavaExec>("runMain") {
-	classpath = sourceSets["main"].runtimeClasspath
-	mainClass.set(mainClassName)
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set(mainClassName)
 }
 
 //----------------------------------------------------------------------
@@ -66,7 +67,7 @@ tasks.register<JavaExec>("runMain") {
 // Run executable JAR
 
 tasks.register<JavaExec>("runJar") {
-	classpath = files(tasks.jar)
+    classpath = files(tasks.jar)
 }
 
 //----------------------------------------------------------------------
