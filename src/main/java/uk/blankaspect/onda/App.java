@@ -192,11 +192,12 @@ public class App
 			the start of a pathname must be escaped by prefixing '+' to it.
 
 			A pathname may contain Java system properties or environment variables enclosed
-			between '${' and '}'; eg, ${HOME}.  A Java system property takes precedence
-			over an environment variable with the same name.  A Java system property can be
-			specified by prefixing 'sys.' to it (eg, ${sys.user.home}), and an environment
-			variable can be specified by prefixing 'env.' to it (eg, ${env.HOME}).
-			""";
+			between '${' and '}'; eg, ${HOME}.  The cent sign (U+00A2) may be used instead
+			of '$'.  A Java system property takes precedence over an environment variable.
+			- A Java system property can be specified explicitly with the prefix 'sys.';
+			  for example, ${sys.user.home}.
+			- An environment variable can be specified explicitly with the prefix 'env.';
+			  for example, ${env.HOME}.""";
 
 	private enum Command
 	{
