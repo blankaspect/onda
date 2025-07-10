@@ -6,37 +6,57 @@ Styles for Onda manual
 
 @import url("blankaspect-manual.css");
 
-table.commandLine td
-{
-  border: 1px solid #A0C0A0;
+.indentA {
+  padding-left: 1.5em;
+}
+
+table.commandLine td {
+  border: 1px solid;
   padding: 0.4em 0.6em;
 }
 
-div.usageSectionTitle
-{
+div.usageSectionTitle {
   font-weight: bold;
-  font-style: italic;
-  color: #006060;
 }
 
-ul.commandSyntax
-{
+li.usageTitle {
+  font-size: 110%;
+}
+
+ul.commandSyntax {
   list-style: none;
   margin-top: 0;
   margin-bottom: 0;
   margin-right: 1.0em;
 }
-ul.commandSyntax li
-{
+ul.commandSyntax li {
   margin-left: -1.0em;
 }
-ul.commandSyntax li.option, li.command
-{
+ul.commandSyntax li.option, li.subcommand {
   margin-top: 0.2em;
 }
-ul.commandSyntax li.section
-{
+ul.commandSyntax li.section {
   margin-top: 1.0em;
+}
+
+@media (prefers-color-scheme: light) {
+  table.commandLine td {
+    border-color: #A0C0A0;
+  }
+
+  div.usageSectionTitle {
+    color: #006060;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  table.commandLine td {
+    border-color: #A0C0A0;
+  }
+
+  div.usageSectionTitle {
+    color: #E0A0C0;
+  }
 }
 
 /*--------------------------------------------------------------------*/

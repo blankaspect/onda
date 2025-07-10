@@ -20,7 +20,6 @@ package uk.blankaspect.onda;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FontMetrics;
@@ -85,6 +84,8 @@ class TaskProgressDialog
 //  Constants
 ////////////////////////////////////////////////////////////////////////
 
+	private static final	int		PROGRESS_UPDATE_INTERVAL	= 500;
+
 	private static final	int		INFO_FIELD_WIDTH	= 480;
 
 	private static final	int		PROGRESS_BAR_WIDTH		= INFO_FIELD_WIDTH;
@@ -113,7 +114,6 @@ class TaskProgressDialog
 	private	long			fileLength;
 	private	long			fileLengthOffset;
 	private	double			fileLengthFactor;
-	private	Task			task;
 	private	boolean			stopped;
 	private	long			startTime;
 	private	long			updateTime;
@@ -129,21 +129,17 @@ class TaskProgressDialog
 ////////////////////////////////////////////////////////////////////////
 
 	private TaskProgressDialog(Window  owner,
-							   String  titleStr,
+							   String  title,
 							   Task    task,
 							   boolean showOverallProgress)
 		throws AppException
 	{
-
 		// Call superclass constructor
-		super(owner, titleStr, Dialog.ModalityType.APPLICATION_MODAL);
+		super(owner, title, ModalityType.APPLICATION_MODAL);
 
 		// Set icons
 		if (owner != null)
 			setIconImages(owner.getIconImages());
-
-		// Initialise instance variables
-		this.task = task;
 
 
 		//----  Info field
@@ -346,7 +342,27 @@ class TaskProgressDialog
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 
 		// Handle window events
-		addWindowListener(new WindowEventHandler());
+		addWindowListener(new WindowAdapter()
+		{
+			@Override
+			public void windowOpened(WindowEvent event)
+			{
+				Task.setProgressView((TaskProgressDialog)event.getWindow());
+				Task.setException(null, true);
+				Task.setCancelled(false);
+				task.start();
+			}
+
+			@Override
+			public void windowClosing(WindowEvent event)
+			{
+				location = getLocation();
+				if (stopped)
+					dispose();
+				else
+					Task.setCancelled(true);
+			}
+		});
 
 		// Prevent dialog from being resized
 		setResizable(false);
@@ -354,7 +370,7 @@ class TaskProgressDialog
 		// Resize dialog to its preferred size
 		pack();
 
-		// Set location of dialog box
+		// Set location of dialog
 		if (location == null)
 			location = GuiUtils.getComponentLocation(this, owner);
 		setLocation(location);
@@ -367,7 +383,6 @@ class TaskProgressDialog
 
 		// Throw any exception from task thread
 		Task.throwIfException();
-
 	}
 
 	//------------------------------------------------------------------
@@ -377,22 +392,22 @@ class TaskProgressDialog
 ////////////////////////////////////////////////////////////////////////
 
 	public static void showDialog(Component parent,
-								  String    titleStr,
+								  String    title,
 								  Task      task)
 		throws AppException
 	{
-		showDialog(parent, titleStr, task, false);
+		showDialog(parent, title, task, false);
 	}
 
 	//------------------------------------------------------------------
 
 	public static void showDialog(Component parent,
-								  String    titleStr,
+								  String    title,
 								  Task      task,
 								  boolean   showOverallProgress)
 		throws AppException
 	{
-		new TaskProgressDialog(GuiUtils.getWindow(parent), titleStr, task, showOverallProgress);
+		new TaskProgressDialog(GuiUtils.getWindow(parent), title, task, showOverallProgress);
 	}
 
 	//------------------------------------------------------------------
@@ -401,6 +416,7 @@ class TaskProgressDialog
 //  Instance methods : ActionListener interface
 ////////////////////////////////////////////////////////////////////////
 
+	@Override
 	public void actionPerformed(ActionEvent event)
 	{
 		if (event.getActionCommand().equals(Command.CLOSE))
@@ -413,6 +429,7 @@ class TaskProgressDialog
 //  Instance methods : IProgressView interface
 ////////////////////////////////////////////////////////////////////////
 
+	@Override
 	public void setInfo(String str)
 	{
 		setInfo(str, null);
@@ -420,22 +437,86 @@ class TaskProgressDialog
 
 	//------------------------------------------------------------------
 
+	@Override
 	public void setInfo(String str,
 						File   file)
 	{
-		SwingUtilities.invokeLater(new DoSetInfo(str, file));
+		SwingUtilities.invokeLater(() ->
+		{
+			if (file == null)
+				infoField.setText(str);
+			else
+			{
+				FontMetrics fontMetrics = infoField.getFontMetrics(infoField.getFont());
+				int maxWidth = infoField.getWidth() - ((str == null) ? 0 : fontMetrics.stringWidth(str + " "));
+				String pathname = TextUtils.getLimitedWidthPathname(Utils.getPathname(file), fontMetrics, maxWidth,
+																	Utils.getFileSeparatorChar());
+				infoField.setText((str == null) ? pathname : str + " " + pathname);
+			}
+		});
 	}
 
 	//------------------------------------------------------------------
 
+	@Override
+	public int getNumProgressIndicators()
+	{
+		return (overallProgressBar == null) ? 1 : 2;
+	}
+
+	//------------------------------------------------------------------
+
+	@Override
 	public void setProgress(int    index,
 							double value)
 	{
-		SwingUtilities.invokeLater(new DoSetProgress(value));
+		SwingUtilities.invokeLater(() ->
+		{
+			if (value < 0.0)
+			{
+				fileProgressBar.setIndeterminate(true);
+
+				timeElapsedField.setText(null);
+				timeRemainingField.setText(null);
+			}
+			else
+			{
+				if (fileProgressBar.isIndeterminate())
+					fileProgressBar.setIndeterminate(false);
+				fileProgressBar.setValue((int)Math.round(value * (double)PROGRESS_BAR_MAX_VALUE));
+
+				boolean reset = (value == 0.0);
+				if (overallProgressBar != null)
+				{
+					reset = reset && (fileLengthOffset == 0);
+					double value0 = (value * (double)fileLength + (double)fileLengthOffset) * fileLengthFactor;
+					overallProgressBar.setValue((int)Math.round(value0 * (double)PROGRESS_BAR_MAX_VALUE));
+				}
+
+				if (reset)
+				{
+					startTime = System.currentTimeMillis();
+					timeElapsedField.setTime(0);
+					timeRemainingField.setText(null);
+				}
+				else
+				{
+					long currentTime = System.currentTimeMillis();
+					if (currentTime >= updateTime)
+					{
+						long timeElapsed = currentTime - startTime;
+						timeElapsedField.setTime((int)timeElapsed);
+						timeRemainingField.setTime((int)Math.round((1.0 / value - 1.0) * (double)timeElapsed) + 500);
+						updateTime = currentTime + PROGRESS_UPDATE_INTERVAL;
+					}
+				}
+			}
+		});
 	}
 
 	//------------------------------------------------------------------
 
+	@Override
 	public void waitForIdle()
 	{
 		EventQueue eventQueue = getToolkit().getSystemEventQueue();
@@ -447,6 +528,7 @@ class TaskProgressDialog
 
 	//------------------------------------------------------------------
 
+	@Override
 	public void close()
 	{
 		stopped = true;
@@ -501,6 +583,12 @@ class TaskProgressDialog
 	private static class InfoField
 		extends JComponent
 	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	text;
 
 	////////////////////////////////////////////////////////////////////
 	//  Constructors
@@ -560,12 +648,6 @@ class TaskProgressDialog
 
 		//--------------------------------------------------------------
 
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	text;
-
 	}
 
 	//==================================================================
@@ -590,6 +672,12 @@ class TaskProgressDialog
 		private static final	String	OUT_OF_RANGE_STR	= "--";
 
 		private static final	Color	TEXT_COLOUR	= new Color(0, 0, 144);
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	text;
 
 	////////////////////////////////////////////////////////////////////
 	//  Constructors
@@ -630,8 +718,7 @@ class TaskProgressDialog
 				// Draw text
 				FontMetrics fontMetrics = gr.getFontMetrics();
 				gr.setColor(TEXT_COLOUR);
-				gr.drawString(text, getWidth() - fontMetrics.stringWidth(text),
-							  fontMetrics.getAscent());
+				gr.drawString(text, getWidth() - fontMetrics.stringWidth(text), fontMetrics.getAscent());
 			}
 		}
 
@@ -649,10 +736,11 @@ class TaskProgressDialog
 				int seconds = milliseconds / 1000;
 				int minutes = seconds / 60;
 				int hours = minutes / 60;
-				str = ((hours == 0) ? Integer.toString(minutes)
-									: Integer.toString(hours) + SEPARATOR_STR +
-												NumberUtils.uIntToDecString(minutes % 60, 2, '0')) +
-									SEPARATOR_STR + NumberUtils.uIntToDecString(seconds % 60, 2, '0');
+				str = ((hours == 0)
+							? Integer.toString(minutes)
+							: Integer.toString(hours) + SEPARATOR_STR
+											+ NumberUtils.uIntToDecString(minutes % 60, 2, '0')) + SEPARATOR_STR
+											+ NumberUtils.uIntToDecString(seconds % 60, 2, '0');
 			}
 			setText(str);
 		}
@@ -666,205 +754,6 @@ class TaskProgressDialog
 				this.text = text;
 				repaint();
 			}
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	text;
-
-	}
-
-	//==================================================================
-
-////////////////////////////////////////////////////////////////////////
-//  Member classes : inner classes
-////////////////////////////////////////////////////////////////////////
-
-
-	// SET INFO CLASS
-
-
-	private class DoSetInfo
-		implements Runnable
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private DoSetInfo(String str,
-						  File   file)
-		{
-			this.str = str;
-			this.file = file;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : Runnable interface
-	////////////////////////////////////////////////////////////////////
-
-		public void run()
-		{
-			if (file == null)
-				infoField.setText(str);
-			else
-			{
-				FontMetrics fontMetrics = infoField.getFontMetrics(infoField.getFont());
-				int maxWidth = infoField.getWidth() -
-												((str == null) ? 0 : fontMetrics.stringWidth(str + " "));
-				String pathname = TextUtils.getLimitedWidthPathname(Utils.getPathname(file),
-																	fontMetrics, maxWidth,
-																	Utils.getFileSeparatorChar());
-				infoField.setText((str == null) ? pathname : str + " " + pathname);
-			}
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	str;
-		private	File	file;
-
-	}
-
-	//==================================================================
-
-
-	// SET PROGRESS CLASS
-
-
-	private class DoSetProgress
-		implements Runnable
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		private static final	int	UPDATE_INTERVAL	= 500;
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private DoSetProgress(double value)
-		{
-			this.value = value;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : Runnable interface
-	////////////////////////////////////////////////////////////////////
-
-		public void run()
-		{
-			if (value < 0.0)
-			{
-				fileProgressBar.setIndeterminate(true);
-
-				timeElapsedField.setText(null);
-				timeRemainingField.setText(null);
-			}
-			else
-			{
-				if (fileProgressBar.isIndeterminate())
-					fileProgressBar.setIndeterminate(false);
-				fileProgressBar.setValue((int)Math.round(value * (double)PROGRESS_BAR_MAX_VALUE));
-
-				boolean reset = (value == 0.0);
-				if (overallProgressBar != null)
-				{
-					reset = reset && (fileLengthOffset == 0);
-					value = (value * (double)fileLength + (double)fileLengthOffset) * fileLengthFactor;
-					overallProgressBar.
-									setValue((int)Math.round(value * (double)PROGRESS_BAR_MAX_VALUE));
-				}
-
-				if (reset)
-				{
-					startTime = System.currentTimeMillis();
-					timeElapsedField.setTime(0);
-					timeRemainingField.setText(null);
-				}
-				else
-				{
-					long currentTime = System.currentTimeMillis();
-					if (currentTime >= updateTime)
-					{
-						long timeElapsed = currentTime - startTime;
-						timeElapsedField.setTime((int)timeElapsed);
-						timeRemainingField.setTime((int)Math.round((1.0 / value - 1.0) *
-																			(double)timeElapsed) + 500);
-						updateTime = currentTime + UPDATE_INTERVAL;
-					}
-				}
-			}
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	double	value;
-
-	}
-
-	//==================================================================
-
-
-	// WINDOW EVENT HANDLER CLASS
-
-
-	private class WindowEventHandler
-		extends WindowAdapter
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private WindowEventHandler()
-		{
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : overriding methods
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		public void windowOpened(WindowEvent event)
-		{
-			Task.setProgressView((TaskProgressDialog)event.getWindow());
-			Task.setException(null, true);
-			Task.setCancelled(false);
-			task.start();
-		}
-
-		//--------------------------------------------------------------
-
-		@Override
-		public void windowClosing(WindowEvent event)
-		{
-			location = getLocation();
-			if (stopped)
-				dispose();
-			else
-				Task.setCancelled(true);
 		}
 
 		//--------------------------------------------------------------

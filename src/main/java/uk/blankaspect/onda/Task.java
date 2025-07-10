@@ -76,7 +76,7 @@ abstract class Task
 			// Perform task
 			try
 			{
-				App.INSTANCE.compress(inputsOutputs, chunkFilters, recursive);
+				OndaApp.INSTANCE.compress(inputsOutputs, chunkFilters, recursive);
 			}
 			catch (TaskCancelledException e)
 			{
@@ -134,7 +134,7 @@ abstract class Task
 			// Perform task
 			try
 			{
-				App.INSTANCE.expand(inputsOutputs, recursive);
+				OndaApp.INSTANCE.expand(inputsOutputs, recursive);
 			}
 			catch (TaskCancelledException e)
 			{
@@ -189,7 +189,7 @@ abstract class Task
 		public void run()
 		{
 			// Perform task
-			App.INSTANCE.validate(inputsOutputs, recursive);
+			OndaApp.INSTANCE.validate(inputsOutputs, recursive);
 
 			// Terminate other task threads
 			setCancelled(true);

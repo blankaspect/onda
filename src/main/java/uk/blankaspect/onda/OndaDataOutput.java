@@ -51,7 +51,7 @@ public class OndaDataOutput
 //  Constants
 ////////////////////////////////////////////////////////////////////////
 
-	private static final	int	BUFFER_SIZE	= 1 << 13;  // 8192
+	private static final	int	BUFFER_LENGTH	= 1 << 13;  // 8192
 
 ////////////////////////////////////////////////////////////////////////
 //  Instance variables
@@ -102,7 +102,7 @@ public class OndaDataOutput
 		this.keyLength = keyLength;
 		this.dataOutput = dataOutput;
 		minEncodingLength = Math.max(1, sampleLength - (1 << keyLength) + 1);
-		outBuffer = new byte[BUFFER_SIZE];
+		outBuffer = new byte[BUFFER_LENGTH];
 		encodingBounds = new int[sampleLength];
 		for (int i = minEncodingLength; i < sampleLength; i++)
 			encodingBounds[i] = (1 << i - 1) - 1;
@@ -137,7 +137,7 @@ public class OndaDataOutput
 	 * close the underlying data destination.
 	 *
 	 * @throws IOException
-	 *           if an error occurred while attempting to write to the data destination.
+	 *           if an error occurs when attempting to write to the data destination.
 	 */
 
 	public void close()
@@ -180,7 +180,7 @@ public class OndaDataOutput
 	 * @throws IndexOutOfBoundsException
 	 *           if {@code (offset < 0)} or {@code (offset > data.length)}.
 	 * @throws IOException
-	 *           if an error occurred while attempting to write to the data destination.
+	 *           if an error occurs when attempting to write to the data destination.
 	 */
 
 	public void writeBlock(
@@ -299,7 +299,7 @@ public class OndaDataOutput
 	 * @param  length
 	 *           the number of low-order bits of {@code value} to write.
 	 * @throws IOException
-	 *           if an error occurred while attempting to write to the data destination.
+	 *           if an error occurs when attempting to write to the data destination.
 	 */
 
 	private void write(

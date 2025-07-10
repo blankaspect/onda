@@ -386,7 +386,8 @@ public class Tokeniser
 		}
 
 		// Create token
-		Token token = new Token(startIndex, buffer.toString(), sequence.subSequence(startIndex, vars.endIndex).toString());
+		Token token =
+				new Token(startIndex, buffer.toString(), sequence.subSequence(startIndex, vars.endIndex).toString());
 
 		// Add token to list
 		tokens.add(token);
@@ -747,7 +748,8 @@ public class Tokeniser
 		{
 			int length = text.length();
 			int rawLength = rawText.length();
-			return (length > 1) && (rawLength > length) && (rawText.charAt(0) == '"') && (rawText.charAt(rawLength - 1) == '"');
+			return (length > 1) && (rawLength > length) && (rawText.charAt(0) == '"')
+					&& (rawText.charAt(rawLength - 1) == '"');
 		}
 
 		//--------------------------------------------------------------

@@ -33,6 +33,12 @@ public class NlfUncheckedException
 {
 
 ////////////////////////////////////////////////////////////////////////
+//  Instance variables
+////////////////////////////////////////////////////////////////////////
+
+	private	ExceptionId	id;
+
+////////////////////////////////////////////////////////////////////////
 //  Constructors
 ////////////////////////////////////////////////////////////////////////
 
@@ -40,11 +46,13 @@ public class NlfUncheckedException
 	 * Creates a new instance of an unchecked exception with the specified identifier.  The identifier is associated
 	 * with a message that is used as the detail message in the constructor of {@link RuntimeException}.
 	 *
-	 * @param id  the identifier of the exception.
+	 * @param id
+	 *          the identifier of the exception.
 	 * @since 1.0
 	 */
 
-	public NlfUncheckedException(ExceptionId id)
+	public NlfUncheckedException(
+		ExceptionId	id)
 	{
 		// Call superclass constructor
 		super(id.getMessage());
@@ -59,13 +67,16 @@ public class NlfUncheckedException
 	 * Creates a new instance of an unchecked exception with the specified identifier and cause.  The identifier is
 	 * associated with a message that is used as the detail message in the constructor of {@link RuntimeException}.
 	 *
-	 * @param id     the identifier of the exception.
-	 * @param cause  the underlying cause of the exception.
+	 * @param id
+	 *          the identifier of the exception.
+	 * @param cause
+	 *          the underlying cause of the exception.
 	 * @since 1.0
 	 */
 
-	public NlfUncheckedException(ExceptionId id,
-								 Throwable   cause)
+	public NlfUncheckedException(
+		ExceptionId	id,
+		Throwable	cause)
 	{
 		// Call superclass constructor
 		super(id.getMessage(), cause);
@@ -93,12 +104,6 @@ public class NlfUncheckedException
 	}
 
 	//------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////
-//  Instance variables
-////////////////////////////////////////////////////////////////////////
-
-	private	ExceptionId	id;
 
 }
 

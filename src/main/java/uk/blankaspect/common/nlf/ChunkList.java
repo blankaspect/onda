@@ -75,22 +75,30 @@ public class ChunkList
 ////////////////////////////////////////////////////////////////////////
 
 	/** The identifier of a {@linkplain ChunkList chunk list}. */
-	public static final		Id	LIST_ID	= new Id(Id.RESERVED_PREFIX + "LIST");
+	public static final		Id		LIST_ID	= new Id(Id.RESERVED_PREFIX + "LIST");
 
 	/** The size (in bytes) of the <i>namespace-name size</i> field of a chunk list. */
-	public static final		int	NAMESPACE_NAME_SIZE_SIZE	= 2;
+	public static final		int		NAMESPACE_NAME_SIZE_SIZE	= 2;
 
 	/** The mask for the <i>namespace-name size</i> field of a chunk list. */
-	protected static final	int	NAMESPACE_NAME_SIZE_MASK	= (1 << (NAMESPACE_NAME_SIZE_SIZE << 3)) - 1;
+	protected static final	int		NAMESPACE_NAME_SIZE_MASK	= (1 << (NAMESPACE_NAME_SIZE_SIZE << 3)) - 1;
 
 	/** The minimum size (in bytes) of the namespace name of a chunk list. */
-	public static final		int	MIN_NAMESPACE_NAME_SIZE		= 0;
+	public static final		int		MIN_NAMESPACE_NAME_SIZE		= 0;
 
 	/** The maximum size (in bytes) of the namespace name of a chunk list. */
-	public static final		int	MAX_NAMESPACE_NAME_SIZE		= (1 << 16) - 1;
+	public static final		int		MAX_NAMESPACE_NAME_SIZE		= (1 << 16) - 1;
 
 	/** The name of an XML <i>namespace</i> attribute. */
 	private static final	String	XML_ATTR_NAME_XMLNS	= "xmlns";
+
+////////////////////////////////////////////////////////////////////////
+//  Instance variables
+////////////////////////////////////////////////////////////////////////
+
+	private	Id			instanceId;
+	private	String		namespaceName;
+	private	List<Chunk>	chunks;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -100,16 +108,21 @@ public class ChunkList
 	 * Creates a new instance of a chunk list with the specified owner document and list-instance identifier.  The list
 	 * will not have a local namespace name.
 	 *
-	 * @param document    the {@linkplain Document document} to which the list will belong.
+	 * @param document
+	 *          the {@linkplain Document document} to which the list will belong.
 	 * @param instanceId  the list-instance identifier.
 	 * @since 1.0
 	 * @see   ChunkList#ChunkList(Document, Id, String)
 	 */
 
-	protected ChunkList(Document document,
-						Id       instanceId)
+	protected ChunkList(
+		Document	document,
+		Id			instanceId)
 	{
+		// Call superclass constructor
 		super(document, LIST_ID);
+
+		// Initialise instance variables
 		this.instanceId = instanceId;
 		chunks = new ArrayList<>();
 	}
@@ -120,24 +133,30 @@ public class ChunkList
 	 * Creates a new instance of a chunk list with the specified owner document, list-instance identifier and local
 	 * namespace name.
 	 *
-	 * @param  document       the {@linkplain Document document} to which the list will belong.
-	 * @param  instanceId     the list-instance identifier.
-	 * @param  namespaceName  the namespace name, which may be {@code null}.
+	 * @param  document
+	 *           the {@linkplain Document document} to which the list will belong.
+	 * @param  instanceId
+	 *           the list-instance identifier.
+	 * @param  namespaceName
+	 *           the namespace name, which may be {@code null}.
 	 * @throws IllegalArgumentException
 	 *           <ul>
-	 *             <li><b>{@code namespaceName}</b> is not a well-formed URI reference, or</li>
-	 *             <li>the length of the UTF-8 encoding of <b>{@code namespaceName}</b> is greater than 65535
-	 *                 bytes.</li>
+	 *             <li>{@code namespaceName} is not a well-formed URI reference, or</li>
+	 *             <li>the length of the UTF-8 encoding of {@code namespaceName} is greater than 65535 bytes.</li>
 	 *           </ul>
 	 * @since  1.0
 	 * @see    ChunkList#ChunkList(Document, Id)
 	 */
 
-	protected ChunkList(Document document,
-						Id       instanceId,
-						String   namespaceName)
+	protected ChunkList(
+		Document	document,
+		Id			instanceId,
+		String		namespaceName)
 	{
+		// Call alternative constructor
 		this(document, instanceId);
+
+		// Initialise instance variables
 		setNamespaceName(namespaceName);
 	}
 
@@ -159,8 +178,9 @@ public class ChunkList
 	@Override
 	public String toString()
 	{
-		return ((namespaceName == null) ? instanceId.toString()
-										: instanceId.toString() + ", " + namespaceName.toString());
+		return (namespaceName == null)
+						? instanceId.toString()
+						: instanceId.toString() + ", " + namespaceName.toString();
 	}
 
 	//------------------------------------------------------------------
@@ -203,7 +223,7 @@ public class ChunkList
 	@Override
 	public String getNamespaceName()
 	{
-		return ((namespaceName == null) ? super.getNamespaceName() : namespaceName);
+		return (namespaceName == null) ? super.getNamespaceName() : namespaceName;
 	}
 
 	//------------------------------------------------------------------
@@ -255,7 +275,8 @@ public class ChunkList
 	 */
 
 	@Override
-	public Element toXml(org.w3c.dom.Document xmlDocument)
+	public Element toXml(
+		org.w3c.dom.Document	xmlDocument)
 		throws DOMException, IOException, NlfException
 	{
 		return toXml(xmlDocument, null);
@@ -330,15 +351,17 @@ public class ChunkList
 	/**
 	 * Returns the chunk at the specified index in this list.
 	 *
-	 * @param  index  the index of the required chunk in this list.
-	 * @return the chunk at the <b>{@code index}</b> in this list.
+	 * @param  index
+	 *           the index of the required chunk in this list.
+	 * @return the chunk at the {@code index} in this list.
 	 * @throws IndexOutOfBoundsException
 	 *           if {@code (index < 0)} or {@code (index >= }{@link #getNumChunks()}{@code )}.
 	 * @since  1.0
 	 * @see    #getNumChunks()
 	 */
 
-	public Chunk getChunk(int index)
+	public Chunk getChunk(
+		int	index)
 	{
 		return chunks.get(index);
 	}
@@ -356,7 +379,7 @@ public class ChunkList
 	public Attributes getAttributes()
 	{
 		int index = firstIndexOf(Attributes.ATTRIBUTES_ID);
-		return ((index < 0) ? null : (Attributes)chunks.get(index));
+		return (index < 0) ? null : (Attributes)chunks.get(index);
 	}
 
 	//------------------------------------------------------------------
@@ -378,20 +401,22 @@ public class ChunkList
 	/**
 	 * Sets the local namespace name of this list to the specified string, which may be {@code null}.
 	 *
-	 * @param  nsName  the string to which the local namespace name of this list will be set.  If <b>{@code nsName}</b>
-	 *                 is {@code null} or an empty string, the list will not have a local namespace name.
+	 * @param  nsName
+	 *           the string to which the local namespace name of this list will be set.  If {@code nsName} is
+	 *           {@code null} or an empty string, the list will not have a local namespace name.
 	 * @throws IllegalArgumentException
 	 *           if
 	 *           <ul>
-	 *             <li><b>{@code nsName}</b> is not a well-formed URI reference, or</li>
-	 *             <li>the length of the UTF-8 encoding of <b>{@code nsName}</b> is greater than 65535 bytes.</li>
+	 *             <li>{@code nsName} is not a well-formed URI reference, or</li>
+	 *             <li>the length of the UTF-8 encoding of {@code nsName} is greater than 65535 bytes.</li>
 	 *           </ul>
 	 * @since  1.0
 	 * @see    #getLocalNamespaceName()
 	 * @see    #getNamespaceName()
 	 */
 
-	public void setNamespaceName(String nsName)
+	public void setNamespaceName(
+		String	nsName)
 	{
 		// Replace empty name with null
 		if ((nsName != null) && (nsName.length() == 0))
@@ -433,7 +458,7 @@ public class ChunkList
 
 	public int getNamespaceNameSize()
 	{
-		return ((namespaceName == null) ? 0 : NlfUtils.getUtf8Length(namespaceName));
+		return (namespaceName == null) ? 0 : NlfUtils.getUtf8Length(namespaceName);
 	}
 
 	//------------------------------------------------------------------
@@ -450,7 +475,7 @@ public class ChunkList
 
 	public int getNamespaceNameFieldSize()
 	{
-		return (NAMESPACE_NAME_SIZE_SIZE + getNamespaceNameSize());
+		return NAMESPACE_NAME_SIZE_SIZE + getNamespaceNameSize();
 	}
 
 	//------------------------------------------------------------------
@@ -459,14 +484,16 @@ public class ChunkList
 	 * Returns the encoded form of the local namespace name of this list (two size bytes followed by a UTF-8 sequence)
 	 * as an array of bytes.
 	 *
-	 * @param  littleEndian  {@code true} if the byte order of the size bytes is little-endian; {@code false} if the
-	 *         byte order is big-endian.
+	 * @param  littleEndian
+	 *           {@code true} if the byte order of the size bytes is little-endian; {@code false} if the byte order is
+	 *           big-endian.
 	 * @return a byte array containing the encoded form of the list's local namespace name: two size bytes followed by a
 	 *         UTF-8 sequence.
 	 * @since  1.0
 	 */
 
-	public byte[] getNamespaceNameBytes(boolean littleEndian)
+	public byte[] getNamespaceNameBytes(
+		boolean	littleEndian)
 	{
 		byte[] bytes = null;
 		int size = 0;
@@ -490,20 +517,26 @@ public class ChunkList
 	 * same document as this list or if the inclusion of the chunk in this list would create a cycle in the list
 	 * hierarchy.  If the chunk is already in the list, it will be removed and then added to the end of the list.
 	 *
-	 * @param  chunk  the chunk that will be added to the end of the list.
+	 * @param  chunk
+	 *           the chunk that will be added to the end of the list.
 	 * @throws IllegalArgumentException
-	 *           if <b>{@code chunk}</b> is {@code null}.
+	 *           if {@code chunk} is {@code null}.
 	 * @throws NlfUncheckedException
 	 *           if
 	 *           <ul>
-	 *             <li>this list and <b>{@code chunk}</b> belong to different documents, or</li>
-	 *             <li>adding <b>{@code chunk}</b> to this list would create a cycle in the list hierarchy because
-	 *                <b>{@code chunk}</b> is this list or an ancestor of this list.</li>
+	 *             <li>
+	 *               this list and {@code chunk} belong to different documents, or
+	 *             </li>
+	 *             <li>
+	 *               adding {@code chunk} to this list would create a cycle in the list hierarchy because {@code chunk}
+	 *               is this list or an ancestor of this list.
+	 *             </li>
 	 *           </ul>
 	 * @since  1.0
 	 */
 
-	public void appendChunk(Chunk chunk)
+	public void appendChunk(
+		Chunk	chunk)
 	{
 		// Test for null argument
 		if (chunk == null)
@@ -546,7 +579,8 @@ public class ChunkList
 	 * Removes the chunk at the specified index in this list, and returns the chunk that was removed.  The chunk that is
 	 * returned has its <i>parent</i> field set to {@code null} to indicate that it has no parent.
 	 *
-	 * @param  index  the index of the chunk that will be removed from this list.
+	 * @param  index
+	 *           the index of the chunk that will be removed from this list.
 	 * @return the chunk that was removed from this list.
 	 * @throws IndexOutOfBoundsException
 	 *           if {@code (index < 0)} or {@code (index >= }{@link #getNumChunks()}{@code)}.
@@ -555,7 +589,8 @@ public class ChunkList
 	 * @see    #getNumChunks()
 	 */
 
-	public Chunk removeChunk(int index)
+	public Chunk removeChunk(
+		int	index)
 	{
 		Chunk chunk = chunks.remove(index);
 		chunk.setParent(null);
@@ -567,16 +602,18 @@ public class ChunkList
 	/**
 	 * Returns the index of the first occurrence of a chunk with the specified identifier in this list.
 	 *
-	 * @param  id  the identifier of the chunk that will be searched for.
-	 * @return the index of the first occurrence of a chunk with the identifier <b>{@code id}</b> in this list, or
-	 *         {@code -1} if no such chunk was found.
+	 * @param  id
+	 *           the identifier of the chunk that will be searched for.
+	 * @return the index of the first occurrence of a chunk with the identifier {@code id} in this list, or {@code -1}
+	 *         if no such chunk was found.
 	 * @since  1.0
 	 * @see    #firstIndexOf(Id, int)
 	 * @see    #lastIndexOf(Id)
 	 * @see    #lastIndexOf(Id, int)
 	 */
 
-	public int firstIndexOf(Id id)
+	public int firstIndexOf(
+		Id	id)
 	{
 		return firstIndexOf(id, 0);
 	}
@@ -587,18 +624,20 @@ public class ChunkList
 	 * Returns the index of the first occurrence of a chunk with the specified identifier in this list, starting at the
 	 * specified index.
 	 *
-	 * @param  id          the identifier of the chunk that will be searched for.
+	 * @param  id
+	 *           the identifier of the chunk that will be searched for.
 	 * @param  startIndex  the index at which the search will start.  The index may be outside the bounds of the list.
-	 * @return the index of the first occurrence of a chunk with the identifier <b>{@code id}</b> in this list, starting
-	 *         at <b>{@code startIndex}</b>, or {@code -1} if no such chunk was found.
+	 * @return the index of the first occurrence of a chunk with the identifier {@code id} in this list, starting at
+	 *         {@code startIndex}, or {@code -1} if no such chunk was found.
 	 * @since  1.0
 	 * @see    #firstIndexOf(Id)
 	 * @see    #lastIndexOf(Id)
 	 * @see    #lastIndexOf(Id, int)
 	 */
 
-	public int firstIndexOf(Id  id,
-							int startIndex)
+	public int firstIndexOf(
+		Id	id,
+		int	startIndex)
 	{
 		for (int i = Math.max(0, startIndex); i < chunks.size(); i++)
 		{
@@ -613,16 +652,18 @@ public class ChunkList
 	/**
 	 * Returns the index of the last occurrence of a chunk with the specified identifier in this list.
 	 *
-	 * @param  id  the identifier of the chunk that will be searched for.
-	 * @return the index of the last occurrence of a chunk with the identifier <b>{@code id}</b> in this list, or {@code
-	 *         -1} if no such chunk was found.
+	 * @param  id
+	 *           the identifier of the chunk that will be searched for.
+	 * @return the index of the last occurrence of a chunk with the identifier {@code id} in this list, or {@code -1} if
+	 *         no such chunk was found.
 	 * @since  1.0
 	 * @see    #firstIndexOf(Id)
 	 * @see    #firstIndexOf(Id, int)
 	 * @see    #lastIndexOf(Id, int)
 	 */
 
-	public int lastIndexOf(Id id)
+	public int lastIndexOf(
+		Id	id)
 	{
 		return lastIndexOf(id, chunks.size() - 1);
 	}
@@ -633,18 +674,21 @@ public class ChunkList
 	 * Returns the index of the last occurrence of a chunk with the specified identifier in this list, ending at the
 	 * specified index.
 	 *
-	 * @param  id        the identifier of the chunk that will be searched for.
-	 * @param  endIndex  the index at which the search will end.  The index may be outside the bounds of the list.
-	 * @return the index of the last occurrence of a chunk with the identifier <b>{@code id}</b> in this list, ending at
-	 *         <b>{@code endIndex}</b>, or {@code -1} if no such chunk was found.
+	 * @param  id
+	 *           the identifier of the chunk that will be searched for.
+	 * @param  endIndex
+	 *           the index at which the search will end.  The index may be outside the bounds of the list.
+	 * @return the index of the last occurrence of a chunk with the identifier {@code id} in this list, ending at {@code
+	 *         endIndex}, or {@code -1} if no such chunk was found.
 	 * @since  1.0
 	 * @see    #firstIndexOf(Id)
 	 * @see    #firstIndexOf(Id, int)
 	 * @see    #lastIndexOf(Id)
 	 */
 
-	public int lastIndexOf(Id  id,
-						   int endIndex)
+	public int lastIndexOf(
+		Id	id,
+		int	endIndex)
 	{
 		for (int i = Math.min(endIndex, chunks.size() - 1); i >= 0; i--)
 		{
@@ -684,13 +728,15 @@ public class ChunkList
 	 * Writes the list-header extension (the list-instance identifier and namespace name) to the specified {@linkplain
 	 * DataOutput data output}.
 	 *
-	 * @param  dataOutput  the data output to which the list-header extension will be written.
+	 * @param  dataOutput
+	 *           the data output to which the list-header extension will be written.
 	 * @throws IOException
 	 *           if an error occurs when writing the list-header extension to the data output.
 	 * @since  1.0
 	 */
 
-	public void writeHeaderExtension(DataOutput dataOutput)
+	public void writeHeaderExtension(
+		DataOutput	dataOutput)
 		throws IOException
 	{
 		// Write list-instance identifier
@@ -706,17 +752,20 @@ public class ChunkList
 	 * Traverses the document subtree in the specified order, starting at this list and calling the specified chunk
 	 * processor on each chunk that is visited.
 	 *
-	 * @param  traversalOrder  the order, breadth-first or depth-first, in which the tree will be traversed.
-	 * @param  processor       the processor that will be called on each chunk that is visited.
+	 * @param  traversalOrder
+	 *           the order, breadth-first or depth-first, in which the tree will be traversed.
+	 * @param  processor
+	 *           the processor that will be called on each chunk that is visited.
 	 * @throws IllegalArgumentException
-	 *           if <b>{@code traversalOrder}</b> is {@code null} or <b>{@code processor}</b> is {@code null}.
+	 *           if {@code traversalOrder} is {@code null} or {@code processor} is {@code null}.
 	 * @throws TerminatedException
 	 *           if the traversal of the tree was terminated.
 	 * @since  1.0
 	 */
 
-	public void processChunks(NlfConstants.TraversalOrder traversalOrder,
-							  Chunk.IProcessor            processor)
+	public void processChunks(
+		NlfConstants.TraversalOrder	traversalOrder,
+		Chunk.IProcessor			processor)
 	{
 		if ((traversalOrder == null) || (processor == null))
 			throw new IllegalArgumentException();
@@ -776,8 +825,10 @@ public class ChunkList
 	/**
 	 * Generates an XML element of the specified XML document from this list and returns the result.
 	 *
-	 * @param  xmlDocument  the XML document that will be the owner of the element that is created.
-	 * @param  element      the XML element that will be generated, or {@code null} if a new element should be created.
+	 * @param  xmlDocument
+	 *           the XML document that will be the owner of the element that is created.
+	 * @param  element
+	 *           the XML element that will be generated, or {@code null} if a new element should be created.
 	 * @return the XML element that is generated from this list.
 	 * @throws DOMException
 	 *           if an exception occurs when creating the XML element or one of its child elements.
@@ -792,8 +843,9 @@ public class ChunkList
 	 * @since  1.0
 	 */
 
-	protected Element toXml(org.w3c.dom.Document xmlDocument,
-							Element              element)
+	protected Element toXml(
+		org.w3c.dom.Document	xmlDocument,
+		Element					element)
 		throws DOMException, IOException, NlfException
 	{
 		if (element == null)
@@ -813,14 +865,6 @@ public class ChunkList
 	}
 
 	//------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////
-//  Instance variables
-////////////////////////////////////////////////////////////////////////
-
-	private	Id			instanceId;
-	private	String		namespaceName;
-	private	List<Chunk>	chunks;
 
 }
 

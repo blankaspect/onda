@@ -103,155 +103,19 @@ public class Document
 	public static final		byte[]	FILE_ID	= { (byte)0x95, 'N', 'L', 'F' };
 
 	// Current version, minumum and maximum supported versions
-	private static final	int	VERSION					= 0;
-	private static final	int	MIN_SUPPORTED_VERSION	= 0;
-	private static final	int	MAX_SUPPORTED_VERSION	= 0;
+	private static final	int		VERSION					= 0;
+	private static final	int		MIN_SUPPORTED_VERSION	= 0;
+	private static final	int		MAX_SUPPORTED_VERSION	= 0;
 
 	// Sizes of components of file header
-	private static final	int	FILE_ID_SIZE	= FILE_ID.length;
-	private static final	int	VERSION_SIZE	= 2;
-	private static final	int	FLAGS_SIZE		= 1;
-	private static final	int	RESERVED_SIZE	= 1;
-	private static final	int	HEADER_SIZE		= FILE_ID_SIZE + VERSION_SIZE + FLAGS_SIZE + RESERVED_SIZE;
+	private static final	int		FILE_ID_SIZE	= FILE_ID.length;
+	private static final	int		VERSION_SIZE	= 2;
+	private static final	int		FLAGS_SIZE		= 1;
+	private static final	int		RESERVED_SIZE	= 1;
+	private static final	int		HEADER_SIZE		= FILE_ID_SIZE + VERSION_SIZE + FLAGS_SIZE + RESERVED_SIZE;
 
 	// Masks for flags in file header
-	private static final	int	BYTE_ORDER_MASK	= 1 << 0;
-
-////////////////////////////////////////////////////////////////////////
-//  Member classes : non-inner classes
-////////////////////////////////////////////////////////////////////////
-
-
-	// CLASS: PAIRING OF CHUNK AND FILE OFFSET
-
-
-	/**
-	 * This class implements a pairing of a chunk and a file offset.  It is used as the element type in the list of
-	 * chunks that have requested to be rewritten on the second pass of the document writer.
-	 *
-	 * @since 1.0
-	 */
-
-	private static class ChunkOffset
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	Chunk	chunk;
-		private	long	offset;
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Creates a new instance of a pairing of the specified chunk and file offset.
-		 *
-		 * @param chunk   the chunk.
-		 * @param offset  the file offset.
-		 * @since 1.0
-		 */
-
-		private ChunkOffset(Chunk chunk,
-							long  offset)
-		{
-			this.chunk = chunk;
-			this.offset = offset;
-		}
-
-		//--------------------------------------------------------------
-
-	}
-
-	//==================================================================
-
-////////////////////////////////////////////////////////////////////////
-//  Member classes : inner classes
-////////////////////////////////////////////////////////////////////////
-
-
-	// CLASS: CHUNK READER
-
-
-	/**
-	 * This class implements a {@linkplain Chunk.IReader reader} for a chunk, which can be used by the chunk to read its
-	 * data from the random-access file that was opened on a document.
-	 *
-	 * @since 1.0
-	 * @see   Chunk#getReader()
-	 * @see   Chunk#setReader(Chunk.IReader)
-	 */
-
-	private class ChunkReader
-		implements Chunk.IReader
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	long	fileOffset;
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Creates a new instance of a chunk reader with the specified file offset.
-		 *
-		 * @param fileOffset  the offset to the start of the chunk data in the input file.
-		 * @since 1.0
-		 */
-
-		private ChunkReader(long fileOffset)
-		{
-			this.fileOffset = fileOffset;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : Chunk.IReader interface
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Resets the chunk reader before any reading is performed, by seeking the start of the chunk data in the input
-		 * file.
-		 *
-		 * @throws IOException
-		 *           if an I/O error occurs.
-		 * @since  1.0
-		 */
-
-		@Override
-		public void reset()
-			throws IOException
-		{
-			raFile.seek(fileOffset);
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Returns the {@linkplain RandomAccessFile random-access file} from which the chunk data is read.
-		 *
-		 * @return the random-access file from which the chunk data will be read.
-		 * @since  1.0
-		 */
-
-		@Override
-		public DataInput getDataInput()
-		{
-			return raFile;
-		}
-
-		//--------------------------------------------------------------
-
-	}
-
-	//==================================================================
+	private static final	int		BYTE_ORDER_MASK	= 1 << 0;
 
 ////////////////////////////////////////////////////////////////////////
 //  Instance variables
@@ -269,13 +133,16 @@ public class Document
 	/**
 	 * Creates a new instance of a document with the specified byte order.
 	 *
-	 * @param littleEndian  if {@code true}, the byte order of <i>size</i> fields in the document will be little-endian;
-	 *                      if {@code false}, the byte order will be big-endian.
+	 * @param littleEndian
+	 *          if {@code true}, the byte order of <i>size</i> fields in the document will be little-endian; if {@code
+	 *          false}, the byte order will be big-endian.
 	 * @since 1.0
 	 */
 
-	public Document(boolean littleEndian)
+	public Document(
+		boolean	littleEndian)
 	{
+		// Initialise instance variables
 		this.littleEndian = littleEndian;
 		rewrites = new ArrayList<>();
 	}
@@ -320,14 +187,16 @@ public class Document
 	 * Creates a general {@linkplain Chunk chunk} with the specified identifier.  The chunk will belong to this document
 	 * and mau be added only to a list that belongs to this document.
 	 *
-	 * @param  id  the identifier of the chunk.
-	 * @return a general chunk with identifier <b>{@code id}</b> that belongs to this document.
+	 * @param  id
+	 *           the identifier of the chunk.
+	 * @return a general chunk with identifier {@code id} that belongs to this document.
 	 * @throws NlfUncheckedException
-	 *           RESERVED_IDENTIFIER: if <b>{@code id}</b> is a reserved identifier.
+	 *           RESERVED_IDENTIFIER: if {@code id} is a reserved identifier.
 	 * @since  1.0
 	 */
 
-	public Chunk createChunk(Id id)
+	public Chunk createChunk(
+		Id	id)
 		throws NlfUncheckedException
 	{
 		// Test for reserved ID
@@ -345,14 +214,16 @@ public class Document
 	 * this document: it may contain only chunks and lists that belong to this document, and it may be added only to
 	 * another list that belongs to this document.
 	 *
-	 * @param  instanceId  the list-instance identifier of the list.
-	 * @return a list with list-instance identifier <b>{@code instanceId}</b> that belongs to this document.
+	 * @param  instanceId
+	 *           the list-instance identifier of the list.
+	 * @return a list with list-instance identifier {@code instanceId} that belongs to this document.
 	 * @throws NlfUncheckedException
-	 *           RESERVED_IDENTIFIER: if <b>{@code instanceId}</b> is a reserved identifier.
+	 *           RESERVED_IDENTIFIER: if {@code instanceId} is a reserved identifier.
 	 * @since  1.0
 	 */
 
-	public ChunkList createList(Id instanceId)
+	public ChunkList createList(
+		Id	instanceId)
 		throws NlfUncheckedException
 	{
 		// Test for reserved ID
@@ -370,15 +241,17 @@ public class Document
 	 * document will be set to the list that is created by this method.  The list will be belong to this document and
 	 * may contain only chunks and lists that belong to this document.
 	 *
-	 * @param  instanceId  the list-instance identifier of the root list.
-	 * @return a list with list-instance identifier <b>{@code instanceId}</b> that belongs to this document and that has
+	 * @param  instanceId
+	 *           the list-instance identifier of the root list.
+	 * @return a list with list-instance identifier {@code instanceId} that belongs to this document and that has
 	 *         been set as the root list of this document.
 	 * @throws NlfUncheckedException
-	 *           RESERVED_IDENTIFIER: if <b>{@code instanceId}</b> is a reserved identifier.
+	 *           RESERVED_IDENTIFIER: if {@code instanceId} is a reserved identifier.
 	 * @since  1.0
 	 */
 
-	public ChunkList createRootList(Id instanceId)
+	public ChunkList createRootList(
+		Id	instanceId)
 		throws NlfUncheckedException
 	{
 		rootList = createList(instanceId);
@@ -397,7 +270,8 @@ public class Document
 	 * each chunk to allow its data to be read from the file.
 	 * </p>
 	 *
-	 * @param  file  the file that will be read.
+	 * @param  file
+	 *           the file that will be read.
 	 * @throws NlfException
 	 *           if
 	 *           <ul>
@@ -410,7 +284,8 @@ public class Document
 	 * @since  1.0
 	 */
 
-	public void read(File file)
+	public void read(
+		File	file)
 		throws NlfException, NlfUncheckedException
 	{
 		// Test whether a file is already open
@@ -495,7 +370,8 @@ public class Document
 	 * prior to renaming the temporary file.
 	 * </p>
 	 *
-	 * @param  file  the file that will be written.
+	 * @param  file
+	 *           the file that will be written.
 	 * @throws NlfException
 	 *           if
 	 *           <ul>
@@ -509,7 +385,8 @@ public class Document
 	 * @since  1.0
 	 */
 
-	public void write(File file)
+	public void write(
+		File	file)
 		throws NlfException, NlfUncheckedException
 	{
 		// Test whether a file is already open
@@ -717,13 +594,11 @@ public class Document
 		org.w3c.dom.Document xmlDocument = null;
 		try
 		{
-			DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newNSInstance();
 			docBuilderFactory.setValidating(false);
-			docBuilderFactory.setNamespaceAware(true);
 			DocumentBuilder documentBuilder = docBuilderFactory.newDocumentBuilder();
-			xmlDocument = documentBuilder.getDOMImplementation().createDocument(rootList.getLocalNamespaceName(),
-																				rootList.getInstanceId().getValue(),
-																				null);
+			xmlDocument = documentBuilder.getDOMImplementation()
+					.createDocument(rootList.getLocalNamespaceName(), rootList.getInstanceId().getValue(), null);
 		}
 		catch (Throwable e)
 		{
@@ -754,17 +629,20 @@ public class Document
 	 * Traverses the document tree in the specified order, calling the specified processor on each chunk that is
 	 * visited.
 	 *
-	 * @param  traversalOrder  the order, breadth-first or depth-first, in which the tree will be traversed.
-	 * @param  processor       the processor that will be called on each chunk that is visited.
+	 * @param  traversalOrder
+	 *           the order, breadth-first or depth-first, in which the tree will be traversed.
+	 * @param  processor
+	 *           the processor that will be called on each chunk that is visited.
 	 * @throws IllegalArgumentException
-	 *           if <b>{@code traversalOrder}</b> is {@code null} or <b>{@code processor}</b> is {@code null}.
+	 *           if {@code traversalOrder} is {@code null} or {@code processor} is {@code null}.
 	 * @throws TerminatedException
 	 *           if the traversal of the tree was terminated.
 	 * @since  1.0
 	 */
 
-	public void processChunks(NlfConstants.TraversalOrder traversalOrder,
-							  Chunk.IProcessor            processor)
+	public void processChunks(
+		NlfConstants.TraversalOrder	traversalOrder,
+		Chunk.IProcessor			processor)
 	{
 		// Validate arguments
 		if ((traversalOrder == null) || (processor == null))
@@ -780,7 +658,8 @@ public class Document
 	/**
 	 * Parses a Nested-List File document, constructing the list tree for the document.
 	 *
-	 * @param  file  the file that will be parsed.
+	 * @param  file
+	 *           the file that will be parsed.
 	 * @throws IOException
 	 *           if an error occurs when parsing the document.
 	 * @throws NlfException
@@ -788,7 +667,8 @@ public class Document
 	 * @since  1.0
 	 */
 
-	private void parse(File file)
+	private void parse(
+		File	file)
 		throws IOException, NlfException
 	{
 		// Test for file header
@@ -837,8 +717,10 @@ public class Document
 	 * otherwise, a {@link Chunk} is created, initialised and added to the specified parent list.  This method returns
 	 * the chunk or list that was created.
 	 *
-	 * @param  file    the file that will be parsed.
-	 * @param  parent  the list that will be the parent of the chunk or list that is created.
+	 * @param  file
+	 *           the file that will be parsed.
+	 * @param  parent
+	 *           the list that will be the parent of the chunk or list that is created.
 	 * @return the chunk or list that was created.
 	 * @throws IOException
 	 *           if an error occurs when parsing the chunk.
@@ -849,8 +731,9 @@ public class Document
 	 * @see    #parseList(File, ChunkList, long)
 	 */
 
-	private Chunk parseChunk(File      file,
-							 ChunkList parent)
+	private Chunk parseChunk(
+		File		file,
+		ChunkList	parent)
 		throws IOException, NlfException
 	{
 		// Get file offset and length
@@ -918,9 +801,12 @@ public class Document
 	 * initialised and added to the specified parent list.  This method returns the {@code Attributes} object that was
 	 * created.
 	 *
-	 * @param  file    the file that will be parsed.
-	 * @param  parent  the list that will be the parent of the attributes chunk that is created.
-	 * @param  size    the size of the chunk.
+	 * @param  file
+	 *           the file that will be parsed.
+	 * @param  parent
+	 *           the list that will be the parent of the attributes chunk that is created.
+	 * @param  size
+	 *           the size of the chunk.
 	 * @return the attributes chunk that was created.
 	 * @throws IOException
 	 *           if an error occurs when parsing the chunk.
@@ -930,9 +816,10 @@ public class Document
 	 * @see    #parseChunk(File, ChunkList)
 	 */
 
-	private Attributes parseAttributes(File      file,
-									   ChunkList parent,
-									   long      size)
+	private Attributes parseAttributes(
+		File		file,
+		ChunkList	parent,
+		long		size)
 		throws IOException, NlfException
 	{
 		// Get file offset and end offset
@@ -1020,9 +907,12 @@ public class Document
 	 * to the specified parent list, then the list's child chunks are parsed recursively with {@link #parseChunk(File,
 	 * ChunkList)}.  This method returns the {@code ChunkList} object that was created.
 	 *
-	 * @param  file    the file that will be parsed.
-	 * @param  parent  the list that will be the parent of the list that is created.
-	 * @param  size    the size of the list.
+	 * @param  file
+	 *           the file that will be parsed.
+	 * @param  parent
+	 *           the list that will be the parent of the list that is created.
+	 * @param  size
+	 *           the size of the list.
 	 * @return the list that was created.
 	 * @throws IOException
 	 *           if an error occurs when parsing the chunk list.
@@ -1032,9 +922,10 @@ public class Document
 	 * @see    #parseChunk(File, ChunkList)
 	 */
 
-	private ChunkList parseList(File      file,
-								ChunkList parent,
-								long      size)
+	private ChunkList parseList(
+		File		file,
+		ChunkList	parent,
+		long		size)
 		throws IOException, NlfException
 	{
 		// Get file offset and end offset
@@ -1164,7 +1055,8 @@ public class Document
 	/**
 	 * Writes the specified chunk to the random-access file that is open on this document.
 	 *
-	 * @param  chunk  the chunk that will be written.
+	 * @param  chunk
+	 *           the chunk that will be written.
 	 * @throws IOException
 	 *           if an error occurs when writing the chunk to the random-access file.
 	 * @since  1.0
@@ -1172,7 +1064,8 @@ public class Document
 	 * @see    #writeList(ChunkList)
 	 */
 
-	private void writeChunk(Chunk chunk)
+	private void writeChunk(
+		Chunk	chunk)
 		throws IOException
 	{
 		// Write chunk header
@@ -1201,16 +1094,19 @@ public class Document
 	 * Seeks to the specified offset in the random-access file that is open on this document, then writes the specified
 	 * chunk to the file.
 	 *
-	 * @param  chunk   the chunk that will be written.
-	 * @param  offset  the offset in the random-access file at which the chunk will be written.
+	 * @param  chunk
+	 *           the chunk that will be written.
+	 * @param  offset
+	 *           the offset in the random-access file at which the chunk will be written.
 	 * @throws IOException
 	 *           if an error occurs when seeking or when writing the chunk to the random-access file.
 	 * @since  1.0
 	 * @see    #writeChunk(Chunk)
 	 */
 
-	private void rewriteChunk(Chunk chunk,
-							  long  offset)
+	private void rewriteChunk(
+		Chunk	chunk,
+		long	offset)
 		throws IOException
 	{
 		// Seek start of chunk data
@@ -1227,14 +1123,16 @@ public class Document
 	/**
 	 * Writes the specified chunk list to the random-access file that is open on this document.
 	 *
-	 * @param  list  the chunk list that will be written.
+	 * @param  list
+	 *           the chunk list that will be written.
 	 * @throws IOException
 	 *           if an error occurs when writing the chunk list to the random-access file.
 	 * @since  1.0
 	 * @see    #writeChunk(Chunk)
 	 */
 
-	private void writeList(ChunkList list)
+	private void writeList(
+		ChunkList	list)
 		throws IOException
 	{
 		// Write chunk header of list
@@ -1273,8 +1171,10 @@ public class Document
 	 * open on this document.  The size of the chunk is calculated from the current file position and the specified
 	 * start offset.  The size of the chunk is set, then the size is written to the chunk header in the file.
 	 *
-	 * @param  chunk        the chunk whose size will be fixed up.
-	 * @param  startOffset  the start offset of the chunk data in the file.
+	 * @param  chunk
+	 *           the chunk whose size will be fixed up.
+	 * @param  startOffset
+	 *           the start offset of the chunk data in the file.
 	 * @throws IOException
 	 *           if an I/O error occurs.
 	 * @since  1.0
@@ -1282,8 +1182,9 @@ public class Document
 	 * @see    #writeList(ChunkList)
 	 */
 
-	private void fixChunkSize(Chunk chunk,
-							  long  startOffset)
+	private void fixChunkSize(
+		Chunk	chunk,
+		long	startOffset)
 		throws IOException
 	{
 		long endOffset = raFile.getFilePointer();
@@ -1294,6 +1195,120 @@ public class Document
 	}
 
 	//------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////
+//  Member records
+////////////////////////////////////////////////////////////////////////
+
+
+	// RECORD: PAIRING OF CHUNK AND FILE OFFSET
+
+
+	/**
+	 * This class implements a pairing of a chunk and a file offset.  It is used as the element type in the list of
+	 * chunks that have requested to be rewritten on the second pass of the document writer.
+	 *
+	 * @param chunk
+	 *          the chunk.
+	 * @param offset
+	 *          the file offset.
+	 * @since 1.0
+	 */
+
+	private record ChunkOffset(
+		Chunk	chunk,
+		long	offset)
+	{ }
+
+	//==================================================================
+
+////////////////////////////////////////////////////////////////////////
+//  Member classes : inner classes
+////////////////////////////////////////////////////////////////////////
+
+
+	// CLASS: CHUNK READER
+
+
+	/**
+	 * This class implements a {@linkplain Chunk.IReader reader} for a chunk, which can be used by the chunk to read its
+	 * data from the random-access file that was opened on a document.
+	 *
+	 * @since 1.0
+	 * @see   Chunk#getReader()
+	 * @see   Chunk#setReader(Chunk.IReader)
+	 */
+
+	private class ChunkReader
+		implements Chunk.IReader
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	long	fileOffset;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * Creates a new instance of a chunk reader with the specified file offset.
+		 *
+		 * @param fileOffset
+		 *          the offset to the start of the chunk data in the input file.
+		 * @since 1.0
+		 */
+
+		private ChunkReader(
+			long	fileOffset)
+		{
+			this.fileOffset = fileOffset;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : Chunk.IReader interface
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * Resets the chunk reader before any reading is performed, by seeking the start of the chunk data in the input
+		 * file.
+		 *
+		 * @throws IOException
+		 *           if an I/O error occurs.
+		 * @since  1.0
+		 */
+
+		@Override
+		public void reset()
+			throws IOException
+		{
+			raFile.seek(fileOffset);
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Returns the {@linkplain RandomAccessFile random-access file} from which the chunk data is read.
+		 *
+		 * @return the random-access file from which the chunk data will be read.
+		 * @since  1.0
+		 */
+
+		@Override
+		public DataInput getDataInput()
+		{
+			return raFile;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
 
 }
 

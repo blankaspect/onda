@@ -190,25 +190,25 @@ public class NonEditableTextPaneDialog
 ////////////////////////////////////////////////////////////////////////
 
 	protected NonEditableTextPaneDialog(Window owner,
-										String titleStr,
+										String title,
 										String key,
 										int    numColumns,
 										int    numRows)
 	{
-		this(owner, titleStr, key, numColumns, numRows, false);
+		this(owner, title, key, numColumns, numRows, false);
 	}
 
 	//------------------------------------------------------------------
 
 	protected NonEditableTextPaneDialog(Window  owner,
-										String  titleStr,
+										String  title,
 										String  key,
 										int     numColumns,
 										int     numRows,
 										boolean canClear)
 	{
 		// Call superclass constructor
-		super(owner, titleStr, key, numColumns, numRows, getCommands(canClear), Command.CLOSE);
+		super(owner, title, key, numColumns, numRows, getCommands(canClear), Command.CLOSE);
 
 		// Initialise instance variables
 		this.canClear = canClear;

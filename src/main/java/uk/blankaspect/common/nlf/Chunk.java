@@ -69,554 +69,16 @@ public class Chunk
 	public static final	long	MAX_SIZE	= (1L << 62) - 1;
 
 ////////////////////////////////////////////////////////////////////////
-//  Member interfaces
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
-
-	// INTERFACE: CHUNK-DATA READER
-
-
-	/**
-	 * This interface defines the methods that must be implemented by a class that reads chunk data from a data input.
-	 * The data input is likely to be an instance of {@link RandomAccessFile}.
-	 *
-	 * @since 1.0
-	 * @see   #getReader()
-	 * @see   #setReader(Chunk.IReader)
-	 */
-
-	public interface IReader
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Methods
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Resets the chunk reader before any reading is performed.
-		 *
-		 * @throws IOException
-		 *           if an I/O error occurs.
-		 * @since  1.0
-		 */
-
-		void reset()
-			throws IOException;
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Returns the data input from which the chunk data will be read.  The input is likely to be an instance of
-		 * {@link RandomAccessFile}.
-		 *
-		 * @return the data input from which the chunk data will be read.
-		 * @since  1.0
-		 */
-
-		DataInput getDataInput();
-
-		//--------------------------------------------------------------
-
-	}
-
-	//==================================================================
-
-
-	// INTERFACE: CHUNK-DATA WRITER
-
-
-	/**
-	 * This interface defines the methods that must be implemented by a class that writes chunk data to a data output.
-	 * The data output is likely to be an instance of {@link RandomAccessFile}.
-	 * <p>
-	 * The recommended way of writing a Nested-List File is with the {@link Document#write(File)} method, which writes a
-	 * document in two passes.  It uses the value that is returned by the {@link #reset(int)} method on the first pass
-	 * to determine whether a chunk should be rewritten on the second pass.
-	 * </p>
-	 *
-	 * @since 1.0
-	 * @see   #getWriter()
-	 * @see   #setWriter(Chunk.IWriter)
-	 */
-
-	public interface IWriter
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Methods
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Resets this chunk writer before any writing is performed.  The writer is reset at the start of each pass of
-		 * the document writer.
-		 *
-		 * @param  pass  the index of the pass (0 = first pass, 1 = second pass) of the document writer that calls this
-		 *               method.
-		 * @return {@code true} on the first pass if the chunk should be rewritten on the second pass; {@code false}
-		 *         otherwise.
-		 * @throws IOException
-		 *           if an I/O error occurs.
-		 * @since  1.0
-		 */
-
-		boolean reset(int pass)
-			throws IOException;
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Returns the length (size) of the chunk in bytes.
-		 *
-		 * @return the length (size) of the chunk in bytes.
-		 * @since  1.0
-		 */
-
-		long getLength();
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Writes the chunk data to the specified data output.  The data output is likely to be an instance of {@link
-		 * RandomAccessFile}.
-		 *
-		 * @param  dataOutput  the data output to which the chunk data will be written.
-		 * @throws IOException
-		 *           if an I/O error occurs.
-		 * @since  1.0
-		 */
-
-		void write(DataOutput dataOutput)
-			throws IOException;
-
-		//--------------------------------------------------------------
-
-	}
-
-	//==================================================================
-
-
-	// INTERFACE: CHUNK-DATA ENCODER
-
-
-	/**
-	 * This interface defines the methods that must be implemented by a class that encodes chunk data as character data
-	 * for use as a text node of an XML file.  The encoder is used by the chunk's {@link #toXml(org.w3c.dom.Document)}
-	 * method.
-	 *
-	 * @since 1.0
-	 * @see   #getEncoder()
-	 * @see   #setEncoder(Chunk.IEncoder)
-	 */
-
-	public interface IEncoder
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Methods
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Resets this chunk encoder before any encoding is performed.
-		 *
-		 * @since 1.0
-		 */
-
-		void reset();
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Returns the length of a block of input data that the {@link #encode(byte[], int, int, boolean)} method
-		 * expects to receive.  A value of zero indicates that the {@code encode} method will accept a block of any
-		 * length.
-		 *
-		 * @param  size  the size of the chunk data.
-		 * @return the length of a block of input data that the {@link #encode(byte[], int, int, boolean) encode} method
-		 *         expects to receive; {@code 0}, if the {@code encode} method will accept a block of any length.
-		 * @since  1.0
-		 */
-
-		int getInputLength(long size);
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Encodes the specified byte data as a string.  When this encoder is used by the chunk's {@link
-		 * #toXml(org.w3c.dom.Document)} method, this method will be called on successive blocks of the chunk data.
-		 *
-		 * @param  data       the data that will be encoded.
-		 * @param  offset     the offset to <b>{@code data}</b> at which the input data begin.
-		 * @param  length     the length of the input data.
-		 * @param  endOfInput {@code true} if <b>{@code data}</b> is the last block to be encoded; {@code false}
-		 *                    otherwise.
-		 * @return the string that results from encoding <b>{@code data}</b>.
-		 * @throws IllegalArgumentException
-		 *           if
-		 *           <ul>
-		 *             <li>any of the arguments are invalid, or</li>
-		 *             <li>the input data is malformed or otherwise illegal.</li>
-		 *           </ul>
-		 * @since  1.0
-		 */
-
-		String encode(byte[]  data,
-					  int     offset,
-					  int     length,
-					  boolean endOfInput);
-
-		//--------------------------------------------------------------
-
-	}
-
-	//==================================================================
-
-
-	// INTERFACE: CHUNK PROCESSOR
-
-
-	/**
-	 * This functional interface defines the method that must be implemented by a class that processes the chunks that
-	 * are visited in the traversal of a document tree or subtree.
-	 *
-	 * @since 1.0
-	 * @see   ChunkList#processChunks(NlfConstants.TraversalOrder, Chunk.IProcessor)
-	 * @see   Document#processChunks(NlfConstants.TraversalOrder, Chunk.IProcessor)
-	 */
-
-	@FunctionalInterface
-	public interface IProcessor
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Methods
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Processes the specified chunk.  During the traversal of a document tree or subtree, this method is called on
-		 * every chunk that is visited.
-		 * <p>
-		 * A processor that wants to terminate the traversal of the tree should throw a {@link TerminatedException},
-		 * which can wrap another {@code Throwable}.
-		 * </p>
-		 *
-		 * @param  chunk  the chunk that will be processed.
-		 * @throws TerminatedException
-		 *           if the traversal of the tree or subtree was terminated.
-		 * @since  1.0
-		 * @see    TerminatedException
-		 */
-
-		void process(Chunk chunk);
-
-		//--------------------------------------------------------------
-
-	}
-
-	//==================================================================
-
-////////////////////////////////////////////////////////////////////////
-//  Member classes : non-inner classes
-////////////////////////////////////////////////////////////////////////
-
-
-	// CLASS: BASE64 ENCODER
-
-
-	/**
-	 * This singleton class implements a Base64 encoder for chunk data.  It is set as the default encoder on all general
-	 * chunks (ie, chunks that do not have a reserved identifier).  The length of a line of output from the encoder and
-	 * the string that terminates each line can both be set on the single instance of the class.  The default line
-	 * length of zero means that no line separators will be appended to the encoded output.
-	 * <p>
-	 * A chunk's encoder is used by the {@link #toXml(org.w3c.dom.Document)} method to encode the chunk data as the
-	 * character data of an XML element.
-	 * </p>
-	 *
-	 * @since 1.0
-	 * @see   IEncoder
-	 */
-
-	public static class Base64Encoder
-		implements IEncoder
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		/** The single instance of this class. */
-		public static final		Base64Encoder	INSTANCE	= new Base64Encoder();
-
-		private static final	int	MIN_LINE_LENGTH	= 0;
-		private static final	int	MAX_LINE_LENGTH	= Integer.MAX_VALUE;
-
-		private static final	String	LINE_SEPARATOR_PROPERTY_KEY	= "line.separator";
-
-		private static final	String	DEFAULT_LINE_SEPARATOR	= "\n";
-
-		private static final	String	BASE64_CHARS	=
-													"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Creates a new instance of a Base64 encoder.  This is a singleton class; its only instance is {@link
-		 * #INSTANCE}.
-		 *
-		 * @since 1.0
-		 */
-
-		private Base64Encoder()
-		{
-			setLineSeparator(null);
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Class methods
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Encodes three bytes as four Base64 characters.
-		 *
-		 * @param  data  the three bytes that are to be encoded.
-		 * @return an array of four characters that is the result of encoding the three input bytes as Base64.
-		 * @since  1.0
-		 */
-
-		private static char[] getChars(int data)
-		{
-			char[] chars = new char[4];
-			for (int j = 3; j >= 0; j--)
-			{
-				chars[j] = BASE64_CHARS.charAt(data & 0x3F);
-				data >>>= 6;
-			}
-			return chars;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : IEncoder interface
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Resets this encoder before any encoding is performed: does nothing.
-		 *
-		 * @since 1.0
-		 */
-
-		@Override
-		public void reset()
-		{
-			// do nothing
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Returns the length of a block of input data that the {@link #encode(byte[], int, int, boolean)} method
-		 * expects to receive.
-		 *
-		 * @param  size  the size of the chunk data.
-		 * @return the length of a block of input data that the {@code encode(byte[], int, int, boolean)} method expects
-		 *         to receive.
-		 * @since  1.0
-		 */
-
-		@Override
-		public int getInputLength(long size)
-		{
-			return (lineLength / 4 * 3);
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Encodes the specified byte data as a Base64 string.  The line length and line separator that are used in the
-		 * encoding can be set with {@link #setLineLength(int)} and {@link #setLineSeparator(String)} respectively.
-		 *
-		 * @param  data       the data that will be encoded.
-		 * @param  offset     the offset to <b>{@code data}</b> at which the input data begin.
-		 * @param  length     the length of the input data.
-		 * @param  endOfInput {@code true} if <b>{@code data}</b> is the last block to be encoded; {@code false}
-		 *                    otherwise.
-		 * @return the string that results from encoding <b>{@code data}</b>.
-		 * @throws IllegalArgumentException
-		 *           if
-		 *           <ul>
-		 *             <li><b>{@code data}</b> is {@code null}, or</li>
-		 *             <li>{@code (offset < 0)} or {@code (offset > data.length)}, or</li>
-		 *             <li>{@code (length < 0)} or {@code (length > data.length - offset)}.</li>
-		 *           </ul>
-		 * @since  1.0
-		 */
-
-		@Override
-		public String encode(byte[]  data,
-							 int     offset,
-							 int     length,
-							 boolean endOfInput)
-		{
-			// Validate arguments
-			if ((data == null) || (offset < 0) || (offset > data.length) ||
-				 (length < 0) || (length > data.length - offset))
-				throw new IllegalArgumentException();
-
-			// Encode input data as Base64
-			StringBuilder outBuffer = new StringBuilder(4 * length / 3);
-			int inBuffer = 0;
-			int inBufferLength = 0;
-			int numChars = 0;
-			int endOffset = offset + length;
-			while (offset < endOffset)
-			{
-				inBuffer <<= 8;
-				inBuffer |= data[offset++] & 0xFF;
-				if (++inBufferLength >= 3)
-				{
-					numChars = appendChars(outBuffer, getChars(inBuffer), numChars);
-					inBuffer = 0;
-					inBufferLength = 0;
-				}
-			}
-			if (inBufferLength > 0)
-			{
-				inBuffer <<= (3 - inBufferLength) << 3;
-				char[] chars = getChars(inBuffer);
-				for (int i = inBufferLength; i < chars.length; i++)
-					chars[i] = '=';
-				appendChars(outBuffer, chars, numChars);
-			}
-			if (lineLength > 0)
-				outBuffer.append(lineSeparator);
-			return outBuffer.toString();
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Returns the length of a line of encoded output.
-		 *
-		 * @return the length of a line of encoded output.
-		 * @since  1.0
-		 * @see    #setLineLength(int)
-		 */
-
-		public int getLineLength()
-		{
-			return lineLength;
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Returns the string that is appended to each line of encoded output.
-		 *
-		 * @return the string that is appended to each line of encoded output.
-		 * @since  1.0
-		 * @see    #setLineSeparator(String)
-		 */
-
-		public String getLineSeparator()
-		{
-			return lineSeparator;
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Sets the length of a Base64-encoded line.  If the length is set to zero, no line separators are appended to
-		 * the encoded output.  The length must be a multiple of {@code 4}.
-		 *
-		 * @param  lineLength  the length of a Base64-encoded line, or {@code 0} if no line separators will be appended
-		 *                     to the encoded output.  The length must be a multiple of {@code 4}.
-		 * @throws IllegalArgumentException
-		 *           if <b>{@code lineLength}</b> is negative or is not a multiple of {@code 4}.
-		 * @since  1.0
-		 * @see    #getLineLength()
-		 */
-
-		public void setLineLength(int lineLength)
-		{
-			if ((lineLength < MIN_LINE_LENGTH) || (lineLength > MAX_LINE_LENGTH) || (lineLength % 4 != 0))
-				throw new IllegalArgumentException();
-			this.lineLength = lineLength;
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Sets the string that is appended to each line of encoded output.
-		 *
-		 * @param lineSeparator  the string that will be appended to each line of encoded output.  If <b>{@code
-		 *                       lineSeparator}</b> is {@code null}, the line separator is set to the value of the
-		 *                       system property {@code line.separator}.
-		 * @since 1.0
-		 * @see   #getLineSeparator()
-		 */
-
-		public void setLineSeparator(String lineSeparator)
-		{
-			this.lineSeparator = (lineSeparator == null)
-											? System.getProperty(LINE_SEPARATOR_PROPERTY_KEY, DEFAULT_LINE_SEPARATOR)
-											: lineSeparator;
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Appends characters to the specified buffer.
-		 *
-		 * @param  buffer    the buffer to which the characters will be appended.
-		 * @param  chars     the characters that will be appended.
-		 * @param  numChars  the number of encoded characters in the buffer.
-		 * @return the updated number of encoded characters in the buffer after <b>{@code chars}</b> have been appended.
-		 * @since  1.0
-		 */
-
-		private int appendChars(StringBuilder buffer,
-								char[]        chars,
-								int           numChars)
-		{
-			if (lineLength == 0)
-			{
-				buffer.append(chars);
-				numChars += chars.length;
-			}
-			else
-			{
-				for (char ch : chars)
-				{
-					if ((numChars > 0) && (numChars % lineLength == 0))
-						buffer.append(lineSeparator);
-					buffer.append(ch);
-					++numChars;
-				}
-			}
-			return numChars;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	int		lineLength;
-		private	String	lineSeparator;
-
-	}
-
-	//==================================================================
+	private	Document	document;
+	private	ChunkList	parent;
+	private	Id			id;
+	private	long		size;
+	private	IReader		reader;
+	private	IWriter		writer;
+	private	IEncoder	encoder;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -626,14 +88,18 @@ public class Chunk
 	 * Creates a new instance of a chunk with the specified owner document and identifier.  A Base64 encoder is set as
 	 * the default encoder.
 	 *
-	 * @param document  the {@linkplain Document document} to which the chunk will belong.
-	 * @param id        the chunk identifier.
+	 * @param document
+	 *          the {@linkplain Document document} to which the chunk will belong.
+	 * @param id
+	 *          the chunk identifier.
 	 * @since 1.0
 	 */
 
-	protected Chunk(Document document,
-					Id       id)
+	protected Chunk(
+		Document	document,
+		Id			id)
 	{
+		// Initialise instance variables
 		this.document = document;
 		this.id = id;
 		size = -1;
@@ -655,32 +121,43 @@ public class Chunk
 	 * The result is
 	 * </p>
 	 * <ul>
-	 *   <li>a negative integer if the identifier of this chunk lexicographically precedes the identifier of the
-	 *       argument;</li>
-	 *   <li>a positive integer if the identifier of this chunk lexicographically succeeds the identifier of the
-	 *       argument;</li>
-	 *   <li>zero if the identifiers of the two chunks are equal.</li>
+	 *   <li>
+	 *     a negative integer if the identifier of this chunk lexicographically precedes the identifier of the argument;
+	 *   </li>
+	 *   <li>
+	 *     a positive integer if the identifier of this chunk lexicographically succeeds the identifier of the argument;
+	 *   </li>
+	 *   <li>
+	 *     zero if the identifiers of the two chunks are equal.
+	 *   </li>
 	 * </ul>
 	 * <p>
 	 * Because of the restrictions on identifiers, special chunks (ie, chunks with reserved identifiers) will always
 	 * precede general chunks (ie, chunks with non-reserved identifiers).
 	 * </p>
 	 *
-	 * @param  chunk  the chunk with which this chunk will be compared.
+	 * @param  chunk
+	 *           the chunk with which this chunk will be compared.
 	 * @return <ul>
-	 *           <li>{@code 0} (zero) if the identifier of this chunk is equal to the identifier of <b>{@code
-	 *               chunk}</b>;</li>
-	 *           <li>a value less than {@code 0} if the identifier of this chunk is lexicographically less than the
-	 *               identifier of <b>{@code chunk}</b>;</li>
-	 *           <li>a value greater than {@code 0} if the identifier of this chunk is lexicographically greater than
-	 *               the identifier of <b>{@code chunk}</b>.</li>
+	 *           <li>
+	 *             {@code 0} (zero) if the identifier of this chunk is equal to the identifier of {@code chunk};
+	 *           </li>
+	 *           <li>
+	 *             a value less than {@code 0} if the identifier of this chunk is lexicographically less than the
+	 *             identifier of {@code chunk};
+	 *           </li>
+	 *           <li>
+	 *             a value greater than {@code 0} if the identifier of this chunk is lexicographically greater than the
+	 *             identifier of {@code chunk}.
+	 *           </li>
 	 *         </ul>
 	 * @since  1.0
 	 * @see    Id#compareTo(Id)
 	 */
 
 	@Override
-	public int compareTo(Chunk chunk)
+	public int compareTo(
+		Chunk	chunk)
 	{
 		return id.compareTo(chunk.id);
 	}
@@ -814,7 +291,8 @@ public class Chunk
 	 * @see   #updateSize()
 	 */
 
-	public void setSize(long size)
+	public void setSize(
+		long	size)
 	{
 		this.size = size;
 	}
@@ -830,7 +308,8 @@ public class Chunk
 	 * @see   #getReader()
 	 */
 
-	public void setReader(IReader reader)
+	public void setReader(
+		IReader	reader)
 	{
 		this.reader = reader;
 	}
@@ -846,7 +325,8 @@ public class Chunk
 	 * @see   #getWriter()
 	 */
 
-	public void setWriter(IWriter writer)
+	public void setWriter(
+		IWriter	writer)
 	{
 		this.writer = writer;
 	}
@@ -862,7 +342,8 @@ public class Chunk
 	 * @see   #getEncoder()
 	 */
 
-	public void setEncoder(IEncoder encoder)
+	public void setEncoder(
+		IEncoder	encoder)
 	{
 		this.encoder = encoder;
 	}
@@ -901,12 +382,14 @@ public class Chunk
 	/**
 	 * Adds the specified value to the size of this chunk.
 	 *
-	 * @param increment  the value that will be added to the size of this chunk.
+	 * @param increment
+	 *          the value that will be added to the size of this chunk.
 	 * @since 1.6
 	 * @see   #decrementSize(long)
 	 */
 
-	public void incrementSize(long increment)
+	public void incrementSize(
+		long	increment)
 	{
 		size += increment;
 	}
@@ -916,12 +399,14 @@ public class Chunk
 	/**
 	 * Subtracts the specified value from the size of this chunk.
 	 *
-	 * @param decrement  the value that will be subtracted from the size of this chunk.
+	 * @param decrement
+	 *          the value that will be subtracted from the size of this chunk.
 	 * @since 1.6
 	 * @see   #incrementSize(long)
 	 */
 
-	public void decrementSize(long decrement)
+	public void decrementSize(
+		long	decrement)
 	{
 		size -= decrement;
 	}
@@ -1023,13 +508,14 @@ public class Chunk
 	/**
 	 * Returns the size of this chunk as an array of bytes, with the specified byte order.
 	 *
-	 * @param  littleEndian  {@code true} if the byte order is little-endian; {@code false} if the byte order is
-	 *                       big-endian.
+	 * @param  littleEndian
+	 *           {@code true} if the byte order is little-endian; {@code false} if the byte order is big-endian.
 	 * @return the size of this chunk as an array of bytes.
 	 * @since  1.0
 	 */
 
-	public byte[] getSizeBytes(boolean littleEndian)
+	public byte[] getSizeBytes(
+		boolean	littleEndian)
 	{
 		byte[] buffer = new byte[SIZE_SIZE];
 		Utils.longToBytes(size, buffer, 0, buffer.length, littleEndian);
@@ -1041,13 +527,15 @@ public class Chunk
 	/**
 	 * Writes the header (identifier and size) of this chunk to the specified data output.
 	 *
-	 * @param  dataOutput  the data output to which the header of this chunk will be written.
+	 * @param  dataOutput
+	 *           the data output to which the header of this chunk will be written.
 	 * @throws IOException
 	 *           if an error occurs when writing the header to the data output.
 	 * @since  1.0
 	 */
 
-	public void writeHeader(DataOutput dataOutput)
+	public void writeHeader(
+		DataOutput	dataOutput)
 		throws IOException
 	{
 		// Write identifier
@@ -1063,7 +551,8 @@ public class Chunk
 	 * Generates an XML element of the specified XML document from this chunk and returns the result.  The chunk data is
 	 * obtained from the chunk's reader, and encoded as text with the chunk's encoder.
 	 *
-	 * @param  xmlDocument  the XML document that will be the owner of the element that is created.
+	 * @param  xmlDocument
+	 *           the XML document that will be the owner of the element that is created.
 	 * @return the XML element that is generated from this chunk.
 	 * @throws DOMException
 	 *           if an exception occurs when creating the XML element.
@@ -1078,7 +567,8 @@ public class Chunk
 	 * @since  1.0
 	 */
 
-	public Element toXml(org.w3c.dom.Document xmlDocument)
+	public Element toXml(
+		org.w3c.dom.Document	xmlDocument)
 		throws DOMException, IOException, NlfException
 	{
 		final	int	DEFAULT_INPUT_LENGTH	= 1024;
@@ -1131,11 +621,13 @@ public class Chunk
 	/**
 	 * Sets the parent of this chunk to the specified list.
 	 *
-	 * @param list  the list that will be set as the parent of this chunk.
+	 * @param list
+	 *          the list that will be set as the parent of this chunk.
 	 * @since 1.0
 	 */
 
-	protected void setParent(ChunkList list)
+	protected void setParent(
+		ChunkList	list)
 	{
 		parent = list;
 	}
@@ -1143,16 +635,584 @@ public class Chunk
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance variables
+//  Member interfaces
 ////////////////////////////////////////////////////////////////////////
 
-	private	Document	document;
-	private	ChunkList	parent;
-	private	Id			id;
-	private	long		size;
-	private	IReader		reader;
-	private	IWriter		writer;
-	private	IEncoder	encoder;
+
+	// INTERFACE: CHUNK-DATA READER
+
+
+	/**
+	 * This interface defines the methods that must be implemented by a class that reads chunk data from a data input.
+	 * The data input is likely to be an instance of {@link RandomAccessFile}.
+	 *
+	 * @since 1.0
+	 * @see   #getReader()
+	 * @see   #setReader(Chunk.IReader)
+	 */
+
+	public interface IReader
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Methods
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * Resets the chunk reader before any reading is performed.
+		 *
+		 * @throws IOException
+		 *           if an I/O error occurs.
+		 * @since  1.0
+		 */
+
+		void reset()
+			throws IOException;
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Returns the data input from which the chunk data will be read.  The input is likely to be an instance of
+		 * {@link RandomAccessFile}.
+		 *
+		 * @return the data input from which the chunk data will be read.
+		 * @since  1.0
+		 */
+
+		DataInput getDataInput();
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
+
+
+	// INTERFACE: CHUNK-DATA WRITER
+
+
+	/**
+	 * This interface defines the methods that must be implemented by a class that writes chunk data to a data output.
+	 * The data output is likely to be an instance of {@link RandomAccessFile}.
+	 * <p>
+	 * The recommended way of writing a Nested-List File is with the {@link Document#write(File)} method, which writes a
+	 * document in two passes.  It uses the value that is returned by the {@link #reset(int)} method on the first pass
+	 * to determine whether a chunk should be rewritten on the second pass.
+	 * </p>
+	 *
+	 * @since 1.0
+	 * @see   #getWriter()
+	 * @see   #setWriter(Chunk.IWriter)
+	 */
+
+	public interface IWriter
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Methods
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * Resets this chunk writer before any writing is performed.  The writer is reset at the start of each pass of
+		 * the document writer.
+		 *
+		 * @param  pass
+		 *           the index of the pass (0 = first pass, 1 = second pass) of the document writer that calls this
+		 *           method.
+		 * @return {@code true} on the first pass if the chunk should be rewritten on the second pass; {@code false}
+		 *         otherwise.
+		 * @throws IOException
+		 *           if an I/O error occurs.
+		 * @since  1.0
+		 */
+
+		boolean reset(
+			int	pass)
+			throws IOException;
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Returns the length (size) of the chunk in bytes.
+		 *
+		 * @return the length (size) of the chunk in bytes.
+		 * @since  1.0
+		 */
+
+		long getLength();
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Writes the chunk data to the specified data output.  The data output is likely to be an instance of {@link
+		 * RandomAccessFile}.
+		 *
+		 * @param  dataOutput
+		 *           the data output to which the chunk data will be written.
+		 * @throws IOException
+		 *           if an I/O error occurs.
+		 * @since  1.0
+		 */
+
+		void write(
+			DataOutput	dataOutput)
+			throws IOException;
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
+
+
+	// INTERFACE: CHUNK-DATA ENCODER
+
+
+	/**
+	 * This interface defines the methods that must be implemented by a class that encodes chunk data as character data
+	 * for use as a text node of an XML file.  The encoder is used by the chunk's {@link #toXml(org.w3c.dom.Document)}
+	 * method.
+	 *
+	 * @since 1.0
+	 * @see   #getEncoder()
+	 * @see   #setEncoder(Chunk.IEncoder)
+	 */
+
+	public interface IEncoder
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Methods
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * Resets this chunk encoder before any encoding is performed.
+		 *
+		 * @since 1.0
+		 */
+
+		void reset();
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Returns the length of a block of input data that the {@link #encode(byte[], int, int, boolean)} method
+		 * expects to receive.  A value of zero indicates that the {@code encode} method will accept a block of any
+		 * length.
+		 *
+		 * @param  size
+		 *           the size of the chunk data.
+		 * @return the length of a block of input data that the {@link #encode(byte[], int, int, boolean) encode} method
+		 *         expects to receive; {@code 0}, if the {@code encode} method will accept a block of any length.
+		 * @since  1.0
+		 */
+
+		int getInputLength(
+			long	size);
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Encodes the specified byte data as a string.  When this encoder is used by the chunk's {@link
+		 * #toXml(org.w3c.dom.Document)} method, this method will be called on successive blocks of the chunk data.
+		 *
+		 * @param  data
+		 *           the data that will be encoded.
+		 * @param  offset
+		 *           the offset to {@code data} at which the input data begin.
+		 * @param  length
+		 *           the length of the input data.
+		 * @param  endOfInput
+		 *           {@code true} if {@code data} is the last block to be encoded; {@code false} otherwise.
+		 * @return the string that results from encoding {@code data}.
+		 * @throws IllegalArgumentException
+		 *           if
+		 *           <ul>
+		 *             <li>any of the arguments are invalid, or</li>
+		 *             <li>the input data is malformed or otherwise illegal.</li>
+		 *           </ul>
+		 * @since  1.0
+		 */
+
+		String encode(
+			byte[]	data,
+			int		offset,
+			int		length,
+			boolean	endOfInput);
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
+
+
+	// INTERFACE: CHUNK PROCESSOR
+
+
+	/**
+	 * This functional interface defines the method that must be implemented by a class that processes the chunks that
+	 * are visited in the traversal of a document tree or subtree.
+	 *
+	 * @since 1.0
+	 * @see   ChunkList#processChunks(NlfConstants.TraversalOrder, Chunk.IProcessor)
+	 * @see   Document#processChunks(NlfConstants.TraversalOrder, Chunk.IProcessor)
+	 */
+
+	@FunctionalInterface
+	public interface IProcessor
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Methods
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * Processes the specified chunk.  During the traversal of a document tree or subtree, this method is called on
+		 * every chunk that is visited.
+		 * <p>
+		 * A processor that wants to terminate the traversal of the tree should throw a {@link TerminatedException},
+		 * which can wrap another {@code Throwable}.
+		 * </p>
+		 *
+		 * @param  chunk
+		 *           the chunk that will be processed.
+		 * @throws TerminatedException
+		 *           if the traversal of the tree or subtree was terminated.
+		 * @since  1.0
+		 * @see    TerminatedException
+		 */
+
+		void process(
+			Chunk	chunk);
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
+
+////////////////////////////////////////////////////////////////////////
+//  Member classes : non-inner classes
+////////////////////////////////////////////////////////////////////////
+
+
+	// CLASS: BASE64 ENCODER
+
+
+	/**
+	 * This singleton class implements a Base64 encoder for chunk data.  It is set as the default encoder on all general
+	 * chunks (ie, chunks that do not have a reserved identifier).  The length of a line of output from the encoder and
+	 * the string that terminates each line can both be set on the single instance of the class.  The default line
+	 * length of zero means that no line separators will be appended to the encoded output.
+	 * <p>
+	 * A chunk's encoder is used by the {@link #toXml(org.w3c.dom.Document)} method to encode the chunk data as the
+	 * character data of an XML element.
+	 * </p>
+	 *
+	 * @since 1.0
+	 * @see   IEncoder
+	 */
+
+	public static class Base64Encoder
+		implements IEncoder
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		/** The single instance of this class. */
+		public static final		Base64Encoder	INSTANCE	= new Base64Encoder();
+
+		private static final	int		MIN_LINE_LENGTH	= 0;
+		private static final	int		MAX_LINE_LENGTH	= Integer.MAX_VALUE;
+
+		private static final	String	LINE_SEPARATOR_PROPERTY_KEY	= "line.separator";
+
+		private static final	String	DEFAULT_LINE_SEPARATOR	= "\n";
+
+		private static final	String	BASE64_CHARS	=
+				"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	int		lineLength;
+		private	String	lineSeparator;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * Creates a new instance of a Base64 encoder.  This is a singleton class; its only instance is {@link
+		 * #INSTANCE}.
+		 *
+		 * @since 1.0
+		 */
+
+		private Base64Encoder()
+		{
+			setLineSeparator(null);
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Class methods
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * Encodes three bytes as four Base64 characters.
+		 *
+		 * @param  data
+		 *           the three bytes that are to be encoded.
+		 * @return an array of four characters that is the result of encoding the three input bytes as Base64.
+		 * @since  1.0
+		 */
+
+		private static char[] getChars(
+			int	data)
+		{
+			char[] chars = new char[4];
+			for (int j = 3; j >= 0; j--)
+			{
+				chars[j] = BASE64_CHARS.charAt(data & 0x3F);
+				data >>>= 6;
+			}
+			return chars;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : IEncoder interface
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * Resets this encoder before any encoding is performed: does nothing.
+		 *
+		 * @since 1.0
+		 */
+
+		@Override
+		public void reset()
+		{
+			// do nothing
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Returns the length of a block of input data that the {@link #encode(byte[], int, int, boolean)} method
+		 * expects to receive.
+		 *
+		 * @param  size
+		 *           the size of the chunk data.
+		 * @return the length of a block of input data that the {@code encode(byte[], int, int, boolean)} method expects
+		 *         to receive.
+		 * @since  1.0
+		 */
+
+		@Override
+		public int getInputLength(
+			long	size)
+		{
+			return (lineLength / 4 * 3);
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Encodes the specified byte data as a Base64 string.  The line length and line separator that are used in the
+		 * encoding can be set with {@link #setLineLength(int)} and {@link #setLineSeparator(String)} respectively.
+		 *
+		 * @param  data
+		 *           the data that will be encoded.
+		 * @param  offset
+		 *           the offset to {@code data} at which the input data begin.
+		 * @param  length
+		 *           the length of the input data.
+		 * @param  endOfInput
+		 *           {@code true} if {@code data} is the last block to be encoded; {@code false} otherwise.
+		 * @return the string that results from encoding {@code data}.
+		 * @throws IllegalArgumentException
+		 *           if
+		 *           <ul>
+		 *             <li>{@code data} is {@code null}, or</li>
+		 *             <li>{@code (offset < 0)} or {@code (offset > data.length)}, or</li>
+		 *             <li>{@code (length < 0)} or {@code (length > data.length - offset)}.</li>
+		 *           </ul>
+		 * @since  1.0
+		 */
+
+		@Override
+		public String encode(
+			byte[]	data,
+			int		offset,
+			int		length,
+			boolean	endOfInput)
+		{
+			// Validate arguments
+			if (data == null)
+				throw new IllegalArgumentException("Null data");
+			if ((offset < 0) || (offset > data.length))
+				throw new IllegalArgumentException("Offset out of bounds");
+			if ((length < 0) || (length > data.length - offset))
+				throw new IllegalArgumentException("Length out of bounds");
+
+			// Encode input data as Base64
+			StringBuilder outBuffer = new StringBuilder(4 * length / 3);
+			int inBuffer = 0;
+			int inBufferLength = 0;
+			int numChars = 0;
+			int endOffset = offset + length;
+			while (offset < endOffset)
+			{
+				inBuffer <<= 8;
+				inBuffer |= data[offset++] & 0xFF;
+				if (++inBufferLength >= 3)
+				{
+					numChars = appendChars(outBuffer, getChars(inBuffer), numChars);
+					inBuffer = 0;
+					inBufferLength = 0;
+				}
+			}
+			if (inBufferLength > 0)
+			{
+				inBuffer <<= (3 - inBufferLength) << 3;
+				char[] chars = getChars(inBuffer);
+				for (int i = inBufferLength; i < chars.length; i++)
+					chars[i] = '=';
+				appendChars(outBuffer, chars, numChars);
+			}
+			if (lineLength > 0)
+				outBuffer.append(lineSeparator);
+			return outBuffer.toString();
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * Returns the length of a line of encoded output.
+		 *
+		 * @return the length of a line of encoded output.
+		 * @since  1.0
+		 * @see    #setLineLength(int)
+		 */
+
+		public int getLineLength()
+		{
+			return lineLength;
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Returns the string that is appended to each line of encoded output.
+		 *
+		 * @return the string that is appended to each line of encoded output.
+		 * @since  1.0
+		 * @see    #setLineSeparator(String)
+		 */
+
+		public String getLineSeparator()
+		{
+			return lineSeparator;
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Sets the length of a Base64-encoded line.  If the length is set to zero, no line separators are appended to
+		 * the encoded output.  The length must be a multiple of {@code 4}.
+		 *
+		 * @param  lineLength
+		 *           the length of a Base64-encoded line, or {@code 0} if no line separators will be appended to the
+		 *           encoded output.  The length must be a multiple of {@code 4}.
+		 * @throws IllegalArgumentException
+		 *           if {@code lineLength} is negative or is not a multiple of {@code 4}.
+		 * @since  1.0
+		 * @see    #getLineLength()
+		 */
+
+		public void setLineLength(
+			int	lineLength)
+		{
+			if ((lineLength < MIN_LINE_LENGTH) || (lineLength > MAX_LINE_LENGTH) || (lineLength % 4 != 0))
+				throw new IllegalArgumentException();
+			this.lineLength = lineLength;
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Sets the string that is appended to each line of encoded output.
+		 *
+		 * @param lineSeparator
+		 *          the string that will be appended to each line of encoded output.  If {@code lineSeparator} is {@code
+		 *          null}, the line separator is set to the value of the system property {@code line.separator}.
+		 * @since 1.0
+		 * @see   #getLineSeparator()
+		 */
+
+		public void setLineSeparator(
+			String	lineSeparator)
+		{
+			this.lineSeparator = (lineSeparator == null)
+											? System.getProperty(LINE_SEPARATOR_PROPERTY_KEY, DEFAULT_LINE_SEPARATOR)
+											: lineSeparator;
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Appends characters to the specified buffer.
+		 *
+		 * @param  buffer
+		 *           the buffer to which the characters will be appended.
+		 * @param  chars
+		 *           the characters that will be appended.
+		 * @param  numChars
+		 *           the number of encoded characters in the buffer.
+		 * @return the updated number of encoded characters in the buffer after {@code chars} have been appended.
+		 * @since  1.0
+		 */
+
+		private int appendChars(
+			StringBuilder	buffer,
+			char[]			chars,
+			int				numChars)
+		{
+			if (lineLength == 0)
+			{
+				buffer.append(chars);
+				numChars += chars.length;
+			}
+			else
+			{
+				for (char ch : chars)
+				{
+					if ((numChars > 0) && (numChars % lineLength == 0))
+						buffer.append(lineSeparator);
+					buffer.append(ch);
+					++numChars;
+				}
+			}
+			return numChars;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
 
 }
 

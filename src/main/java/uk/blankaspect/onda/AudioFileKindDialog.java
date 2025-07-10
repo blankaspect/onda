@@ -19,7 +19,6 @@ package uk.blankaspect.onda;
 
 
 import java.awt.Component;
-import java.awt.Dialog;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -69,7 +68,7 @@ class AudioFileKindDialog
 ////////////////////////////////////////////////////////////////////////
 
 	private static final	String	TITLE_STR	= "Select output file kind";
-	private static final	String	OPTION_STR	= "AIFF, WAVE or Quit (A/W/Q) ?";
+	private static final	String	OPTION_STR	= "AIFF | WAVE | Quit (A/W/Q) ?";
 
 	private static final	String[]	PROMPT_STRS	=
 	{
@@ -90,9 +89,8 @@ class AudioFileKindDialog
 
 	private AudioFileKindDialog(Window owner)
 	{
-
 		// Call superclass constructor
-		super(owner, TITLE_STR, Dialog.ModalityType.APPLICATION_MODAL);
+		super(owner, TITLE_STR, ModalityType.APPLICATION_MODAL);
 
 		// Set icons
 		setIconImages(owner.getIconImages());
@@ -221,7 +219,7 @@ class AudioFileKindDialog
 		// Resize dialog to its preferred size
 		pack();
 
-		// Set location of dialog box
+		// Set location of dialog
 		if (location == null)
 			location = GuiUtils.getComponentLocation(this, owner);
 		setLocation(location);
@@ -231,7 +229,6 @@ class AudioFileKindDialog
 
 		// Show dialog
 		setVisible(true);
-
 	}
 
 	//------------------------------------------------------------------

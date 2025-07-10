@@ -25,14 +25,18 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
 import uk.blankaspect.common.filesystem.PathnameUtils;
+import uk.blankaspect.common.filesystem.PathUtils;
+
+import uk.blankaspect.common.function.IFunction1;
 
 import uk.blankaspect.common.misc.Tokeniser;
+
+import uk.blankaspect.common.string.StringUtils;
 
 //----------------------------------------------------------------------
 
@@ -43,6 +47,7 @@ import uk.blankaspect.common.misc.Tokeniser;
 /**
  * This class provides a means of parsing the command line of a program.  A command line consists of
  * <ul>
+ *   <li><i>subcommands</i>, which may have the prefix "--",</li>
  *   <li><i>options</i>, which have the prefix "--" and may have an argument, and</li>
  *   <li><i>non-option arguments</i> such as the pathnames of input files.</li>
  * </ul>
@@ -71,6 +76,7 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 	private enum State
 	{
 		ARGUMENT,
+		SUBCOMMAND,
 		OPTION,
 		OPTION_ARGUMENT,
 		NON_OPTION_ARGUMENT,
@@ -80,13 +86,29 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 	/** Error messages. */
 	private interface ErrorMsg
 	{
-		String	FILE_DOES_NOT_EXIST					= "The file does not exist.";
-		String	ERROR_READING_FILE					= "An error occurred when reading the file.";
-		String	UNCLOSED_QUOTATION					= "Line %d contains an unclosed quotation.";
-		String	INVALID_OPTION						= "'" + OPTION_PREFIX + "%s' is not a valid option.";
-		String	MISSING_OPTION_ARGUMENT				= "The '" + OPTION_PREFIX + "%s' option expects an argument.";
-		String	UNEXPECTED_OPTION_ARGUMENT			= "The '" + OPTION_PREFIX + "%s' option does not take an argument.";
-		String	OPTION_AFTER_NON_OPTION_ARGUMENT	= "All options must precede non-option arguments.";
+		String	FILE_DOES_NOT_EXIST =
+				"The file does not exist.";
+
+		String	ERROR_READING_FILE =
+				"An error occurred when reading the file.";
+
+		String	UNCLOSED_QUOTATION =
+				"Line %d contains an unclosed quotation.";
+
+		String	INVALID_OPTION =
+				"'" + OPTION_PREFIX + "%s' is not a valid option.";
+
+		String	MISSING_OPTION_ARGUMENT =
+				"The '" + OPTION_PREFIX + "%s' option expects an argument.";
+
+		String	UNEXPECTED_OPTION_ARGUMENT =
+				"The '" + OPTION_PREFIX + "%s' option does not take an argument.";
+
+		String	SUBCOMMAND_OUT_OF_ORDER =
+				"The subcommand '%s' is out of order.\nSubcommands must precede options and non-option arguments.";
+
+		String	OPTION_OUT_OF_ORDER =
+				"The option '%s' is out of order.\nOptions must precede non-option arguments.";
 	}
 
 ////////////////////////////////////////////////////////////////////////
@@ -100,8 +122,8 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 		options must precede all non-option arguments. */
 	private	boolean	posixOrder;
 
-	/** The usage string. */
-	private	String	usageStr;
+	/** The usage message. */
+	private	String	usageMessage;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -115,19 +137,19 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 	 * @param posixOrder
 	 *          if {@code true}, the arguments of this command line are expected to appear in POSIX order; that is, all
 	 *          options must precede all non-option arguments.
-	 * @param usageStr
-	 *          the usage string, which may be {@code null}.
+	 * @param usageMessage
+	 *          the usage message, which may be {@code null}.
 	 */
 
 	public CommandLine(
 		Class<E>	optionClass,
 		boolean		posixOrder,
-		String		usageStr)
+		String		usageMessage)
 	{
 		// Initialise instance variables
 		options = EnumSet.allOf(optionClass);
 		this.posixOrder = posixOrder;
-		this.usageStr = usageStr;
+		this.usageMessage = usageMessage;
 	}
 
 	//------------------------------------------------------------------
@@ -186,7 +208,7 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 	 *           the prefix of comments, which may be {@code null}.
 	 * @return the list of arguments that result from parsing the file denoted by {@code pathname}.
 	 * @throws CommandLineException
-	 *           if an error occurred when reading or parsing the file.
+	 *           if an error occurs when reading or parsing the file.
 	 */
 
 	private static List<String> readArgumentFile(
@@ -226,7 +248,7 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 				}
 
 				// Remove leading and trailing whitespace
-				str = str.trim();
+				str = str.strip();
 
 				// Extract arguments from line
 				if (!str.isEmpty())
@@ -265,15 +287,15 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 	 *           the command-line arguments that will be parsed.
 	 * @return a list of the command-line elements that resulted from parsing {@code arguments}.
 	 * @throws CommandLineException
-	 *           if an error occurred when parsing {@code arguments} or when reading or parsing an argument file that
-	 *           was specified as a command-line argument.
+	 *           if an error occurs when parsing {@code arguments} or when reading or parsing an argument file that was
+	 *           specified as a command-line argument.
 	 */
 
 	public List<Element<E>> parse(
 		String[]	arguments)
 		throws CommandLineException
 	{
-		return parse(Arrays.asList(arguments), false, null);
+		return parse(List.of(arguments), false, null);
 	}
 
 	//------------------------------------------------------------------
@@ -291,8 +313,8 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 	 *           {@code expand} is {@code false}.
 	 * @return a list of the command-line elements that result from parsing {@code arguments}.
 	 * @throws CommandLineException
-	 *           if an error occurred when parsing {@code arguments} or when reading or parsing an argument file that
-	 *           was specified as a command-line argument.
+	 *           if an error occurs when parsing {@code arguments} or when reading or parsing an argument file that was
+	 *           specified as a command-line argument.
 	 */
 
 	public List<Element<E>> parse(
@@ -301,7 +323,7 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 		String		commentPrefix)
 		throws CommandLineException
 	{
-		return parse(Arrays.asList(arguments), expand, commentPrefix);
+		return parse(List.of(arguments), expand, commentPrefix);
 	}
 
 	//------------------------------------------------------------------
@@ -313,8 +335,8 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 	 *           the command-line arguments that will be parsed.
 	 * @return a list of the command-line elements that resulted from parsing {@code arguments}.
 	 * @throws CommandLineException
-	 *           if an error occurred when parsing {@code arguments} or when reading or parsing an argument file that
-	 *           was specified as a command-line argument.
+	 *           if an error occurs when parsing {@code arguments} or when reading or parsing an argument file that was
+	 *           specified as a command-line argument.
 	 */
 
 	public List<Element<E>> parse(
@@ -339,8 +361,8 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 	 *           {@code expand} is {@code false}.
 	 * @return a list of the command-line elements that result from parsing {@code arguments}.
 	 * @throws CommandLineException
-	 *           if an error occurred when parsing {@code arguments} or when reading or parsing an argument file that
-	 *           was specified as a command-line argument.
+	 *           if an error occurs when parsing {@code arguments} or when reading or parsing an argument file that was
+	 *           specified as a command-line argument.
 	 */
 
 	public List<Element<E>> parse(
@@ -362,6 +384,9 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 				args.add(argument);
 		}
 
+		// Create test for subcommand
+		IFunction1<Boolean, IOption<E>> isSubcommand = option -> (option != null) && option.isSubcommand();
+
 		// Initialise list of command-line elements
 		List<Element<E>> elements = new ArrayList<>();
 
@@ -370,6 +395,7 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 		int argIndex = 0;
 		IOption<E> option = null;
 		boolean optionsEnded = false;
+		boolean subcommandsEnded = false;
 		State state = State.ARGUMENT;
 
 		// Parse arguments
@@ -377,98 +403,130 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 		{
 			switch (state)
 			{
-			case ARGUMENT:
-				if (argIndex < args.size())
-				{
-					argument = args.get(argIndex);
-					if (argument.startsWith(OPTION_PREFIX))
+				case ARGUMENT:
+					if (argIndex < args.size())
 					{
-						++argIndex;
-						state = State.OPTION;
+						argument = args.get(argIndex);
+						if (argument.startsWith(OPTION_PREFIX))
+						{
+							++argIndex;
+							option = getOption(argument.substring(OPTION_PREFIX.length()));
+							if (isSubcommand.invoke(option))
+								state = State.SUBCOMMAND;
+							else
+							{
+								subcommandsEnded = true;
+								state = State.OPTION;
+							}
+						}
+						else if (subcommandsEnded)
+							state = State.NON_OPTION_ARGUMENT;
+						else
+						{
+							option = getOption(argument);
+							if (isSubcommand.invoke(option))
+							{
+								++argIndex;
+								state = State.SUBCOMMAND;
+							}
+							else
+							{
+								subcommandsEnded = true;
+								state = State.NON_OPTION_ARGUMENT;
+							}
+						}
 					}
 					else
-						state = State.NON_OPTION_ARGUMENT;
-				}
-				else
-					state = State.DONE;
-				break;
+						state = State.DONE;
+					break;
 
-			case OPTION:
-				argument = argument.substring(OPTION_PREFIX.length());
-				if (argument.isEmpty())
-				{
-					optionsEnded = true;
-					state = State.NON_OPTION_ARGUMENT;
-				}
-				else
-				{
-					option = null;
-					int index = argument.indexOf(OPTION_ARGUMENT_SEPARATOR_CHAR);
-					if (index < 0)
+				case SUBCOMMAND:
+					if (subcommandsEnded)
 					{
-						option = getOption(argument);
-						if (option == null)
-							throw new CommandLineException(String.format(ErrorMsg.INVALID_OPTION, argument), usageStr);
-						if (option.hasArgument())
+						throw new CommandLineException(ErrorMsg.SUBCOMMAND_OUT_OF_ORDER, usageMessage,
+													   option.getName());
+					}
+					elements.add(new Element<>(option, null));
+					state = State.ARGUMENT;
+					break;
+
+				case OPTION:
+					argument = argument.substring(OPTION_PREFIX.length());
+					if (argument.isEmpty())
+					{
+						optionsEnded = true;
+						state = State.NON_OPTION_ARGUMENT;
+					}
+					else
+					{
+						int index = argument.indexOf(OPTION_ARGUMENT_SEPARATOR_CHAR);
+						if (index < 0)
 						{
-							argument = null;
-							state = State.OPTION_ARGUMENT;
+							option = getOption(argument);
+							if (option == null)
+								throw new CommandLineException(ErrorMsg.INVALID_OPTION, usageMessage, argument);
+							if (option.requiresArgument())
+							{
+								argument = null;
+								state = State.OPTION_ARGUMENT;
+							}
+							else
+							{
+								elements.add(new Element<>(option, null));
+								state = State.ARGUMENT;
+							}
 						}
 						else
 						{
-							elements.add(new Element<>(option, null));
+							String name = argument.substring(0, index);
+							option = getOption(name);
+							if (option == null)
+								throw new CommandLineException(ErrorMsg.INVALID_OPTION, usageMessage, name);
+							if (!option.requiresArgument())
+								throw new CommandLineException(ErrorMsg.UNEXPECTED_OPTION_ARGUMENT, usageMessage, name);
+							argument = argument.substring(index + 1);
+							state = State.OPTION_ARGUMENT;
+						}
+					}
+					break;
+
+				case OPTION_ARGUMENT:
+					if (argument == null)
+					{
+						if (argIndex >= args.size())
+						{
+							throw new CommandLineException(ErrorMsg.MISSING_OPTION_ARGUMENT, usageMessage,
+														   option.getName());
+						}
+						argument = args.get(argIndex++);
+					}
+					elements.add(new Element<>(option, argument));
+					state = State.ARGUMENT;
+					break;
+
+				case NON_OPTION_ARGUMENT:
+					if (argIndex < args.size())
+					{
+						argument = args.get(argIndex);
+						if (argument.startsWith(OPTION_PREFIX) && !optionsEnded)
+						{
+							if (posixOrder)
+								throw new CommandLineException(ErrorMsg.OPTION_OUT_OF_ORDER, usageMessage, argument);
 							state = State.ARGUMENT;
+						}
+						else
+						{
+							elements.add(new Element<>(null, argument));
+							++argIndex;
 						}
 					}
 					else
-					{
-						String name = argument.substring(0, index);
-						option = getOption(name);
-						if (option == null)
-							throw new CommandLineException(String.format(ErrorMsg.INVALID_OPTION, name), usageStr);
-						if (!option.hasArgument())
-							throw new CommandLineException(String.format(ErrorMsg.UNEXPECTED_OPTION_ARGUMENT, name), usageStr);
-						argument = argument.substring(index + 1);
-						state = State.OPTION_ARGUMENT;
-					}
-				}
-				break;
+						state = State.DONE;
+					break;
 
-			case OPTION_ARGUMENT:
-				if (argument == null)
-				{
-					if (argIndex >= args.size())
-						throw new CommandLineException(String.format(ErrorMsg.MISSING_OPTION_ARGUMENT, option.getName()),
-													   usageStr);
-					argument = args.get(argIndex++);
-				}
-				elements.add(new Element<>(option, argument));
-				state = State.ARGUMENT;
-				break;
-
-			case NON_OPTION_ARGUMENT:
-				if (argIndex < args.size())
-				{
-					argument = args.get(argIndex);
-					if (argument.startsWith(OPTION_PREFIX) && !optionsEnded)
-					{
-						if (posixOrder)
-							throw new CommandLineException(ErrorMsg.OPTION_AFTER_NON_OPTION_ARGUMENT, usageStr);
-						state = State.ARGUMENT;
-					}
-					else
-					{
-						elements.add(new Element<>(null, argument));
-						++argIndex;
-					}
-				}
-				else
-					state = State.DONE;
-				break;
-
-			case DONE:
-				// do nothing
-				break;
+				case DONE:
+					// do nothing
+					break;
 			}
 		}
 
@@ -539,12 +597,35 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 		//--------------------------------------------------------------
 
 		/**
-		 * Returns {@code true} if this option expects an argument.
+		 * Returns the name of this option with the {@linkplain CommandLine#OPTION_PREFIX command-line prefix}.
 		 *
-		 * @return {@code true} if this option expects an argument.
+		 * @return the name of this option with the command-line prefix.
 		 */
 
-		boolean hasArgument();
+		default String getPrefixedName()
+		{
+			return OPTION_PREFIX + getName();
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Returns {@code true} if this option is a subcommand.
+		 *
+		 * @return {@code true} if this option is a subcommand.
+		 */
+
+		boolean isSubcommand();
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Returns {@code true} if this option requires an argument.
+		 *
+		 * @return {@code true} if this option requires an argument.
+		 */
+
+		boolean requiresArgument();
 
 		//--------------------------------------------------------------
 
@@ -563,8 +644,9 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 	/**
 	 * This class implements an element of a command line.  An element is one of the following:
 	 * <ul>
-	 *   <li>an option, which starts with "--";</li>
-	 *   <li>an argument of an option;</li>
+	 *   <li>a subcommand, which may start with "--",</li>
+	 *   <li>an option, which starts with "--",</li>
+	 *   <li>an argument of an option, or</li>
 	 *   <li>a non-option argument (eg, the pathname of an input file).</li>
 	 * </ul>
 	 */
@@ -695,37 +777,25 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 	////////////////////////////////////////////////////////////////////
 
 		/**
-		 * Creates a new instance of a command-line exception with the specified detail message.
+		 * Creates a new instance of a command-line exception with the specified detail message, optional usage message
+		 * and replacement sequences.  The usage message is appended to the detail message.
 		 *
 		 * @param message
 		 *          the detail message of the exception.
+		 * @param usageMessage
+		 *          the usage message, which may be {@code null}.
+		 * @param replacements
+		 *          the items whose string representations will replace placeholders in {@code message}.
 		 */
 
 		private CommandLineException(
-			String	message)
+			String		message,
+			String		usageMessage,
+			Object...	replacements)
 		{
 			// Call superclass method
-			super(message);
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Creates a new instance of a command-line exception with the specified detail message and usage string, which
-		 * is appended to the detail message.
-		 *
-		 * @param message
-		 *          the detail message of the exception.
-		 * @param usageStr
-		 *          the usage staring, which may be {@code null}.
-		 */
-
-		private CommandLineException(
-			String	message,
-			String	usageStr)
-		{
-			// Call superclass method
-			super((usageStr == null) ? message : message + "\n" + usageStr);
+			super(((replacements.length > 0) ? String.format(message, replacements) : message)
+						+ (StringUtils.isNullOrEmpty(usageMessage) ? "" : "\n" + usageMessage));
 		}
 
 		//--------------------------------------------------------------
@@ -744,7 +814,7 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 			Path	file)
 		{
 			// Call superclass method
-			super(ARGUMENT_FILE_STR + file.toAbsolutePath() + "\n" + message);
+			super(ARGUMENT_FILE_STR + PathUtils.abs(file) + "\n" + message);
 		}
 
 		//--------------------------------------------------------------
@@ -767,7 +837,7 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 			Path		file)
 		{
 			// Call superclass method
-			super(ARGUMENT_FILE_STR + file.toAbsolutePath() + "\n" + message, cause);
+			super(ARGUMENT_FILE_STR + PathUtils.abs(file) + "\n" + message, cause);
 		}
 
 		//--------------------------------------------------------------

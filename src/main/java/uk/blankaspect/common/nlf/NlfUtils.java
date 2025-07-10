@@ -62,7 +62,8 @@ public class NlfUtils
 	 * sequence is malformed or contains bytes that cannot be mapped to a character.  This method is equivalent to
 	 * {@code #utf8ToString(data, 0, data.length)}.
 	 *
-	 * @param  data  an array that contains the UTF-8 sequence that will be decoded.
+	 * @param  data
+	 *           an array that contains the UTF-8 sequence that will be decoded.
 	 * @return the string that results from decoding the input sequence.
 	 * @throws IllegalArgumentException
 	 *           if
@@ -78,7 +79,8 @@ public class NlfUtils
 	 * @see    #stringToUtf8(String)
 	 */
 
-	public static String utf8ToString(byte[] data)
+	public static String utf8ToString(
+		byte[]	data)
 	{
 		return utf8ToString(data, 0, data.length);
 	}
@@ -89,9 +91,12 @@ public class NlfUtils
 	 * Decodes the specified UTF-8 sequence to a string.  An {@code IllegalArgumentException} is thrown if the UTF-8
 	 * sequence is malformed or if it contains bytes that cannot be mapped to a character.
 	 *
-	 * @param  data    an array that contains the UTF-8 sequence that will be decoded.
-	 * @param  offset  the offset to <b>{@code data}</b> at which the input sequence begins.
-	 * @param  length  the length of the input sequence.
+	 * @param  data
+	 *           an array that contains the UTF-8 sequence that will be decoded.
+	 * @param  offset
+	 *           the offset to {@code data} at which the input sequence begins.
+	 * @param  length
+	 *           the length of the input sequence.
 	 * @return the string that results from decoding the input sequence.
 	 * @throws IllegalArgumentException
 	 *           if
@@ -107,14 +112,16 @@ public class NlfUtils
 	 * @see    #stringToUtf8(String)
 	 */
 
-	public static String utf8ToString(byte[] data,
-									  int    offset,
-									  int    length)
+	public static String utf8ToString(
+		byte[]	data,
+		int		offset,
+		int		length)
 	{
 		try
 		{
-			CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
-																	.onUnmappableCharacter(CodingErrorAction.REPORT);
+			CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
+					.onMalformedInput(CodingErrorAction.REPORT)
+					.onUnmappableCharacter(CodingErrorAction.REPORT);
 			return decoder.decode(ByteBuffer.wrap(data, offset, length)).toString();
 		}
 		catch (Exception e)
@@ -164,18 +171,22 @@ public class NlfUtils
 	 * Returns {@code true} if the length of the UTF-8 sequence that results from encoding the specified string is
 	 * within the specified bounds.
 	 *
-	 * @param  str        the string whose encoded length will be tested.
-	 * @param  minLength  the minimum length of the encoded string.
-	 * @param  maxLength  the maximum length of the encoded string.
-	 * @return {@code true} if the length of the UTF-8 sequence that results from encoding <b>{@code str}</b> is within
+	 * @param  str
+	 *           the string whose encoded length will be tested.
+	 * @param  minLength
+	 *           the minimum length of the encoded string.
+	 * @param  maxLength
+	 *           the maximum length of the encoded string.
+	 * @return {@code true} if the length of the UTF-8 sequence that results from encoding {@code str} is within
 	 *         the specified bounds; {@code false} otherwise.
 	 * @since  1.0
 	 * @see    #getUtf8Length(String)
 	 */
 
-	public static boolean isUtf8LengthWithinBounds(String str,
-												   int    minLength,
-												   int    maxLength)
+	public static boolean isUtf8LengthWithinBounds(
+		String	str,
+		int		minLength,
+		int		maxLength)
 	{
 		int size = getUtf8Length(str);
 		return ((size >= minLength) && (size <= maxLength));
@@ -193,16 +204,19 @@ public class NlfUtils
 	 * valid under XML 1.0.
 	 * </p>
 	 *
-	 * @param  codePoint  the Unicode code point that will be validated.
-	 * @return {@code true} if <b>{@code codePoint}</b> is a valid first character of the identifier of a chunk or the
-	 *         name of an attribute; {@code false} otherwise.
+	 * @param  codePoint
+	 *           the Unicode code point that will be validated.
+	 * @return {@code true} if {@code codePoint} is a valid first character of the identifier of a chunk or the name of
+	 *         an attribute; {@code false} otherwise.
 	 * @since  1.0
 	 * @see    #isNameChar(int)
 	 */
 
-	public static boolean isNameStartChar(int codePoint)
+	public static boolean isNameStartChar(
+		int	codePoint)
 	{
-		return (((codePoint >= 'A') && (codePoint <= 'Z')) || (codePoint == '_')
+		return ((codePoint >= 'A') && (codePoint <= 'Z'))
+				|| (codePoint == '_')
 				|| ((codePoint >= 'a') && (codePoint <= 'z'))
 				|| ((codePoint >= 0xC0) && (codePoint <= 0xD6))
 				|| ((codePoint >= 0xD8) && (codePoint <= 0xF6))
@@ -215,7 +229,7 @@ public class NlfUtils
 				|| ((codePoint >= 0x3001) && (codePoint <= 0xD7FF))
 				|| ((codePoint >= 0xF900) && (codePoint <= 0xFDCF))
 				|| ((codePoint >= 0xFDF0) && (codePoint <= 0xFFFD))
-				|| ((codePoint >= 0x10000) && (codePoint <= 0xEFFFF)));
+				|| ((codePoint >= 0x10000) && (codePoint <= 0xEFFFF));
 	}
 
 	//------------------------------------------------------------------
@@ -230,19 +244,21 @@ public class NlfUtils
 	 * valid under XML 1.0.
 	 * </p>
 	 *
-	 * @param  codePoint  the Unicode code point that will be validated.
-	 * @return {@code true} if <b>{@code codePoint}</b> is a valid second or subsequent character of the identifier of a
-	 *         chunk or the name of an attribute; {@code false} otherwise.
+	 * @param  codePoint
+	 *           the Unicode code point that will be validated.
+	 * @return {@code true} if {@code codePoint} is a valid second or subsequent character of the identifier of a chunk
+	 *         or the name of an attribute; {@code false} otherwise.
 	 * @since  1.0
 	 * @see    #isNameStartChar(int)
 	 */
 
-	public static boolean isNameChar(int codePoint)
+	public static boolean isNameChar(
+		int	codePoint)
 	{
-		return (isNameStartChar(codePoint) || (codePoint == '-') || (codePoint == '.')
+		return isNameStartChar(codePoint) || (codePoint == '-') || (codePoint == '.')
 				|| ((codePoint >= '0') && (codePoint <= '9')) || (codePoint == 0xB7)
 				|| ((codePoint >= 0x0300) && (codePoint <= 0x036F))
-				|| ((codePoint >= 0x203F) && (codePoint <= 0x2040)));
+				|| ((codePoint >= 0x203F) && (codePoint <= 0x2040));
 	}
 
 	//------------------------------------------------------------------

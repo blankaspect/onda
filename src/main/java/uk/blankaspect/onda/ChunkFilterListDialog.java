@@ -19,7 +19,6 @@ package uk.blankaspect.onda;
 
 
 import java.awt.Component;
-import java.awt.Dialog;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -84,8 +83,8 @@ class ChunkFilterListDialog
 //  Constructors
 ////////////////////////////////////////////////////////////////////////
 
-	private static final	int	MODIFIERS_MASK	= ActionEvent.ALT_MASK | ActionEvent.META_MASK | ActionEvent.CTRL_MASK
-														| ActionEvent.SHIFT_MASK;
+	private static final	int		MODIFIERS_MASK	=
+			ActionEvent.ALT_MASK | ActionEvent.META_MASK | ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK;
 
 	private static final	String	ADD_STR		= "Add";
 	private static final	String	EDIT_STR	= "Edit";
@@ -113,107 +112,47 @@ class ChunkFilterListDialog
 	private static final	Map<String, String>	COMMAND_MAP;
 
 ////////////////////////////////////////////////////////////////////////
-//  Member classes : non-inner classes
+//  Class variables
 ////////////////////////////////////////////////////////////////////////
 
+	private static	Point	location;
 
-	// FILTER SELECTION LIST CLASS
+////////////////////////////////////////////////////////////////////////
+//  Instance variables
+////////////////////////////////////////////////////////////////////////
 
+	private	boolean		accepted;
+	private	FilterList	filterList;
+	private	JScrollPane	filterListScrollPane;
+	private	JButton		addButton;
+	private	JButton		editButton;
+	private	JButton		deleteButton;
 
-	private static class FilterList
-		extends SingleSelectionList<ChunkFilter>
+////////////////////////////////////////////////////////////////////////
+//  Static initialiser
+////////////////////////////////////////////////////////////////////////
+
+	static
 	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		private static final	int	NUM_COLUMNS	= 48;
-		private static final	int	NUM_ROWS	= 16;
-
-		private static final	int	VERTICAL_MARGIN	= 1;
-		private static final	int	ICON_MARGIN		= 4;
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private FilterList(List<ChunkFilter> filters)
-		{
-			super(NUM_COLUMNS, NUM_ROWS, AppFont.MAIN.getFont(), filters);
-			setExtraWidth(ICON_MARGIN + Icons.INCLUDE.getIconWidth());
-			FontMetrics fontMetrics = getFontMetrics(getFont());
-			setRowHeight(2 * VERTICAL_MARGIN +
-										Math.max(Icons.INCLUDE.getIconHeight(),
-												 fontMetrics.getAscent() + fontMetrics.getDescent()));
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : overriding methods
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		public String getElementText(int index)
-		{
-			return getElement(index).getIdString();
-		}
-
-		//--------------------------------------------------------------
-
-		@Override
-		protected void drawElement(Graphics gr,
-								   int      index)
-		{
-			// Create copy of graphics context
-			gr = gr.create();
-
-			// Draw icon
-			int rowHeight = getRowHeight();
-			int x = ICON_MARGIN;
-			int y = index * rowHeight;
-			ImageIcon icon = getElement(index).isInclude() ? Icons.INCLUDE : Icons.EXCLUDE;
-			gr.drawImage(icon.getImage(), x, y + (rowHeight - icon.getIconHeight()) / 2, null);
-
-			// Set rendering hints for text antialiasing and fractional metrics
-			TextRendering.setHints((Graphics2D)gr);
-
-			// Get text and truncate it if it is too wide
-			FontMetrics fontMetrics = gr.getFontMetrics();
-			String text = truncateText(getElementText(index), fontMetrics, getMaxTextWidth());
-
-			// Draw text
-			x = getExtraWidth() + getHorizontalMargin();
-			gr.setColor(getForegroundColour(index));
-			gr.drawString(text, x, y + FontUtils.getBaselineOffset(rowHeight, fontMetrics));
-		}
-
-		//--------------------------------------------------------------
-
-		@Override
-		protected int getPopUpXOffset()
-		{
-			return getExtraWidth();
-		}
-
-		//--------------------------------------------------------------
-
+		COMMAND_MAP = new HashMap<>();
+		COMMAND_MAP.put(SingleSelectionList.Command.EDIT_ELEMENT,      Command.EDIT_FILTER);
+		COMMAND_MAP.put(SingleSelectionList.Command.DELETE_ELEMENT,    Command.CONFIRM_DELETE_FILTER);
+		COMMAND_MAP.put(SingleSelectionList.Command.DELETE_EX_ELEMENT, Command.DELETE_FILTER);
+		COMMAND_MAP.put(SingleSelectionList.Command.MOVE_ELEMENT_UP,   Command.MOVE_FILTER_UP);
+		COMMAND_MAP.put(SingleSelectionList.Command.MOVE_ELEMENT_DOWN, Command.MOVE_FILTER_DOWN);
+		COMMAND_MAP.put(SingleSelectionList.Command.DRAG_ELEMENT,      Command.MOVE_FILTER);
 	}
-
-	//==================================================================
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
 ////////////////////////////////////////////////////////////////////////
 
 	private ChunkFilterListDialog(Window            owner,
-								  String            titleStr,
+								  String            title,
 								  List<ChunkFilter> filters)
 	{
-
 		// Call superclass constructor
-		super(owner, titleStr, Dialog.ModalityType.APPLICATION_MODAL);
+		super(owner, title, ModalityType.APPLICATION_MODAL);
 
 		// Set icons
 		setIconImages(owner.getIconImages());
@@ -374,7 +313,7 @@ class ChunkFilterListDialog
 		// Resize dialog to its preferred size
 		pack();
 
-		// Set location of dialog box
+		// Set location of dialog
 		if (location == null)
 			location = GuiUtils.getComponentLocation(this, owner);
 		setLocation(location);
@@ -384,7 +323,6 @@ class ChunkFilterListDialog
 
 		// Show dialog
 		setVisible(true);
-
 	}
 
 	//------------------------------------------------------------------
@@ -394,11 +332,10 @@ class ChunkFilterListDialog
 ////////////////////////////////////////////////////////////////////////
 
 	public static List<ChunkFilter> showDialog(Component         parent,
-											   String            titleStr,
+											   String            title,
 											   List<ChunkFilter> filters)
 	{
-		return new ChunkFilterListDialog(GuiUtils.getWindow(parent), titleStr, filters).
-																							getFilters();
+		return new ChunkFilterListDialog(GuiUtils.getWindow(parent), title, filters).getFilters();
 	}
 
 	//------------------------------------------------------------------
@@ -582,36 +519,95 @@ class ChunkFilterListDialog
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Class variables
+//  Member classes : non-inner classes
 ////////////////////////////////////////////////////////////////////////
 
-	private static	Point	location;
 
-////////////////////////////////////////////////////////////////////////
-//  Static initialiser
-////////////////////////////////////////////////////////////////////////
+	// FILTER SELECTION LIST CLASS
 
-	static
+
+	private static class FilterList
+		extends SingleSelectionList<ChunkFilter>
 	{
-		COMMAND_MAP = new HashMap<>();
-		COMMAND_MAP.put(SingleSelectionList.Command.EDIT_ELEMENT,      Command.EDIT_FILTER);
-		COMMAND_MAP.put(SingleSelectionList.Command.DELETE_ELEMENT,    Command.CONFIRM_DELETE_FILTER);
-		COMMAND_MAP.put(SingleSelectionList.Command.DELETE_EX_ELEMENT, Command.DELETE_FILTER);
-		COMMAND_MAP.put(SingleSelectionList.Command.MOVE_ELEMENT_UP,   Command.MOVE_FILTER_UP);
-		COMMAND_MAP.put(SingleSelectionList.Command.MOVE_ELEMENT_DOWN, Command.MOVE_FILTER_DOWN);
-		COMMAND_MAP.put(SingleSelectionList.Command.DRAG_ELEMENT,      Command.MOVE_FILTER);
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		private static final	int	NUM_COLUMNS	= 48;
+		private static final	int	NUM_ROWS	= 16;
+
+		private static final	int	VERTICAL_MARGIN	= 1;
+		private static final	int	ICON_MARGIN		= 4;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private FilterList(List<ChunkFilter> filters)
+		{
+			super(NUM_COLUMNS, NUM_ROWS, AppFont.MAIN.getFont(), filters);
+			setExtraWidth(ICON_MARGIN + Icons.INCLUDE.getIconWidth());
+			FontMetrics fontMetrics = getFontMetrics(getFont());
+			setRowHeight(2 * VERTICAL_MARGIN +
+										Math.max(Icons.INCLUDE.getIconHeight(),
+												 fontMetrics.getAscent() + fontMetrics.getDescent()));
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : overriding methods
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		public String getElementText(int index)
+		{
+			return getElement(index).getIdString();
+		}
+
+		//--------------------------------------------------------------
+
+		@Override
+		protected void drawElement(Graphics gr,
+								   int      index)
+		{
+			// Create copy of graphics context
+			gr = gr.create();
+
+			// Draw icon
+			int rowHeight = getRowHeight();
+			int x = ICON_MARGIN;
+			int y = index * rowHeight;
+			ImageIcon icon = getElement(index).isInclude() ? Icons.INCLUDE : Icons.EXCLUDE;
+			gr.drawImage(icon.getImage(), x, y + (rowHeight - icon.getIconHeight()) / 2, null);
+
+			// Set rendering hints for text antialiasing and fractional metrics
+			TextRendering.setHints((Graphics2D)gr);
+
+			// Get text and truncate it if it is too wide
+			FontMetrics fontMetrics = gr.getFontMetrics();
+			String text = truncateText(getElementText(index), fontMetrics, getMaxTextWidth());
+
+			// Draw text
+			x = getExtraWidth() + getHorizontalMargin();
+			gr.setColor(getForegroundColour(index));
+			gr.drawString(text, x, y + FontUtils.getBaselineOffset(rowHeight, fontMetrics));
+		}
+
+		//--------------------------------------------------------------
+
+		@Override
+		protected int getPopUpXOffset()
+		{
+			return getExtraWidth();
+		}
+
+		//--------------------------------------------------------------
+
 	}
 
-////////////////////////////////////////////////////////////////////////
-//  Instance variables
-////////////////////////////////////////////////////////////////////////
-
-	private	boolean		accepted;
-	private	FilterList	filterList;
-	private	JScrollPane	filterListScrollPane;
-	private	JButton		addButton;
-	private	JButton		editButton;
-	private	JButton		deleteButton;
+	//==================================================================
 
 }
 

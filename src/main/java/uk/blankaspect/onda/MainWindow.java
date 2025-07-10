@@ -2,7 +2,7 @@
 
 MainWindow.java
 
-Main window class.
+Class: main window.
 
 \*====================================================================*/
 
@@ -94,7 +94,7 @@ import uk.blankaspect.ui.swing.transfer.DataImporter;
 //----------------------------------------------------------------------
 
 
-// MAIN WINDOW CLASS
+// CLASS: MAIN WINDOW
 
 
 class MainWindow
@@ -121,20 +121,17 @@ class MainWindow
 	private static final	String	PROCEED_STR							= "Proceed";
 	private static final	String	SELECT_INPUT_PATHNAME_TOOLTIP_STR	= "Select input file or directory";
 	private static final	String	SELECT_OUTPUT_DIRECTORY_TOOLTIP_STR	= "Select output directory";
-	private static final	String	COPY_IN_TO_OUT_TOOLTIP_STR			= "Copy input pathname to output " +
-																			"pathname";
-	private static final	String	COPY_OUT_TO_IN_TOOLTIP_STR			= "Copy output pathname to input " +
-																			"pathname";
+	private static final	String	COPY_IN_TO_OUT_TOOLTIP_STR			= "Copy input pathname to output pathname";
+	private static final	String	COPY_OUT_TO_IN_TOOLTIP_STR			= "Copy output pathname to input pathname";
 	private static final	String	INPUT_FILE_OR_DIRECTORY_TITLE_STR	= "Input file or directory";
 	private static final	String	OUTPUT_DIRECTORY_TITLE_STR			= "Output directory";
 	private static final	String	SELECT_STR							= "Select";
 	private static final	String	SELECT_FILE_OR_DIRECTORY_STR		= "Select file or directory";
 	private static final	String	SELECT_DIRECTORY_STR				= "Select directory";
 	private static final	String	LOG_STR								= "Log";
-	private static final	String	NUM_FILES_TO_COMPRESS				= "Number of files to compress = ";
-	private static final	String	NUM_FILES_TO_EXPAND					= "Number of files to expand = ";
-	private static final	String	PROCEED_MESSAGE_STR					= "Do you want to proceed with " +
-																			"the task?";
+	private static final	String	NUM_FILES_TO_COMPRESS				= "Number of files to compress : ";
+	private static final	String	NUM_FILES_TO_EXPAND					= "Number of files to expand : ";
+	private static final	String	PROCEED_MESSAGE_STR					= "Do you want to proceed with the task?";
 
 	// Commands
 	private interface Command
@@ -165,22 +162,23 @@ class MainWindow
 //  Constructors
 ////////////////////////////////////////////////////////////////////////
 
-	public MainWindow(String titleStr)
+	public MainWindow(
+		String	title)
 	{
 		// Call superclass constructor
-		super(titleStr);
+		super(title);
 
 		// Set icons
 		setIconImages(Images.APP_ICON_IMAGES);
 
 		// Initialise instance variables
-		inPathnameChooser = new JFileChooser(SystemUtils.getUserHomePathname());
+		inPathnameChooser = new JFileChooser(SystemUtils.userHomeDirectoryPathname());
 		inPathnameChooser.setDialogTitle(INPUT_FILE_OR_DIRECTORY_TITLE_STR);
 		inPathnameChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		inPathnameChooser.setApproveButtonMnemonic(KeyEvent.VK_S);
 		inPathnameChooser.setApproveButtonToolTipText(SELECT_FILE_OR_DIRECTORY_STR);
 
-		outDirectoryChooser = new JFileChooser(SystemUtils.getUserHomePathname());
+		outDirectoryChooser = new JFileChooser(SystemUtils.userHomeDirectoryPathname());
 		outDirectoryChooser.setDialogTitle(OUTPUT_DIRECTORY_TITLE_STR);
 		outDirectoryChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		outDirectoryChooser.setApproveButtonMnemonic(KeyEvent.VK_S);
@@ -192,19 +190,19 @@ class MainWindow
 		compressFileChooser.setDialogTitle(COMPRESS_FILE_STR);
 		compressFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		compressFileChooser.setFileFilter(new FilenameSuffixFilter(AppConstants.AUDIO_FILES_STR,
-																   AppConstants.AUDIO_FILE_SUFFIXES));
+																   AppConstants.AUDIO_FILENAME_EXTENSIONS));
 
 		expandFileChooser = new JFileChooser(config.getExpandDirectory());
 		expandFileChooser.setDialogTitle(EXPAND_FILE_STR);
 		expandFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		expandFileChooser.setFileFilter(new FilenameSuffixFilter(AppConstants.COMPRESSED_FILES_STR,
-																 AppConstants.COMPRESSED_FILE_SUFFIX));
+																 AppConstants.COMPRESSED_FILENAME_EXTENSION));
 
 		validateFileChooser = new JFileChooser(config.getValidateDirectory());
 		validateFileChooser.setDialogTitle(VALIDATE_FILE_STR);
 		validateFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		validateFileChooser.setFileFilter(new FilenameSuffixFilter(AppConstants.COMPRESSED_FILES_STR,
-																   AppConstants.COMPRESSED_FILE_SUFFIX));
+																   AppConstants.COMPRESSED_FILENAME_EXTENSION));
 
 
 		//----  Control panel
@@ -296,8 +294,7 @@ class MainWindow
 		// Panel: input pathname
 		inPathnameComboBox = new FPathnameComboBox();
 		FPathnameComboBox.addObserver(inPathnameComboBox);
-		PathnamePanel inPathnamePanel = new PathnamePanel(inPathnameComboBox,
-														  Command.CHOOSE_INPUT_PATHNAME, this);
+		PathnamePanel inPathnamePanel = new PathnamePanel(inPathnameComboBox, Command.CHOOSE_INPUT_PATHNAME, this);
 		inPathnamePanel.setButtonTooltipText(SELECT_INPUT_PATHNAME_TOOLTIP_STR);
 
 		gbc.gridx = 1;
@@ -349,8 +346,8 @@ class MainWindow
 		// Panel: output directory
 		outDirectoryComboBox = new FPathnameComboBox();
 		FPathnameComboBox.addObserver(outDirectoryComboBox);
-		PathnamePanel outDirectoryPanel = new PathnamePanel(outDirectoryComboBox,
-															Command.CHOOSE_OUTPUT_DIRECTORY, this);
+		PathnamePanel outDirectoryPanel =
+				new PathnamePanel(outDirectoryComboBox, Command.CHOOSE_OUTPUT_DIRECTORY, this);
 		outDirectoryPanel.setButtonTooltipText(SELECT_OUTPUT_DIRECTORY_TOOLTIP_STR);
 
 		gbc.gridx = 1;
@@ -449,8 +446,7 @@ class MainWindow
 
 		// Add commands to action map
 		KeyAction.create(mainPanel, JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT,
-						 KeyStroke.getKeyStroke(KeyEvent.VK_CONTEXT_MENU, 0), Command.SHOW_CONTEXT_MENU,
-						 this);
+						 KeyStroke.getKeyStroke(KeyEvent.VK_CONTEXT_MENU, 0), Command.SHOW_CONTEXT_MENU, this);
 
 		// Update commands
 		updateCommands();
@@ -468,7 +464,8 @@ class MainWindow
 		addWindowListener(new WindowAdapter()
 		{
 			@Override
-			public void windowClosing(WindowEvent event)
+			public void windowClosing(
+				WindowEvent	event)
 			{
 				AppCommand.EXIT.execute();
 			}
@@ -526,7 +523,8 @@ class MainWindow
 ////////////////////////////////////////////////////////////////////////
 
 	@Override
-	public void mouseClicked(MouseEvent event)
+	public void mouseClicked(
+		MouseEvent	event)
 	{
 		// do nothing
 	}
@@ -534,7 +532,8 @@ class MainWindow
 	//------------------------------------------------------------------
 
 	@Override
-	public void mouseEntered(MouseEvent event)
+	public void mouseEntered(
+		MouseEvent	event)
 	{
 		// do nothing
 	}
@@ -542,7 +541,8 @@ class MainWindow
 	//------------------------------------------------------------------
 
 	@Override
-	public void mouseExited(MouseEvent event)
+	public void mouseExited(
+		MouseEvent	event)
 	{
 		// do nothing
 	}
@@ -550,7 +550,8 @@ class MainWindow
 	//------------------------------------------------------------------
 
 	@Override
-	public void mousePressed(MouseEvent event)
+	public void mousePressed(
+		MouseEvent	event)
 	{
 		showContextMenu(event);
 	}
@@ -558,7 +559,8 @@ class MainWindow
 	//------------------------------------------------------------------
 
 	@Override
-	public void mouseReleased(MouseEvent event)
+	public void mouseReleased(
+		MouseEvent	event)
 	{
 		showContextMenu(event);
 	}
@@ -569,7 +571,8 @@ class MainWindow
 //  Instance methods
 ////////////////////////////////////////////////////////////////////////
 
-	public void executeCommand(AppCommand command)
+	public void executeCommand(
+		AppCommand	command)
 	{
 		try
 		{
@@ -606,7 +609,7 @@ class MainWindow
 		}
 		catch (AppException e)
 		{
-			App.INSTANCE.showErrorMessage(App.SHORT_NAME, e);
+			OndaApp.INSTANCE.showErrorMessage(OndaApp.SHORT_NAME, e);
 		}
 
 		updateCommands();
@@ -703,8 +706,9 @@ class MainWindow
 
 	//------------------------------------------------------------------
 
-	private boolean compressFiles(List<InputOutput> inputsOutputs,
-								  ChunkFilter[]     chunkFilters)
+	private boolean compressFiles(
+		List<InputOutput>	inputsOutputs,
+		ChunkFilter[]		chunkFilters)
 		throws AppException
 	{
 		try
@@ -722,13 +726,13 @@ class MainWindow
 
 	//------------------------------------------------------------------
 
-	private boolean expandFiles(List<InputOutput> inputsOutputs)
+	private boolean expandFiles(
+		List<InputOutput>	inputsOutputs)
 		throws AppException
 	{
 		try
 		{
-			TaskProgressDialog.showDialog(this, EXPAND_STR,
-										  new Task.Expand(inputsOutputs, isRecursive()),
+			TaskProgressDialog.showDialog(this, EXPAND_STR, new Task.Expand(inputsOutputs, isRecursive()),
 										  AppConfig.INSTANCE.isShowOverallProgress());
 		}
 		catch (TaskCancelledException e)
@@ -740,7 +744,8 @@ class MainWindow
 
 	//------------------------------------------------------------------
 
-	private void showContextMenu(MouseEvent event)
+	private void showContextMenu(
+		MouseEvent	event)
 	{
 		if ((event == null) || event.isPopupTrigger())
 		{
@@ -834,7 +839,6 @@ class MainWindow
 
 	//------------------------------------------------------------------
 
-	@SuppressWarnings("unchecked")
 	private void onImportFiles()
 		throws AppException
 	{
@@ -842,6 +846,7 @@ class MainWindow
 		validateOutDirectory();
 
 		// Create lists of files to compress or expand
+		@SuppressWarnings("unchecked")
 		List<File> files = (List<File>)AppCommand.IMPORT_FILES.getValue(AppCommand.Property.FILES);
 		File outDirectory = getOutDirectory();
 		List<InputOutput> compressInputsOutputs = new ArrayList<>();
@@ -850,7 +855,7 @@ class MainWindow
 		{
 			if (file.isFile())
 			{
-				if (file.getName().endsWith(AppConstants.COMPRESSED_FILE_SUFFIX))
+				if (file.getName().endsWith(AppConstants.COMPRESSED_FILENAME_EXTENSION))
 					expandInputsOutputs.add(new InputOutput(file, outDirectory));
 				else
 					compressInputsOutputs.add(new InputOutput(file, outDirectory));
@@ -879,7 +884,7 @@ class MainWindow
 		}
 		buffer.append(PROCEED_MESSAGE_STR);
 		String[] optionStrs = Utils.getOptionStrings(PROCEED_STR);
-		if (JOptionPane.showOptionDialog(this, buffer, App.SHORT_NAME, JOptionPane.OK_CANCEL_OPTION,
+		if (JOptionPane.showOptionDialog(this, buffer, OndaApp.SHORT_NAME, JOptionPane.OK_CANCEL_OPTION,
 										 JOptionPane.QUESTION_MESSAGE, null, optionStrs,
 										 optionStrs[1]) == JOptionPane.OK_OPTION)
 
@@ -911,8 +916,7 @@ class MainWindow
 			compressFileChooser.setSelectedFile(new File(""));
 			if (compressFileChooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION)
 				return false;
-			inputsOutputs.add(new InputOutput(compressFileChooser.getSelectedFile(),
-											  outDirectory));
+			inputsOutputs.add(new InputOutput(compressFileChooser.getSelectedFile(), outDirectory));
 		}
 		else
 		{
@@ -923,7 +927,7 @@ class MainWindow
 					break;
 
 				case LIST:
-					inputsOutputs = App.readListFile(inPathnameComboBox.getFile());
+					inputsOutputs = OndaApp.readListFile(inPathnameComboBox.getFile());
 					break;
 			}
 		}
@@ -963,7 +967,7 @@ class MainWindow
 					break;
 
 				case LIST:
-					inputsOutputs = App.readListFile(inPathnameComboBox.getFile());
+					inputsOutputs = OndaApp.readListFile(inPathnameComboBox.getFile());
 					break;
 			}
 		}
@@ -999,7 +1003,7 @@ class MainWindow
 					break;
 
 				case LIST:
-					inputsOutputs = App.readListFile(inPathnameComboBox.getFile());
+					inputsOutputs = OndaApp.readListFile(inPathnameComboBox.getFile());
 					break;
 			}
 		}
@@ -1053,7 +1057,7 @@ class MainWindow
 ////////////////////////////////////////////////////////////////////////
 
 
-	// INPUT MODE
+	// ENUMERATION: INPUT MODE
 
 
 	private enum InputMode
@@ -1076,7 +1080,8 @@ class MainWindow
 	//  Constructors
 	////////////////////////////////////////////////////////////////////
 
-		private InputMode(String text)
+		private InputMode(
+			String	text)
 		{
 			this.text = text;
 		}
@@ -1100,7 +1105,7 @@ class MainWindow
 	//==================================================================
 
 
-	// ERROR IDENTIFIERS
+	// ENUMERATION: ERROR IDENTIFIERS
 
 
 	private enum ErrorId
@@ -1139,7 +1144,8 @@ class MainWindow
 	//  Constructors
 	////////////////////////////////////////////////////////////////////
 
-		private ErrorId(String message)
+		private ErrorId(
+			String	message)
 		{
 			this.message = message;
 		}
@@ -1167,7 +1173,7 @@ class MainWindow
 ////////////////////////////////////////////////////////////////////////
 
 
-	// LOG DIALOG CLASS
+	// CLASS: LOG DIALOG
 
 
 	private static class LogDialog
@@ -1196,12 +1202,13 @@ class MainWindow
 	//  Constructors
 	////////////////////////////////////////////////////////////////////
 
-		private LogDialog(Window         owner,
-						  String         titleStr,
-						  List<Log.Line> lines)
+		private LogDialog(
+			Window			owner,
+			String			title,
+			List<Log.Line>	lines)
 		{
 			// Call superclass constructor
-			super(owner, titleStr, KEY, NUM_COLUMNS, NUM_ROWS, true);
+			super(owner, title, KEY, NUM_COLUMNS, NUM_ROWS, true);
 
 			// Initialise instance variables
 			this.lines = lines;
@@ -1214,9 +1221,9 @@ class MainWindow
 			for (Log.Line line : lines)
 			{
 				Paragraph paragraph = new Paragraph(StyleContext.DEFAULT_STYLE);
-				paragraph.add(new Span(line.str,
-									   (line.kind == Log.Line.Kind.INFO) ? StyleContext.DEFAULT_STYLE
-																		 : ERROR_STYLE_KEY));
+				paragraph.add(new Span(line.text(), (line.kind() == Log.LineKind.INFO)
+																	? StyleContext.DEFAULT_STYLE
+																	: ERROR_STYLE_KEY));
 				append(paragraph);
 			}
 			setCaretToEnd();
@@ -1231,11 +1238,12 @@ class MainWindow
 	//  Class methods
 	////////////////////////////////////////////////////////////////////
 
-		public static LogDialog showDialog(Component      parent,
-										   String         titleStr,
-										   List<Log.Line> lines)
+		public static LogDialog showDialog(
+			Component		parent,
+			String			title,
+			List<Log.Line>	lines)
 		{
-			return new LogDialog(GuiUtils.getWindow(parent), titleStr, lines);
+			return new LogDialog(GuiUtils.getWindow(parent), title, lines);
 		}
 
 		//--------------------------------------------------------------
@@ -1250,9 +1258,9 @@ class MainWindow
 			StringBuilder buffer = new StringBuilder(lines.size() * 80);
 			for (Log.Line line : lines)
 			{
-				if (line.kind == Log.Line.Kind.ERROR)
+				if (line.kind() == Log.LineKind.ERROR)
 					buffer.append(Log.ERROR_PREFIX);
-				buffer.append(line.str);
+				buffer.append(line.text());
 				buffer.append('\n');
 			}
 			return buffer.toString();
@@ -1269,7 +1277,7 @@ class MainWindow
 ////////////////////////////////////////////////////////////////////////
 
 
-	// FILE TRANSFER HANDLER CLASS
+	// CLASS: FILE-TRANSFER HANDLER
 
 
 	private class FileTransferHandler
@@ -1303,7 +1311,8 @@ class MainWindow
 	////////////////////////////////////////////////////////////////////
 
 		@Override
-		public boolean canImport(TransferHandler.TransferSupport support)
+		public boolean canImport(
+			TransferHandler.TransferSupport	support)
 		{
 			boolean supported = !support.isDrop() || ((support.getSourceDropActions() & COPY) == COPY);
 			if (supported)
@@ -1316,7 +1325,8 @@ class MainWindow
 		//--------------------------------------------------------------
 
 		@Override
-		public boolean importData(TransferHandler.TransferSupport support)
+		public boolean importData(
+			TransferHandler.TransferSupport	support)
 		{
 			if (canImport(support))
 			{
@@ -1344,7 +1354,7 @@ class MainWindow
 				}
 				catch (AppException e)
 				{
-					App.INSTANCE.showErrorMessage(App.SHORT_NAME, e);
+					OndaApp.INSTANCE.showErrorMessage(OndaApp.SHORT_NAME, e);
 				}
 			}
 			return false;

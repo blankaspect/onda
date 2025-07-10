@@ -98,395 +98,11 @@ public class Attributes
 	public static final		int	MAX_VALUE_SIZE	= (1 << 16) - 1;
 
 ////////////////////////////////////////////////////////////////////////
-//  Member classes : non-inner classes
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
-
-	// ATTRIBUTE NAME-VALUE PAIR CLASS
-
-
-	/**
-	 * This class implements an attribute as a name&ndash;value pair.  An {@linkplain Attributes attributes chunk}
-	 * consists of a list of name&ndash;value pairs.
-	 *
-	 * @since 1.0
-	 */
-
-	public static class Attr
-		implements Comparable<Attr>
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Creates a new instance of an attribute with the specified name.  The value of the attribute is an empty
-		 * string.
-		 *
-		 * @param  name  the name of the attribute.
-		 * @throws IllegalArgumentException
-		 *           if
-		 *           <ul>
-		 *             <li><b>{@code name}</b> is {@code null}, or</li>
-		 *             <li>the length of the UTF-8 encoding of <b>{@code name}</b> is greater than 65535 bytes, or</li>
-		 *             <li><b>{@code name}</b> is not a valid attribute name.</li>
-		 *           </ul>
-		 * @since  1.0
-		 */
-
-		public Attr(String name)
-		{
-			this(name, "");
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Creates a new instance of an attribute with the specified name and value.
-		 *
-		 * @param  name   the attribute name.
-		 * @param  value  the attribute value.
-		 * @throws IllegalArgumentException
-		 *           if
-		 *           <ul>
-		 *             <li><b>{@code name}</b> is {@code null}, or</li>
-		 *             <li>the length of the UTF-8 encoding of <b>{@code name}</b> is greater than 65535 bytes, or</li>
-		 *             <li><b>{@code name}</b> is not a valid attribute name, or</li>
-		 *             <li><b>{@code value}</b> is {@code null}, or</li>
-		 *             <li>the length of the UTF-8 encoding of <b>{@code value}</b> is greater than 65535 bytes.</li>
-		 *           </ul>
-		 * @since  1.0
-		 */
-
-		public Attr(String name,
-					String value)
-		{
-			// Validate name
-			if ((name == null) || !isValidName(name))
-				throw new IllegalArgumentException();
-
-			// Validate value
-			if ((value == null) ||
-				 !NlfUtils.isUtf8LengthWithinBounds(value, MIN_VALUE_SIZE, MAX_VALUE_SIZE))
-				throw new IllegalArgumentException();
-
-			// Set name and value
-			this.name = name;
-			this.value = value;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : Comparable interface
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Compares this attribute with the specified attribute and returns the result.  The comparison is performed by
-		 * comparing the names of the two objects using {@link String#compareTo(String)}, which compares strings
-		 * lexicographically by the Unicode value of each character in the strings.
-		 * <p>
-		 * The result is
-		 * </p>
-		 * <ul>
-		 *   <li>a negative integer if the name of this attribute lexicographically precedes the name of the
-		 *       argument;</li>
-		 *   <li>a positive integer if the name of this attribute lexicographically succeeds the name of the
-		 *       argument;</li>
-		 *   <li>zero if the names of the two attributes are equal.</li>
-		 * </ul>
-		 * <p>
-		 * Note that a result of zero <em>does not</em> imply that the {@link #equals(Object)} method would return
-		 * {@code true}, although the converse is true.
-		 * </p>
-		 *
-		 * @param  attr  the attribute with which this attribute will be compared.
-		 * @return <ul>
-		 *           <li>{@code 0} (zero) if the name of this attribute is equal to the name of <b>{@code
-		 *               attr}</b>;</li>
-		 *           <li>a value less than {@code 0} if the name of this attribute is lexicographically less than the
-		 *               name of <b>{@code attr}</b>;</li>
-		 *           <li>a value greater than {@code 0} if the name of this attribute is lexicographically greater than
-		 *               the name of <b>{@code attr}</b>.</li>
-		 *         </ul>
-		 * @since  1.0
-		 * @see    String#compareTo(String)
-		 */
-
-		@Override
-		public int compareTo(Attr attr)
-		{
-			return name.compareTo(attr.name);
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : overriding methods
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Returns {@code true} if specified object is an instance of {@code Attr} that has the same name and value as
-		 * this attribute.
-		 *
-		 * @param  obj  the object with which this attribute will be compared.
-		 * @return {@code true} if <b>{@code obj}</b> is an instance of {@code Attr} that has the same name and value as
-		 *         this attribute; {@code false} otherwise.
-		 * @since  1.0
-		 */
-
-		@Override
-		public boolean equals(Object obj)
-		{
-			if (this == obj)
-				return true;
-
-			return (obj instanceof Attr other) && name.equals(other.name) && value.equals(other.value);
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Returns the hash code of this attribute.
-		 *
-		 * @return the hash code of this attribute.
-		 * @since  1.1
-		 * @see    #equals(Object)
-		 */
-
-		@Override
-		public int hashCode()
-		{
-			return name.hashCode() * 31 + value.hashCode();
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Returns a string representation of this attribute.  The string is in the form <i>name</i>="<i>value</i>".
-		 *
-		 * @return a string representation of this attribute, in the form <i>name</i>="<i>value</i>".
-		 * @since  1.0
-		 */
-
-		@Override
-		public String toString()
-		{
-			return (name + "=\"" + value + "\"");
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Returns the name of this attribute.
-		 *
-		 * @return the name of this attribute.
-		 * @since  1.0
-		 */
-
-		public String getName()
-		{
-			return name;
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Returns the value of this attribute.
-		 *
-		 * @return the value of this attribute.
-		 * @since  1.0
-		 */
-
-		public String getValue()
-		{
-			return value;
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Returns the size of the encoded form of this attribute (ie, the form in which it is encoded in an attributes
-		 * chunk in a Nested-List File).  The name and value of the attribute are each encoded as two size bytes
-		 * followed by a UTF-8 sequence.
-		 *
-		 * @return the size of the encoded form of this attribute.
-		 * @since  1.0
-		 * @see    #getBytes(boolean)
-		 */
-
-		public int getSize()
-		{
-			return (NAME_SIZE_SIZE + NlfUtils.getUtf8Length(name) + VALUE_SIZE_SIZE + NlfUtils.getUtf8Length(value));
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Returns the encoded form of this attribute (ie, the form in which it is encoded in an attributes chunk in a
-		 * Nested-List File).  The name and value of the attribute are each encoded as two size bytes followed by a
-		 * UTF-8 sequence.
-		 *
-		 * @param  littleEndian  {@code true} if the byte order of the size of the name and value is little-endian;
-		 *                       {@code false} if the byte order of the size of the name and value is big-endian.
-		 * @return the encoded form of this attribute.
-		 * @since  1.0
-		 * @see    #getSize()
-		 */
-
-		public byte[] getBytes(boolean littleEndian)
-		{
-			// Encode the name of this attribute and its size
-			byte[] nameBytes = NlfUtils.stringToUtf8(name);
-			byte[] nameSizeBuffer = new byte[NAME_SIZE_SIZE];
-			Utils.intToBytes(nameBytes.length, nameSizeBuffer, 0, nameSizeBuffer.length, littleEndian);
-
-			// Encode the value of this attribute and its size
-			byte[] valueBytes = NlfUtils.stringToUtf8(value);
-			byte[] valueSizeBuffer = new byte[VALUE_SIZE_SIZE];
-			Utils.intToBytes(valueBytes.length, valueSizeBuffer, 0, valueSizeBuffer.length, littleEndian);
-
-			// Concatenate the size of the name, the name, the size of the value and the value
-			int size = NAME_SIZE_SIZE + nameBytes.length + VALUE_SIZE_SIZE + valueBytes.length;
-			byte[] buffer = new byte[size];
-			int offset = 0;
-			System.arraycopy(nameSizeBuffer, 0, buffer, offset, nameSizeBuffer.length);
-			offset += nameSizeBuffer.length;
-			System.arraycopy(nameBytes, 0, buffer, offset, nameBytes.length);
-			offset += nameBytes.length;
-			System.arraycopy(valueSizeBuffer, 0, buffer, offset, valueSizeBuffer.length);
-			offset += valueSizeBuffer.length;
-			System.arraycopy(valueBytes, 0, buffer, offset, valueBytes.length);
-
-			// Return encoded attribute
-			return buffer;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	name;
-		private	String	value;
-
-	}
-
-	//==================================================================
-
-////////////////////////////////////////////////////////////////////////
-//  Member classes : inner classes
-////////////////////////////////////////////////////////////////////////
-
-
-	// ATTRIBUTES WRITER CLASS
-
-
-	/**
-	 * This class implements a {@linkplain Chunk.IWriter chunk writer}, with which the list of attributes of the
-	 * enclosing {@linkplain Attributes attributes chunk} is written to a Nested-List File.  An instance of this class
-	 * is set as the default writer when the attributes chunk is created.
-	 *
-	 * @since 1.0
-	 */
-
-	private class Writer
-		implements Chunk.IWriter
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * Creates a new instance of an attributes writer, which implements {@link Chunk.IWriter}.
-		 *
-		 * @since 1.0
-		 */
-
-		private Writer()
-		{
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : Chunk.IWriter interface
-	////////////////////////////////////////////////////////////////////
-
-		/**
-		 * This method, which is called before a chunk is written, performs no action.  It returns the value of the
-		 * {@link Attributes#rewrite} field to indicate whether the chunk should be rewritten on the second pass of the
-		 * document writer.
-		 *
-		 * @param  pass  the index of the pass (0 = first pass, 1 = second pass) of the document writer that calls this
-		 *               method.
-		 * @return {@code true} if the chunk should be rewritten on the second pass of the document writer; {@code
-		 *         false} otherwise.
-		 * @since  1.0
-		 * @see    Chunk.IWriter#reset(int)
-		 * @see    Document#write(File)
-		 * @see    Attributes#rewrite
-		 */
-
-		@Override
-		public boolean reset(int pass)
-		{
-			return ((pass == 0) ? rewrite : false);
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Returns the size of the enclosing attributes chunk.
-		 *
-		 * @return the size of the enclosing attributes chunk.
-		 * @since  1.0
-		 * @see    Chunk.IWriter#getLength(int)
-		 * @see    Document#write(File)
-		 */
-
-		@Override
-		public long getLength()
-		{
-			long size = 0;
-			for (Attr attr : attributes)
-				size += attr.getSize();
-			return size;
-		}
-
-		//--------------------------------------------------------------
-
-		/**
-		 * Writes the attributes chunk to the specified output.
-		 *
-		 * @param  dataOutput  the {@code DataOutput} object to which the attributes chunk will be written.
-		 * @throws IOException
-		 *           if an I/O error occurs.
-		 * @since  1.0
-		 * @see    Chunk.IWriter#write(DataOutput)
-		 * @see    Document#write(File)
-		 */
-
-		@Override
-		public void write(DataOutput dataOutput)
-			throws IOException
-		{
-			for (Attr attr : attributes)
-				dataOutput.write(attr.getBytes(getDocument().isLittleEndian()));
-		}
-
-		//--------------------------------------------------------------
-
-	}
-
-	//==================================================================
+	private	List<Attr>	attributes;
+	private	boolean		rewrite;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -500,11 +116,13 @@ public class Attributes
 	 * Chunk#setWriter(Chunk.IWriter)}.
 	 * </p>
 	 *
-	 * @param document  the document to which the attributes chunk will belong.
+	 * @param document
+	 *          the document to which the attributes chunk will belong.
 	 * @since 1.0
 	 */
 
-	protected Attributes(Document document)
+	protected Attributes(
+		Document	document)
 	{
 		// Call superclass constructor
 		super(document, ATTRIBUTES_ID);
@@ -525,12 +143,14 @@ public class Attributes
 	 * Returns {@code true} if the specified string is a valid attribute name.  An attribute name is valid if it is a
 	 * valid unprefixed name (ie, a name that doesn't contain a ':') under XML 1.1.
 	 *
-	 * @param  str  the string whose validity will be determined.
-	 * @return {@code true} if <b>{@code str}</b> is a valid attribute name; {@code false} otherwise.
+	 * @param  str
+	 *           the string whose validity will be determined.
+	 * @return {@code true} if {@code str} is a valid attribute name; {@code false} otherwise.
 	 * @since  1.0
 	 */
 
-	public static boolean isValidName(String str)
+	public static boolean isValidName(
+		String	str)
 	{
 		if (!NlfUtils.isUtf8LengthWithinBounds(str, MIN_NAME_SIZE, MAX_NAME_SIZE))
 			return false;
@@ -564,14 +184,16 @@ public class Attributes
 	 * Returns {@code true} if specified object is an instance of {@code Attributes} that contains the same attributes
 	 * as this attributes chunk, though not necessarily in the same order.
 	 *
-	 * @param  obj  the object with which this attributes chunk will be compared.
-	 * @return {@code true} if <b>{@code obj}</b> is an instance of {@code Attributes} that contains the same attributes
-	 *         as this attributes chunk, though not necessarily in the same order; {@code false} otherwise.
+	 * @param  obj
+	 *           the object with which this attributes chunk will be compared.
+	 * @return {@code true} if {@code obj} is an instance of {@code Attributes} that contains the same attributes as
+	 *         this attributes chunk, though not necessarily in the same order; {@code false} otherwise.
 	 * @since  1.0
 	 */
 
 	@Override
-	public boolean equals(Object obj)
+	public boolean equals(
+		Object	obj)
 	{
 		if (this == obj)
 			return true;
@@ -679,15 +301,17 @@ public class Attributes
 	/**
 	 * Returns the attribute at the specified index in this chunk's list of attributes.
 	 *
-	 * @param  index  the index of the required attribute in this chunk's list of attributes.
-	 * @return the attribute at <b>{@code index}</b> in this chunk's list of attributes.
+	 * @param  index
+	 *           the index of the required attribute in this chunk's list of attributes.
+	 * @return the attribute at {@code index} in this chunk's list of attributes.
 	 * @throws IndexOutOfBoundsException
 	 *           if {@code (index < 0)} or {@code (index >= }{@link #getNumAttributes()}{@code)}.
 	 * @since  1.0
 	 * @see    #getNumAttributes()
 	 */
 
-	public Attr getAttribute(int index)
+	public Attr getAttribute(
+		int	index)
 	{
 		return attributes.get(index);
 	}
@@ -699,13 +323,15 @@ public class Attributes
 	 * The flag, which is used by an {@code Attributes} object's default writer, can be tested by a replacement writer
 	 * with {@link #isRewrite()}.
 	 *
-	 * @param rewrite  {@code true} if the attributes should be rewritten on the second pass of the document writer;
-	 *                 {@code false} otherwise.
+	 * @param rewrite
+	 *          {@code true} if the attributes should be rewritten on the second pass of the document writer; {@code
+	 *          false} otherwise.
 	 * @since 1.0
 	 * @see   #isRewrite()
 	 */
 
-	public void setRewrite(boolean rewrite)
+	public void setRewrite(
+		boolean	rewrite)
 	{
 		this.rewrite = rewrite;
 	}
@@ -717,15 +343,17 @@ public class Attributes
 	 * in the list must have unique names, any occurrence in the list of an attribute with a given name will be the only
 	 * occurrence.
 	 *
-	 * @param  name  the name of the attribute whose index is required.
-	 * @return the index of the attribute whose name is <b>{@code name}</b> in this chunk's list of attributes, or
-	 *         {@code -1} if the list does not contain such an attribute.
+	 * @param  name
+	 *           the name of the attribute whose index is required.
+	 * @return the index of the attribute whose name is {@code name} in this chunk's list of attributes, or {@code -1}
+	 *         if the list does not contain such an attribute.
 	 * @throws IllegalArgumentException
-	 *           if <b>{@code name}</b> is {@code null}.
+	 *           if {@code name} is {@code null}.
 	 * @since  1.0
 	 */
 
-	public int indexOf(String name)
+	public int indexOf(
+		String	name)
 	{
 		if (name == null)
 			throw new IllegalArgumentException();
@@ -745,14 +373,16 @@ public class Attributes
 	 * the same name, it is replaced with the specified attribute; otherwise, the new attribute is added to the end of
 	 * the list.
 	 *
-	 * @param  attribute  the attribute that will be set in or added to the list of attributes.
+	 * @param  attribute
+	 *           the attribute that will be set in or added to the list of attributes.
 	 * @throws IllegalArgumentException
-	 *           if <b>{@code attribute}</b> is {@code null}.
+	 *           if {@code attribute} is {@code null}.
 	 * @since  1.0
 	 * @see    #removeAttribute(int)
 	 */
 
-	public void setAttribute(Attr attribute)
+	public void setAttribute(
+		Attr	attribute)
 	{
 		// Validate argument
 		if (attribute == null)
@@ -782,7 +412,8 @@ public class Attributes
 	 * Removes the attribute at the specified index in this chunk's list of attributes, and returns the attribute that
 	 * was removed.
 	 *
-	 * @param  index  the index of the attribute that will be removed from this chunk's list of attributes.
+	 * @param  index
+	 *           the index of the attribute that will be removed from this chunk's list of attributes.
 	 * @return the attribute that was removed from the list.
 	 * @throws IndexOutOfBoundsException
 	 *           if {@code (index < 0)} or {@code (index >= }{@link #getNumAttributes()}{@code)}.
@@ -792,7 +423,8 @@ public class Attributes
 	 * @see    #indexOf(String)
 	 */
 
-	public Attr removeAttribute(int index)
+	public Attr removeAttribute(
+		int	index)
 	{
 		Attr attr = attributes.remove(index);
 		decrementSize(attr.getSize());
@@ -804,14 +436,15 @@ public class Attributes
 	/**
 	 * Sets the attributes in this chunk's list of attributes as attributes of the specified XML element.
 	 *
-	 * @param  element  the XML element on which the attributes will be set.
+	 * @param  element
+	 *           the XML element on which the attributes will be set.
 	 * @throws DOMException
-	 *           if an attribute name is not valid for the XML version of the document to which <b>{@code element}</b>
-	 *           belongs.
+	 *           if an attribute name is not valid for the XML version of the document to which {@code element} belongs.
 	 * @since  1.0
 	 */
 
-	protected void toXml(Element element)
+	protected void toXml(
+		Element	element)
 		throws DOMException
 	{
 		for (Attr attribute : attributes)
@@ -821,11 +454,420 @@ public class Attributes
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance variables
+//  Member classes : non-inner classes
 ////////////////////////////////////////////////////////////////////////
 
-	private	List<Attr>	attributes;
-	private	boolean		rewrite;
+
+	// CLASS: ATTRIBUTE NAME-VALUE PAIR
+
+
+	/**
+	 * This class implements an attribute as a name&ndash;value pair.  An {@linkplain Attributes attributes chunk}
+	 * consists of a list of name&ndash;value pairs.
+	 *
+	 * @since 1.0
+	 */
+
+	public static class Attr
+		implements Comparable<Attr>
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	name;
+		private	String	value;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * Creates a new instance of an attribute with the specified name.  The value of the attribute is an empty
+		 * string.
+		 *
+		 * @param  name
+		 *           the name of the attribute.
+		 * @throws IllegalArgumentException
+		 *           if
+		 *           <ul>
+		 *             <li>{@code name} is {@code null}, or</li>
+		 *             <li>the length of the UTF-8 encoding of {@code name} is greater than 65535 bytes, or</li>
+		 *             <li>{@code name} is not a valid attribute name.</li>
+		 *           </ul>
+		 * @since  1.0
+		 */
+
+		public Attr(
+			String	name)
+		{
+			this(name, "");
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Creates a new instance of an attribute with the specified name and value.
+		 *
+		 * @param  name
+		 *           the attribute name.
+		 * @param  value
+		 *           the attribute value.
+		 * @throws IllegalArgumentException
+		 *           if
+		 *           <ul>
+		 *             <li>@code name} is {@code null}, or</li>
+		 *             <li>the length of the UTF-8 encoding of {@code name} is greater than 65535 bytes, or</li>
+		 *             <li>@code name} is not a valid attribute name, or</li>
+		 *             <li>{@code value} is {@code null}, or</li>
+		 *             <li>the length of the UTF-8 encoding of {@code value} is greater than 65535 bytes.</li>
+		 *           </ul>
+		 * @since  1.0
+		 */
+
+		public Attr(
+			String	name,
+			String	value)
+		{
+			// Validate arguments
+			if (name == null)
+				throw new IllegalArgumentException("Null name");
+			if (!isValidName(name))
+				throw new IllegalArgumentException("Invalid name");
+			if (value == null)
+				throw new IllegalArgumentException("Null value");
+			if (!NlfUtils.isUtf8LengthWithinBounds(value, MIN_VALUE_SIZE, MAX_VALUE_SIZE))
+				throw new IllegalArgumentException("Length of value out of bounds");
+
+			// Initialise instance variables
+			this.name = name;
+			this.value = value;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : Comparable interface
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * Compares this attribute with the specified attribute and returns the result.  The comparison is performed by
+		 * comparing the names of the two objects using {@link String#compareTo(String)}, which compares strings
+		 * lexicographically by the Unicode value of each character in the strings.
+		 * <p>
+		 * The result is
+		 * </p>
+		 * <ul>
+		 *   <li>
+		 *     a negative integer if the name of this attribute lexicographically precedes the name of the argument;
+		 *   </li>
+		 *   <li>
+		 *     a positive integer if the name of this attribute lexicographically succeeds the name of the argument;
+		 *   </li>
+		 *   <li>
+		 *     zero if the names of the two attributes are equal.
+		 *   </li>
+		 * </ul>
+		 * <p>
+		 * Note that a result of zero <em>does not</em> imply that the {@link #equals(Object)} method would return
+		 * {@code true}, although the converse is true.
+		 * </p>
+		 *
+		 * @param  attr
+		 *           the attribute with which this attribute will be compared.
+		 * @return <ul>
+		 *           <li>
+		 *             {@code 0} (zero) if the name of this attribute is equal to the name of {@code attr};
+		 *           </li>
+		 *           <li>
+		 *             a value less than {@code 0} if the name of this attribute is lexicographically less than the name
+		 *             of {@code attr};
+		 *           </li>
+		 *           <li>
+		 *             a value greater than {@code 0} if the name of this attribute is lexicographically greater than
+		 *             the name of {@code attr}.
+		 *           </li>
+		 *         </ul>
+		 * @since  1.0
+		 * @see    String#compareTo(String)
+		 */
+
+		@Override
+		public int compareTo(
+			Attr	attr)
+		{
+			return name.compareTo(attr.name);
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : overriding methods
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * Returns {@code true} if specified object is an instance of {@code Attr} that has the same name and value as
+		 * this attribute.
+		 *
+		 * @param  obj
+		 *           the object with which this attribute will be compared.
+		 * @return {@code true} if {@code obj} is an instance of {@code Attr} that has the same name and value as this
+		 *         attribute; {@code false} otherwise.
+		 * @since  1.0
+		 */
+
+		@Override
+		public boolean equals(
+			Object	obj)
+		{
+			if (this == obj)
+				return true;
+
+			return (obj instanceof Attr other) && name.equals(other.name) && value.equals(other.value);
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Returns the hash code of this attribute.
+		 *
+		 * @return the hash code of this attribute.
+		 * @since  1.1
+		 * @see    #equals(Object)
+		 */
+
+		@Override
+		public int hashCode()
+		{
+			return 31 * name.hashCode() + value.hashCode();
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Returns a string representation of this attribute.  The string is in the form <i>name</i>="<i>value</i>".
+		 *
+		 * @return a string representation of this attribute, in the form <i>name</i>="<i>value</i>".
+		 * @since  1.0
+		 */
+
+		@Override
+		public String toString()
+		{
+			return name + "=\"" + value + "\"";
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * Returns the name of this attribute.
+		 *
+		 * @return the name of this attribute.
+		 * @since  1.0
+		 */
+
+		public String getName()
+		{
+			return name;
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Returns the value of this attribute.
+		 *
+		 * @return the value of this attribute.
+		 * @since  1.0
+		 */
+
+		public String getValue()
+		{
+			return value;
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Returns the size of the encoded form of this attribute (ie, the form in which it is encoded in an attributes
+		 * chunk in a Nested-List File).  The name and value of the attribute are each encoded as two size bytes
+		 * followed by a UTF-8 sequence.
+		 *
+		 * @return the size of the encoded form of this attribute.
+		 * @since  1.0
+		 * @see    #getBytes(boolean)
+		 */
+
+		public int getSize()
+		{
+			return (NAME_SIZE_SIZE + NlfUtils.getUtf8Length(name) + VALUE_SIZE_SIZE + NlfUtils.getUtf8Length(value));
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Returns the encoded form of this attribute (ie, the form in which it is encoded in an attributes chunk in a
+		 * Nested-List File).  The name and value of the attribute are each encoded as two size bytes followed by a
+		 * UTF-8 sequence.
+		 *
+		 * @param  littleEndian
+		 *           {@code true} if the byte order of the size of the name and value is little-endian; {@code false} if
+		 *           the byte order of the size of the name and value is big-endian.
+		 * @return the encoded form of this attribute.
+		 * @since  1.0
+		 * @see    #getSize()
+		 */
+
+		public byte[] getBytes(
+			boolean	littleEndian)
+		{
+			// Encode the name of this attribute and its size
+			byte[] nameBytes = NlfUtils.stringToUtf8(name);
+			byte[] nameSizeBuffer = new byte[NAME_SIZE_SIZE];
+			Utils.intToBytes(nameBytes.length, nameSizeBuffer, 0, nameSizeBuffer.length, littleEndian);
+
+			// Encode the value of this attribute and its size
+			byte[] valueBytes = NlfUtils.stringToUtf8(value);
+			byte[] valueSizeBuffer = new byte[VALUE_SIZE_SIZE];
+			Utils.intToBytes(valueBytes.length, valueSizeBuffer, 0, valueSizeBuffer.length, littleEndian);
+
+			// Concatenate the size of the name, the name, the size of the value and the value
+			int size = NAME_SIZE_SIZE + nameBytes.length + VALUE_SIZE_SIZE + valueBytes.length;
+			byte[] buffer = new byte[size];
+			int offset = 0;
+			System.arraycopy(nameSizeBuffer, 0, buffer, offset, nameSizeBuffer.length);
+			offset += nameSizeBuffer.length;
+			System.arraycopy(nameBytes, 0, buffer, offset, nameBytes.length);
+			offset += nameBytes.length;
+			System.arraycopy(valueSizeBuffer, 0, buffer, offset, valueSizeBuffer.length);
+			offset += valueSizeBuffer.length;
+			System.arraycopy(valueBytes, 0, buffer, offset, valueBytes.length);
+
+			// Return encoded attribute
+			return buffer;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
+
+////////////////////////////////////////////////////////////////////////
+//  Member classes : inner classes
+////////////////////////////////////////////////////////////////////////
+
+
+	// CLASS: ATTRIBUTES WRITER
+
+
+	/**
+	 * This class implements a {@linkplain Chunk.IWriter chunk writer}, with which the list of attributes of the
+	 * enclosing {@linkplain Attributes attributes chunk} is written to a Nested-List File.  An instance of this class
+	 * is set as the default writer when the attributes chunk is created.
+	 *
+	 * @since 1.0
+	 */
+
+	private class Writer
+		implements Chunk.IWriter
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * Creates a new instance of an attributes writer, which implements {@link Chunk.IWriter}.
+		 *
+		 * @since 1.0
+		 */
+
+		private Writer()
+		{
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : Chunk.IWriter interface
+	////////////////////////////////////////////////////////////////////
+
+		/**
+		 * This method, which is called before a chunk is written, performs no action.  It returns the value of the
+		 * {@link Attributes#rewrite} field to indicate whether the chunk should be rewritten on the second pass of the
+		 * document writer.
+		 *
+		 * @param  pass
+		 *           the index of the pass (0 = first pass, 1 = second pass) of the document writer that calls this
+		 *           method.
+		 * @return {@code true} if the chunk should be rewritten on the second pass of the document writer; {@code
+		 *         false} otherwise.
+		 * @since  1.0
+		 * @see    Chunk.IWriter#reset(int)
+		 * @see    Document#write(File)
+		 * @see    Attributes#rewrite
+		 */
+
+		@Override
+		public boolean reset(
+			int	pass)
+		{
+			return (pass == 0) ? rewrite : false;
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Returns the size of the enclosing attributes chunk.
+		 *
+		 * @return the size of the enclosing attributes chunk.
+		 * @since  1.0
+		 * @see    Chunk.IWriter#getLength(int)
+		 * @see    Document#write(File)
+		 */
+
+		@Override
+		public long getLength()
+		{
+			long size = 0;
+			for (Attr attr : attributes)
+				size += attr.getSize();
+			return size;
+		}
+
+		//--------------------------------------------------------------
+
+		/**
+		 * Writes the attributes chunk to the specified output.
+		 *
+		 * @param  dataOutput
+		 *           the {@code DataOutput} object to which the attributes chunk will be written.
+		 * @throws IOException
+		 *           if an I/O error occurs.
+		 * @since  1.0
+		 * @see    Chunk.IWriter#write(DataOutput)
+		 * @see    Document#write(File)
+		 */
+
+		@Override
+		public void write(
+			DataOutput	dataOutput)
+			throws IOException
+		{
+			for (Attr attr : attributes)
+				dataOutput.write(attr.getBytes(getDocument().isLittleEndian()));
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
 
 }
 

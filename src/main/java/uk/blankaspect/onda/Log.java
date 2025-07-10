@@ -2,7 +2,7 @@
 
 Log.java
 
-Log class.
+Class: log.
 
 \*====================================================================*/
 
@@ -29,7 +29,7 @@ import uk.blankaspect.common.string.StringUtils;
 //----------------------------------------------------------------------
 
 
-// LOG CLASS
+// CLASS: LOG
 
 
 class Log
@@ -39,54 +39,22 @@ class Log
 //  Constants
 ////////////////////////////////////////////////////////////////////////
 
-	public static final	Log	INSTANCE	= new Log();
+	public static final	Log		INSTANCE	= new Log();
 
 	public static final	String	ERROR_PREFIX	= "! ";
 
-////////////////////////////////////////////////////////////////////////
-//  Member classes : non-inner classes
-////////////////////////////////////////////////////////////////////////
-
-
-	// LOG LINE CLASS
-
-
-	public static class Line
+	enum LineKind
 	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		enum Kind
-		{
-			INFO,
-			ERROR
-		}
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private Line(Kind   kind,
-					 String str)
-		{
-			this.kind = kind;
-			this.str = str;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		Kind	kind;
-		String	str;
-
+		INFO,
+		ERROR
 	}
 
-	//==================================================================
+////////////////////////////////////////////////////////////////////////
+//  Instance variables
+////////////////////////////////////////////////////////////////////////
+
+	private	List<Line>	lines;
+	private	boolean		show;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -124,42 +92,75 @@ class Log
 
 	//------------------------------------------------------------------
 
-	public void setShow(boolean show)
+	public void setShow(
+		boolean	show)
 	{
 		this.show = show;
 	}
 
 	//------------------------------------------------------------------
 
-	public void appendLine(String str)
+	public void appendLine(
+		String	text)
 	{
 		if (show)
-			System.out.println(str);
+			System.out.println(text);
 		else
-			lines.add(new Line(Line.Kind.INFO, str));
+			lines.add(Line.info(text));
 	}
 
 	//------------------------------------------------------------------
 
-	public void appendException(AppException exception)
+	public void appendException(
+		AppException	exception)
 	{
 		for (String str : StringUtils.split(exception.toString(), '\n'))
 		{
 			if (show)
 				System.out.println(ERROR_PREFIX + str);
 			else
-				lines.add(new Line(Line.Kind.ERROR, str));
+				lines.add(Line.error(str));
 		}
 	}
 
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance variables
+//  Member records
 ////////////////////////////////////////////////////////////////////////
 
-	private	List<Line>	lines;
-	private	boolean		show;
+
+	// RECORD: LINE OF LOG
+
+
+	public record Line(
+		LineKind	kind,
+		String		text)
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Class methods
+	////////////////////////////////////////////////////////////////////
+
+		private static Line info(
+			String	text)
+		{
+			return new Line(LineKind.INFO, text);
+		}
+
+		//--------------------------------------------------------------
+
+		private static Line error(
+			String	text)
+		{
+			return new Line(LineKind.ERROR, text);
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
 
 }
 

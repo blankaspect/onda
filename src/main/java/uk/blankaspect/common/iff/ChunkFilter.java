@@ -235,12 +235,10 @@ public class ChunkFilter
 	@Override
 	public boolean equals(Object obj)
 	{
-		if (obj instanceof ChunkFilter)
-		{
-			ChunkFilter filter = (ChunkFilter)obj;
-			return ((kind == filter.kind) && ids.equals(filter.ids));
-		}
-		return false;
+		if (this == obj)
+			return true;
+
+		return (obj instanceof ChunkFilter other) && (kind == other.kind) && ids.equals(other.ids);
 	}
 
 	//------------------------------------------------------------------
@@ -248,7 +246,7 @@ public class ChunkFilter
 	@Override
 	public int hashCode()
 	{
-		return (kind.ordinal() * 31 + ids.hashCode());
+		return 31 * kind.ordinal() + ids.hashCode();
 	}
 
 	//------------------------------------------------------------------
@@ -256,8 +254,7 @@ public class ChunkFilter
 	@Override
 	public String toString()
 	{
-		return ((isIncludeAll() || isExcludeAll()) ? getIdString()
-												   : kind.getKey() + " " + getIdString());
+		return (isIncludeAll() || isExcludeAll()) ? getIdString() : kind.getKey() + " " + getIdString();
 	}
 
 	//------------------------------------------------------------------

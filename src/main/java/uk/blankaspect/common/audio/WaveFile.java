@@ -2,7 +2,7 @@
 
 WaveFile.java
 
-WAVE audio file class.
+Class: WAVE audio file.
 
 \*====================================================================*/
 
@@ -54,7 +54,7 @@ import uk.blankaspect.common.number.NumberCodec;
 //----------------------------------------------------------------------
 
 
-// WAVE AUDIO FILE CLASS
+// CLASS: WAVE AUDIO FILE
 
 
 public class WaveFile
@@ -73,12 +73,321 @@ public class WaveFile
 	private static final	RiffChunk	FORMAT_CHUNK	= new RiffChunk(WAVE_FORMAT_ID, null);
 	private static final	RiffChunk	DATA_CHUNK		= new RiffChunk(WAVE_DATA_ID, null);
 
+	private static final	String	FILE_IS_NOT_OPEN_STR	= "File is not open";
+
+////////////////////////////////////////////////////////////////////////
+//  Constructors
+////////////////////////////////////////////////////////////////////////
+
+	public WaveFile(File file)
+	{
+		super(file);
+		chunks = new ArrayList<>();
+	}
+
+	//------------------------------------------------------------------
+
+	public WaveFile(File file,
+					int  numChannels,
+					int  bitsPerSample,
+					int  sampleRate)
+	{
+		super(file, numChannels, bitsPerSample, sampleRate);
+		chunks = new ArrayList<>();
+	}
+
+	//------------------------------------------------------------------
+
+	public WaveFile(File     file,
+					WaveFile waveFile)
+	{
+		this(file, waveFile.numChannels, waveFile.bitsPerSample, waveFile.sampleRate);
+	}
+
+	//------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////
+//  Class methods
+////////////////////////////////////////////////////////////////////////
+
+	public static int setSampleData16(double[] data,
+									  int      srcOffset,
+									  byte[]   buffer,
+									  int      destOffset,
+									  int      length)
+	{
+		double maxSampleValue = getMaxOutputSampleValue(2);
+		int endOffset = srcOffset + length;
+		for (int i = srcOffset; i < endOffset; i++)
+		{
+			int sampleValue = (int)Math.round(data[i] * maxSampleValue);
+			buffer[destOffset++] = (byte)sampleValue;
+			buffer[destOffset++] = (byte)(sampleValue >> 8);
+		}
+		return destOffset;
+	}
+
+	//------------------------------------------------------------------
+
+	public static int setSampleData24(double[] data,
+									  int      srcOffset,
+									  byte[]   buffer,
+									  int      destOffset,
+									  int      length)
+	{
+		double maxSampleValue = getMaxOutputSampleValue(3);
+		int endOffset = srcOffset + length;
+		for (int i = srcOffset; i < endOffset; i++)
+		{
+			int sampleValue = (int)Math.round(data[i] * maxSampleValue);
+			buffer[destOffset++] = (byte)sampleValue;
+			buffer[destOffset++] = (byte)(sampleValue >> 8);
+			buffer[destOffset++] = (byte)(sampleValue >> 16);
+		}
+		return destOffset;
+	}
+
+	//------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////
+//  Instance methods : overriding methods
+////////////////////////////////////////////////////////////////////////
+
+	@Override
+	public void addChunks(List<Chunk> chunks)
+		throws ClassCastException
+	{
+		for (Chunk chunk : chunks)
+			this.chunks.add((RiffChunk)chunk);
+	}
+
+	//------------------------------------------------------------------
+
+	@Override
+	public void read(FormFile.IChunkReader chunkReader)
+		throws AppException
+	{
+		new RiffFormFile(file).read(chunkReader);
+	}
+
+	//------------------------------------------------------------------
+
+	@Override
+	public int read(double[] buffer,
+					int      offset,
+					int      length)
+		throws AppException
+	{
+		// Test whether random access file is open
+		if (raFile == null)
+			throw new IllegalStateException(FILE_IS_NOT_OPEN_STR);
+
+		// Read from random access file
+		try
+		{
+			// Read from file
+			int bytesPerSample = getBytesPerSample();
+			byte[] inBuffer = new byte[length * bytesPerSample];
+			int readLength = raFile.read(inBuffer);
+
+			// Convert sample data
+			if (readLength > 0)
+			{
+				double factor = 1.0 / getMaxInputSampleValue(bytesPerSample);
+				if (bytesPerSample == 1)
+				{
+					for (int i = 0; i < readLength; i++)
+						buffer[offset++] = (double)(inBuffer[i] ^ (byte)0x80) * factor;
+				}
+				else
+				{
+					for (int i = 0; i < readLength; i += bytesPerSample)
+						buffer[offset++] = (double)NumberCodec.bytesToIntLE(inBuffer, i, bytesPerSample) * factor;
+					readLength /= bytesPerSample;
+				}
+			}
+			return readLength;
+		}
+		catch (IOException e)
+		{
+			throw new FileException(AudioFile.ErrorId.ERROR_READING_FILE, file, e);
+		}
+	}
+
+	//------------------------------------------------------------------
+
+	@Override
+	protected Object read(SampleFormat sampleFormat,
+						  int          bytesPerSample,
+						  Object       outStream,
+						  ChunkFilter  filter)
+		throws AppException
+	{
+		ChunkReader reader = new ChunkReader(sampleFormat, bytesPerSample, outStream, filter);
+		new RiffFormFile(file).read(reader);
+		return reader.getData();
+	}
+
+	//------------------------------------------------------------------
+
+	@Override
+	protected int readGroupHeader()
+		throws AppException
+	{
+		try
+		{
+			// Read group header
+			byte[] buffer = new byte[Group.HEADER_SIZE];
+			raFile.readFully(buffer);
+
+			// Test for WAVE group
+			RiffGroup group = new RiffGroup(buffer);
+			if (!group.getGroupId().equals(RIFF_GROUP_ID) ||
+				 !group.getTypeId().equals(WAVE_TYPE_ID))
+				throw new FileException(ErrorId.NOT_A_WAVE_FILE, file);
+
+			// Test group size
+			int groupSize = RiffChunk.getSize(buffer, IffId.SIZE);
+			if (groupSize < 0)
+				throw new FileException(ErrorId.FILE_IS_TOO_LARGE, file);
+			if (groupSize > raFile.length() - Chunk.HEADER_SIZE)
+				throw new FileException(AudioFile.ErrorId.MALFORMED_FILE, file);
+
+			return groupSize;
+		}
+		catch (IOException e)
+		{
+			throw new FileException(AudioFile.ErrorId.ERROR_READING_FILE, file, e);
+		}
+	}
+
+	//------------------------------------------------------------------
+
+	@Override
+	protected void write(IDataInput      sampleDataInput,
+						 IDataInput.Kind inputKind)
+		throws AppException
+	{
+		// Create placeholders for required chunks
+		if (chunks.isEmpty())
+		{
+			chunks.add(FORMAT_CHUNK);
+			chunks.add(DATA_CHUNK);
+		}
+
+		// Write file
+		new RiffFormFile(file).write(WAVE_TYPE_ID, new ChunkWriter(sampleDataInput, inputKind));
+	}
+
+	//------------------------------------------------------------------
+
+	@Override
+	protected int getChunkSize(byte[] buffer,
+							   int    offset)
+	{
+		return RiffChunk.getSize(buffer, offset);
+	}
+
+	//------------------------------------------------------------------
+
+	@Override
+	protected IffId getDataChunkId()
+	{
+		return WAVE_DATA_ID;
+	}
+
+	//------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////
+//  Instance methods
+////////////////////////////////////////////////////////////////////////
+
+	public RiffChunk getChunk(IffId id)
+	{
+		for (RiffChunk chunk : chunks)
+		{
+			if (chunk.getId().equals(id))
+				return chunk;
+		}
+		return null;
+	}
+
+	//------------------------------------------------------------------
+
+	public void setChunks(List<RiffChunk> chunks)
+	{
+		this.chunks = chunks;
+	}
+
+	//------------------------------------------------------------------
+
+	public RiffChunk readChunk(IffId id)
+		throws AppException
+	{
+		// Test whether random access file is open
+		if (raFile == null)
+			throw new IllegalStateException(FILE_IS_NOT_OPEN_STR);
+
+		// Find chunk
+		int chunkSize = findChunk(id);
+		if (chunkSize < 0)
+			return null;
+
+		// Read chunk
+		try
+		{
+			byte[] buffer = new byte[chunkSize];
+			raFile.readFully(buffer);
+			return new RiffChunk(id, buffer);
+		}
+		catch (OutOfMemoryError e)
+		{
+			throw new IffException(ErrorId.NOT_ENOUGH_MEMORY, file, id);
+		}
+		catch (IOException e)
+		{
+			throw new FileException(AudioFile.ErrorId.ERROR_READING_FILE, file, e);
+		}
+	}
+
+	//------------------------------------------------------------------
+
+	private void parseFormatChunk(RandomAccessFile raFile,
+								  int              chunkSize)
+		throws AppException, IOException
+	{
+		if ((chunkSize != Attributes.CHUNK_SIZE1) && (chunkSize < Attributes.CHUNK_SIZE2))
+			throw new FileException(ErrorId.INVALID_FORMAT_CHUNK, file);
+
+		byte[] buffer = new byte[chunkSize];
+		raFile.readFully(buffer);
+
+		Attributes attributes = new Attributes(buffer);
+		if (attributes.kind != Attributes.UNCOMPRESSED)
+			throw new IffException(ErrorId.UNSUPPORTED_FORMAT, file, WAVE_FORMAT_ID);
+		numChannels = attributes.numChannels;
+		bitsPerSample = attributes.bitsPerSample;
+		if (bitsPerSample > MAX_BITS_PER_SAMPLE)
+			throw new FileException(ErrorId.UNSUPPORTED_BITS_PER_SAMPLE, file);
+		sampleRate = attributes.samplesPerSecond;
+		if (attributes.bytesPerSecond != getBytesPerSampleFrame() * sampleRate)
+			throw new FileException(ErrorId.INCONSISTENT_AVERAGE_BYTES_PER_SECOND, file);
+	}
+
+	//------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////
+//  Instance variables
+////////////////////////////////////////////////////////////////////////
+
+	private	List<RiffChunk>	chunks;
+
 ////////////////////////////////////////////////////////////////////////
 //  Enumerated types
 ////////////////////////////////////////////////////////////////////////
 
 
-	// ERROR IDENTIFIERS
+	// ENUMERATION: ERROR IDENTIFIERS
 
 
 	private enum ErrorId
@@ -130,6 +439,12 @@ public class WaveFile
 		("There was not enough memory to read the file.");
 
 	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	message;
+
+	////////////////////////////////////////////////////////////////////
 	//  Constructors
 	////////////////////////////////////////////////////////////////////
 
@@ -144,18 +459,13 @@ public class WaveFile
 	//  Instance methods : AppException.IId interface
 	////////////////////////////////////////////////////////////////////
 
+		@Override
 		public String getMessage()
 		{
 			return message;
 		}
 
 		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	message;
 
 	}
 
@@ -166,7 +476,7 @@ public class WaveFile
 ////////////////////////////////////////////////////////////////////////
 
 
-	// ATTRIBUTES CLASS
+	// CLASS: ATTRIBUTES
 
 
 	private static class Attributes
@@ -183,12 +493,23 @@ public class WaveFile
 		private static final	int	BLOCK_ALIGN_SIZE		= 2;
 		private static final	int	BITS_PER_SAMPLE_SIZE	= 2;
 
-		private static final	int	CHUNK_SIZE1	= KIND_SIZE + NUM_CHANNELS_SIZE + SAMPLES_PER_SECOND_SIZE +
-																BYTES_PER_SECOND_SIZE + BLOCK_ALIGN_SIZE +
-																BITS_PER_SAMPLE_SIZE;
+		private static final	int	CHUNK_SIZE1	=
+				KIND_SIZE + NUM_CHANNELS_SIZE + SAMPLES_PER_SECOND_SIZE + BYTES_PER_SECOND_SIZE + BLOCK_ALIGN_SIZE
+				+ BITS_PER_SAMPLE_SIZE;
 		private static final	int	CHUNK_SIZE2	= CHUNK_SIZE1 + 2;
 
 		private static final	int	UNCOMPRESSED	= 1;
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		int	kind;
+		int	numChannels;
+		int	samplesPerSecond;
+		int	bytesPerSecond;
+		int	blockAlign;
+		int	bitsPerSample;
 
 	////////////////////////////////////////////////////////////////////
 	//  Constructors
@@ -279,17 +600,6 @@ public class WaveFile
 
 		//--------------------------------------------------------------
 
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		int	kind;
-		int	numChannels;
-		int	samplesPerSecond;
-		int	bytesPerSecond;
-		int	blockAlign;
-		int	bitsPerSample;
-
 	}
 
 	//==================================================================
@@ -299,12 +609,22 @@ public class WaveFile
 ////////////////////////////////////////////////////////////////////////
 
 
-	// CHUNK READER CLASS
+	// CLASS: CHUNK READER
 
 
 	private class ChunkReader
 		implements FormFile.IChunkReader
 	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	SampleFormat	sampleFormat;
+		private	int				bytesPerSample;
+		private	Object			outStream;
+		private	ChunkFilter		filter;
+		private	Object			sampleData;
 
 	////////////////////////////////////////////////////////////////////
 	//  Constructors
@@ -327,6 +647,7 @@ public class WaveFile
 	//  Instance methods : FormFile.IChunkReader interface
 	////////////////////////////////////////////////////////////////////
 
+		@Override
 		public void beginReading(RandomAccessFile raFile,
 								 IffId            typeId,
 								 int              size)
@@ -341,6 +662,7 @@ public class WaveFile
 
 		//--------------------------------------------------------------
 
+		@Override
 		public void read(RandomAccessFile raFile,
 						 IffId            id,
 						 int              size)
@@ -422,6 +744,7 @@ public class WaveFile
 
 		//--------------------------------------------------------------
 
+		@Override
 		public void endReading(RandomAccessFile raFile)
 			throws AppException
 		{
@@ -588,7 +911,10 @@ public class WaveFile
 				else
 				{
 					for (int i = 0; i < inLength; i += inBytesPerSample)
-						outBuffer[outIndex++] = (double)NumberCodec.bytesToIntLE(inBuffer, i, inBytesPerSample) * factor;
+					{
+						outBuffer[outIndex++] =
+								(double)NumberCodec.bytesToIntLE(inBuffer, i, inBytesPerSample) * factor;
+					}
 				}
 
 				// Write data to output stream
@@ -603,32 +929,30 @@ public class WaveFile
 			}
 
 			// If sample data were written to buffer, return it
-			return ((outStream == null) ? outBuffer : null);
+			return (outStream == null) ? outBuffer : null;
 		}
 
 		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	SampleFormat	sampleFormat;
-		private	int				bytesPerSample;
-		private	Object			outStream;
-		private	ChunkFilter		filter;
-		private	Object			sampleData;
 
 	}
 
 	//==================================================================
 
 
-	// CHUNK WRITER CLASS
+	// CLASS: CHUNK WRITER
 
 
 	private class ChunkWriter
 		implements FormFile.IChunkWriter
 	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	IDataInput		sampleDataInput;
+		private	IDataInput.Kind	inputKind;
+		private	int				chunkIndex;
 
 	////////////////////////////////////////////////////////////////////
 	//  Constructors
@@ -647,6 +971,7 @@ public class WaveFile
 	//  Instance methods : FormFile.IChunkWriter interface
 	////////////////////////////////////////////////////////////////////
 
+		@Override
 		public void beginWriting(RandomAccessFile raFile)
 		{
 			// do nothing
@@ -654,6 +979,7 @@ public class WaveFile
 
 		//--------------------------------------------------------------
 
+		@Override
 		public IffId getNextId()
 		{
 			return ((chunkIndex < chunks.size()) ? chunks.get(chunkIndex++).getId() : null);
@@ -661,6 +987,7 @@ public class WaveFile
 
 		//--------------------------------------------------------------
 
+		@Override
 		public void write(RandomAccessFile raFile,
 						  IffId            id)
 			throws AppException, IOException
@@ -684,6 +1011,7 @@ public class WaveFile
 
 		//--------------------------------------------------------------
 
+		@Override
 		public void endWriting(RandomAccessFile raFile)
 		{
 			// do nothing
@@ -819,324 +1147,9 @@ public class WaveFile
 
 		//--------------------------------------------------------------
 
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	IDataInput		sampleDataInput;
-		private	IDataInput.Kind	inputKind;
-		private	int				chunkIndex;
-
 	}
 
 	//==================================================================
-
-////////////////////////////////////////////////////////////////////////
-//  Constructors
-////////////////////////////////////////////////////////////////////////
-
-	public WaveFile(File file)
-	{
-		super(file);
-		chunks = new ArrayList<>();
-	}
-
-	//------------------------------------------------------------------
-
-	public WaveFile(File file,
-					int  numChannels,
-					int  bitsPerSample,
-					int  sampleRate)
-	{
-		super(file, numChannels, bitsPerSample, sampleRate);
-		chunks = new ArrayList<>();
-	}
-
-	//------------------------------------------------------------------
-
-	public WaveFile(File     file,
-					WaveFile waveFile)
-	{
-		this(file, waveFile.numChannels, waveFile.bitsPerSample, waveFile.sampleRate);
-	}
-
-	//------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////
-//  Class methods
-////////////////////////////////////////////////////////////////////////
-
-	public static int setSampleData16(double[] data,
-									  int      srcOffset,
-									  byte[]   buffer,
-									  int      destOffset,
-									  int      length)
-	{
-		double maxSampleValue = getMaxOutputSampleValue(2);
-		int endOffset = srcOffset + length;
-		for (int i = srcOffset; i < endOffset; i++)
-		{
-			int sampleValue = (int)Math.round(data[i] * maxSampleValue);
-			buffer[destOffset++] = (byte)sampleValue;
-			buffer[destOffset++] = (byte)(sampleValue >> 8);
-		}
-		return destOffset;
-	}
-
-	//------------------------------------------------------------------
-
-	public static int setSampleData24(double[] data,
-									  int      srcOffset,
-									  byte[]   buffer,
-									  int      destOffset,
-									  int      length)
-	{
-		double maxSampleValue = getMaxOutputSampleValue(3);
-		int endOffset = srcOffset + length;
-		for (int i = srcOffset; i < endOffset; i++)
-		{
-			int sampleValue = (int)Math.round(data[i] * maxSampleValue);
-			buffer[destOffset++] = (byte)sampleValue;
-			buffer[destOffset++] = (byte)(sampleValue >> 8);
-			buffer[destOffset++] = (byte)(sampleValue >> 16);
-		}
-		return destOffset;
-	}
-
-	//------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////
-//  Instance methods : overriding methods
-////////////////////////////////////////////////////////////////////////
-
-	@Override
-	public void addChunks(List<Chunk> chunks)
-		throws ClassCastException
-	{
-		for (Chunk chunk : chunks)
-			this.chunks.add((RiffChunk)chunk);
-	}
-
-	//------------------------------------------------------------------
-
-	@Override
-	public void read(FormFile.IChunkReader chunkReader)
-		throws AppException
-	{
-		new RiffFormFile(file).read(chunkReader);
-	}
-
-	//------------------------------------------------------------------
-
-	@Override
-	public int read(double[] buffer,
-					int      offset,
-					int      length)
-		throws AppException
-	{
-		// Test whether random access file is open
-		if (raFile == null)
-			throw new FileException(AudioFile.ErrorId.FILE_IS_NOT_OPEN, file);
-
-		// Read from random access file
-		try
-		{
-			// Read from file
-			int bytesPerSample = getBytesPerSample();
-			byte[] inBuffer = new byte[length * bytesPerSample];
-			int readLength = raFile.read(inBuffer);
-
-			// Convert sample data
-			if (readLength > 0)
-			{
-				double factor = 1.0 / getMaxInputSampleValue(bytesPerSample);
-				if (bytesPerSample == 1)
-				{
-					for (int i = 0; i < readLength; i++)
-						buffer[offset++] = (double)(inBuffer[i] ^ (byte)0x80) * factor;
-				}
-				else
-				{
-					for (int i = 0; i < readLength; i += bytesPerSample)
-						buffer[offset++] = (double)NumberCodec.bytesToIntLE(inBuffer, i, bytesPerSample) * factor;
-					readLength /= bytesPerSample;
-				}
-			}
-			return readLength;
-		}
-		catch (IOException e)
-		{
-			throw new FileException(AudioFile.ErrorId.ERROR_READING_FILE, file, e);
-		}
-	}
-
-	//------------------------------------------------------------------
-
-	@Override
-	protected Object read(SampleFormat sampleFormat,
-						  int          bytesPerSample,
-						  Object       outStream,
-						  ChunkFilter  filter)
-		throws AppException
-	{
-		ChunkReader reader = new ChunkReader(sampleFormat, bytesPerSample, outStream, filter);
-		new RiffFormFile(file).read(reader);
-		return reader.getData();
-	}
-
-	//------------------------------------------------------------------
-
-	@Override
-	protected int readGroupHeader()
-		throws AppException
-	{
-		try
-		{
-			// Read group header
-			byte[] buffer = new byte[Group.HEADER_SIZE];
-			raFile.readFully(buffer);
-
-			// Test for WAVE group
-			RiffGroup group = new RiffGroup(buffer);
-			if (!group.getGroupId().equals(RIFF_GROUP_ID) ||
-				 !group.getTypeId().equals(WAVE_TYPE_ID))
-				throw new FileException(ErrorId.NOT_A_WAVE_FILE, file);
-
-			// Test group size
-			int groupSize = RiffChunk.getSize(buffer, IffId.SIZE);
-			if (groupSize < 0)
-				throw new FileException(ErrorId.FILE_IS_TOO_LARGE, file);
-			if (groupSize > raFile.length() - Chunk.HEADER_SIZE)
-				throw new FileException(AudioFile.ErrorId.MALFORMED_FILE, file);
-
-			return groupSize;
-		}
-		catch (IOException e)
-		{
-			throw new FileException(AudioFile.ErrorId.ERROR_READING_FILE, file, e);
-		}
-	}
-
-	//------------------------------------------------------------------
-
-	@Override
-	protected void write(IDataInput      sampleDataInput,
-						 IDataInput.Kind inputKind)
-		throws AppException
-	{
-		// Create placeholders for required chunks
-		if (chunks.isEmpty())
-		{
-			chunks.add(FORMAT_CHUNK);
-			chunks.add(DATA_CHUNK);
-		}
-
-		// Write file
-		new RiffFormFile(file).write(WAVE_TYPE_ID, new ChunkWriter(sampleDataInput, inputKind));
-	}
-
-	//------------------------------------------------------------------
-
-	@Override
-	protected int getChunkSize(byte[] buffer,
-							   int    offset)
-	{
-		return RiffChunk.getSize(buffer, offset);
-	}
-
-	//------------------------------------------------------------------
-
-	@Override
-	protected IffId getDataChunkId()
-	{
-		return WAVE_DATA_ID;
-	}
-
-	//------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////
-//  Instance methods
-////////////////////////////////////////////////////////////////////////
-
-	public RiffChunk getChunk(IffId id)
-	{
-		for (RiffChunk chunk : chunks)
-		{
-			if (chunk.getId().equals(id))
-				return chunk;
-		}
-		return null;
-	}
-
-	//------------------------------------------------------------------
-
-	public void setChunks(List<RiffChunk> chunks)
-	{
-		this.chunks = chunks;
-	}
-
-	//------------------------------------------------------------------
-
-	public RiffChunk readChunk(IffId id)
-		throws AppException
-	{
-		// Test whether random access file is open
-		if (raFile == null)
-			throw new FileException(AudioFile.ErrorId.FILE_IS_NOT_OPEN, file);
-
-		// Find chunk
-		int chunkSize = findChunk(id);
-		if (chunkSize < 0)
-			return null;
-
-		// Read chunk
-		try
-		{
-			byte[] buffer = new byte[chunkSize];
-			raFile.readFully(buffer);
-			return new RiffChunk(id, buffer);
-		}
-		catch (OutOfMemoryError e)
-		{
-			throw new IffException(ErrorId.NOT_ENOUGH_MEMORY, file, id);
-		}
-		catch (IOException e)
-		{
-			throw new FileException(AudioFile.ErrorId.ERROR_READING_FILE, file, e);
-		}
-	}
-
-	//------------------------------------------------------------------
-
-	private void parseFormatChunk(RandomAccessFile raFile,
-								  int              chunkSize)
-		throws AppException, IOException
-	{
-		if ((chunkSize != Attributes.CHUNK_SIZE1) && (chunkSize < Attributes.CHUNK_SIZE2))
-			throw new FileException(ErrorId.INVALID_FORMAT_CHUNK, file);
-
-		byte[] buffer = new byte[chunkSize];
-		raFile.readFully(buffer);
-
-		Attributes attributes = new Attributes(buffer);
-		if (attributes.kind != Attributes.UNCOMPRESSED)
-			throw new IffException(ErrorId.UNSUPPORTED_FORMAT, file, WAVE_FORMAT_ID);
-		numChannels = attributes.numChannels;
-		bitsPerSample = attributes.bitsPerSample;
-		if (bitsPerSample > MAX_BITS_PER_SAMPLE)
-			throw new FileException(ErrorId.UNSUPPORTED_BITS_PER_SAMPLE, file);
-		sampleRate = attributes.samplesPerSecond;
-		if (attributes.bytesPerSecond != getBytesPerSampleFrame() * sampleRate)
-			throw new FileException(ErrorId.INCONSISTENT_AVERAGE_BYTES_PER_SECOND, file);
-	}
-
-	//------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////
-//  Instance variables
-////////////////////////////////////////////////////////////////////////
-
-	private	List<RiffChunk>	chunks;
 
 }
 

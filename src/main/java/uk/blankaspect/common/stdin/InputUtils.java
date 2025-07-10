@@ -27,7 +27,7 @@ import java.io.IOException;
 
 
 /**
- * This class defines some utility methods that read from standard input.
+ * This class defines some utility methods that read from the standard input stream.
  */
 
 public class InputUtils
@@ -52,16 +52,19 @@ public class InputUtils
 ////////////////////////////////////////////////////////////////////////
 
 	/**
-	 * Repeatedly writes the specified question to standard output and reads a single-character response from standard
-	 * input until the response matches one of the specified valid responses, then returns the response.  Case is
-	 * when matching a response.
-	 * @param  question        the question that will be written to standard output to prompt for a response.
-	 * @param  validResponses  the valid reponses that will cause this method to return.
-	 * @return the response (one of {@code validResponses} that was read from standard input.
+	 * Repeatedly writes the specified question to the standard output stream and reads a single-character response from
+	 * the standard input stream until the response matches one of the specified valid responses, then returns the
+	 * response.  Alphabetic case is ignored when matching a response.
+	 * @param  question
+	 *           the question that will be written to the standard output stream to prompt for a response.
+	 * @param  validResponses
+	 *           the valid reponses that will cause this method to return.
+	 * @return the response (one of {@code validResponses}) that was read from the standard input stream.
 	 */
 
-	public static char readResponse(String  question,
-									char... validResponses)
+	public static char readResponse(
+		String	question,
+		char...	validResponses)
 	{
 		while (true)
 		{
@@ -93,16 +96,19 @@ public class InputUtils
 	//------------------------------------------------------------------
 
 	/**
-	 * Repeatedly writes the specified question to standard output and reads a single-character response from standard
-	 * input until the response matches one of the specified valid responses, then returns the response.  Case is
-	 * when matching a response.
-	 * @param  question        the question that will be written to standard output to prompt for a response.
-	 * @param  validResponses  a string whose characters are valid reponses that will cause this method to return.
-	 * @return the response (one of {@code validResponses} that was read from standard input.
+	 * Repeatedly writes the specified question to the standard output stream and reads a single-character response from
+	 * the standard input stream until the response matches one of the specified valid responses, then returns the
+	 * response.  Alphabetic case is ignored when matching a response.
+	 * @param  question
+	 *           the question that will be written to the standard output stream to prompt for a response.
+	 * @param  validResponses
+	 *           a string whose characters are valid reponses that will cause this method to return.
+	 * @return the response (one of {@code validResponses}) that was read from the standard input stream.
 	 */
 
-	public static char readResponse(String question,
-									String validResponses)
+	public static char readResponse(
+		String	question,
+		String	validResponses)
 	{
 		return readResponse(question, validResponses.toCharArray());
 	}
@@ -112,4 +118,3 @@ public class InputUtils
 }
 
 //----------------------------------------------------------------------
-

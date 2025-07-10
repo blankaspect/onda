@@ -52,7 +52,7 @@ public class OndaDataInput
 //  Constants
 ////////////////////////////////////////////////////////////////////////
 
-	private static final	int	BUFFER_SIZE	= 1 << 13;  // 8192
+	private static final	int	BUFFER_LENGTH	= 1 << 13;  // 8192
 
 ////////////////////////////////////////////////////////////////////////
 //  Instance variables
@@ -103,7 +103,7 @@ public class OndaDataInput
 		this.sampleLength = sampleLength;
 		this.keyLength = keyLength;
 		this.dataInput = dataInput;
-		inBuffer = new byte[BUFFER_SIZE];
+		inBuffer = new byte[BUFFER_LENGTH];
 		inBufferIndex = inBuffer.length;
 		encodingLengths = new int[numChannels];
 		excessCodes = new int[numChannels];
@@ -135,7 +135,7 @@ public class OndaDataInput
 	 * @throws IndexOutOfBoundsException
 	 *           if {@code (offset < 0)} or {@code (offset > buffer.length)}.
 	 * @throws IOException
-	 *           if an error occurred while attempting to read from the data source.
+	 *           if an error occurs when attempting to read from the data source.
 	 */
 
 	public void readBlock(
@@ -217,7 +217,7 @@ public class OndaDataInput
 	 *           the number of bits to read.
 	 * @return the bit string that was read from the data source, as an unsigned integer.
 	 * @throws IOException
-	 *           if an error occurred while attempting to read from the data source.
+	 *           if an error occurs when attempting to read from the data source.
 	 */
 
 	private int read(

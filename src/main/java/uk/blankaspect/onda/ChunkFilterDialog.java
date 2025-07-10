@@ -20,7 +20,6 @@ package uk.blankaspect.onda;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -220,8 +219,7 @@ class ChunkFilterDialog
 					width = strWidth;
 			}
 			width += getInsets().left + getInsets().right;
-			height = getInsets().top + fontMetrics.getAscent() + fontMetrics.getDescent() +
-																						getInsets().bottom;
+			height = getInsets().top + fontMetrics.getAscent() + fontMetrics.getDescent() + getInsets().bottom;
 			addActionListener(this);
 		}
 
@@ -406,12 +404,11 @@ class ChunkFilterDialog
 ////////////////////////////////////////////////////////////////////////
 
 	private ChunkFilterDialog(Window      owner,
-							  String      titleStr,
+							  String      title,
 							  ChunkFilter filter)
 	{
-
 		// Call superclass constructor
-		super(owner, titleStr, Dialog.ModalityType.APPLICATION_MODAL);
+		super(owner, title, ModalityType.APPLICATION_MODAL);
 
 		// Set icons
 		setIconImages(owner.getIconImages());
@@ -547,7 +544,7 @@ class ChunkFilterDialog
 		// Resize dialog to its preferred size
 		pack();
 
-		// Set location of dialog box
+		// Set location of dialog
 		if (location == null)
 			location = GuiUtils.getComponentLocation(this, owner);
 		setLocation(location);
@@ -561,7 +558,6 @@ class ChunkFilterDialog
 
 		// Show dialog
 		setVisible(true);
-
 	}
 
 	//------------------------------------------------------------------
@@ -571,10 +567,10 @@ class ChunkFilterDialog
 ////////////////////////////////////////////////////////////////////////
 
 	public static ChunkFilter showDialog(Component   parent,
-										 String      titleStr,
+										 String      title,
 										 ChunkFilter filter)
 	{
-		return new ChunkFilterDialog(GuiUtils.getWindow(parent), titleStr, filter).getFilter();
+		return new ChunkFilterDialog(GuiUtils.getWindow(parent), title, filter).getFilter();
 	}
 
 	//------------------------------------------------------------------

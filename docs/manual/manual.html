@@ -377,14 +377,14 @@
 
       <p class="wrap">
         Onda runs in console mode if command-line arguments are passed to it when it starts up.
-        Valid arguments are of three types: options, commands and input pathnames.  Options and
-        commands must have <code>--</code> prefixed to them; there are no single-character short
-        forms that have a prefix of a single hyphen.  The name and value of an option may be
-        separated with whitespace or with a <code>=</code> character.
+        Valid arguments are of three types: subcommands, options and input pathnames.  Options
+        and subcommands must have <code>--</code> prefixed to them; there are no
+        single-character short forms that have a prefix of a single hyphen.  The name and value
+        of an option may be separated with whitespace or with a <code>=</code> character.
       </p>
       <p class="wrap">
         In keeping with convention, the command-line syntax for the Onda application (shown
-        below and in response to Onda&apos;s <code>--help</code> command) implies that the
+        below and in response to Onda&apos;s <code>--help</code> subcommand) implies that the
         application is invoked with the command <i>onda</i>.  However, this is only a
         convention; the actual form of a command line that invokes Onda is described in the
         relevant sections for <a href="#section2-4-1">Linux/UNIX</a> and <a
@@ -393,12 +393,17 @@
 
       <div class="commandSyntax">
         <ul class="commandSyntax">
-          <li>onda <i>command</i> [<i>options</i>] [<i>input-pathnames</i>]</li>
+          <li class="usageTitle">
+            <strong>onda </strong><i>subcommand</i> [<i>options</i>] [<i>input-pathnames</i>]
+          </li>
           <li class="section">
-            <div class="usageSectionTitle">Commands</div>
+            <div class="usageSectionTitle">Subcommands</div>
+            <p class="noTopMargin indentA wrap">
+              (The <code>--</code> prefix of a subcommand may be omitted.)
+            </p>
 
             <ul class="commandSyntax">
-              <li class="command">
+              <li class="subcommand">
                 <strong>--compress</strong>
                 <ul class="commandSyntax">
                   <li class="wrap">
@@ -411,7 +416,7 @@
             </ul>
 
             <ul class="commandSyntax">
-              <li class="command">
+              <li class="subcommand">
                 <strong>--expand</strong>
                 <ul class="commandSyntax">
                   <li class="wrap">
@@ -424,18 +429,18 @@
             </ul>
 
             <ul class="commandSyntax">
-              <li class="command">
+              <li class="subcommand">
                 <strong>--help</strong>
                 <ul class="commandSyntax">
                   <li class="wrap">
-                    Display help information.
+                    Write help information to the standard output stream.
                   </li>
                 </ul>
               </li>
             </ul>
 
             <ul class="commandSyntax">
-              <li class="command">
+              <li class="subcommand">
                 <strong>--validate</strong>
                 <ul class="commandSyntax">
                   <li class="wrap">
@@ -446,11 +451,11 @@
             </ul>
 
             <ul class="commandSyntax">
-              <li class="command">
+              <li class="subcommand">
                 <strong>--version</strong>
                 <ul class="commandSyntax">
                   <li class="wrap">
-                    Display version information.
+                    Write version information to the standard output stream.
                   </li>
                 </ul>
               </li>
@@ -477,12 +482,12 @@
                     </div>
                     <ul class="commandSyntax">
                       <li class="wrap">
-                        If the prefix is <code>+</code>, the filter is inclusive: a chunk is
-                        preserved if its ID is in <i>chunk-ids</i>.
+                        &bull;&nbsp; If the prefix is <code>+</code>, the filter is inclusive: a
+                        chunk is preserved if its ID is in <i>chunk-ids</i>.
                       </li>
                       <li class="wrap">
-                        If the prefix is <code>&minus;</code>, the filter is exclusive: a chunk
-                        is preserved if its ID is not in <i>chunk-ids</i>.
+                        &bull;&nbsp; If the prefix is <code>&minus;</code>, the filter is
+                        exclusive: a chunk is preserved if its ID is not in <i>chunk-ids</i>.
                       </li>
                     </ul>
                     <div class="wrap">
@@ -497,17 +502,31 @@
                       Examples:
                     </div>
                     <ul class="commandSyntax">
-                      <li class="wrap">
-                        <code>--wave-chunk-filter=+/bext/cue</code>&nbsp; preserves chunks in a
-                        WAVE file with IDs <code>bext</code> and <code>cue&nbsp;</code>;
+                      <li>
+                        <div>
+                          <code>--wave-chunk-filter=+/bext/cue</code>
+                        </div>
+                        <div class="indentA wrap">
+                          preserves chunks in a WAVE file with IDs <code>bext</code> and
+                          <code>cue&nbsp;</code>;
+                        </div>
                       </li>
-                      <li class="wrap">
-                        <code>--aiff-chunk-filter=&minus;</code>&nbsp; preserves all the
-                        ancillary chunks in an AIFF file (ie, excludes none) (the default);
+                      <li>
+                        <div>
+                          <code>--aiff-chunk-filter=&minus;</code>
+                        </div>
+                        <div class="indentA wrap">
+                          preserves all the ancillary chunks in an AIFF file (ie, excludes none)
+                          (the default);
+                        </div>
                       </li>
-                      <li class="wrap">
-                        <code>--wave-chunk-filter=+</code>&nbsp; discards all the ancillary
-                        chunks in a WAVE file (ie, includes none).
+                      <li>
+                        <div>
+                          <code>--wave-chunk-filter=+</code>
+                        </div>
+                        <div class="indentA wrap">
+                          discards all the ancillary chunks in a WAVE file (ie, includes none).
+                        </div>
                       </li>
                     </ul>
                   </li>
@@ -586,19 +605,26 @@
             <code>@</code>.  A literal <code>+</code> at the start of a pathname must be escaped
             by prefixing <code>+</code> to it.
           </li>
-          <li class="section wrap">
-            A pathname may contain Java system properties or environment variables enclosed
-            between <code>${</code> and <code>}</code>; eg, ${HOME}. A Java system property
-            takes precedence over an environment variable with the same name.  A Java system
-            property can be specified by prefixing <code>sys.</code> to it (eg,
-            ${sys.user.home}), and an environment variable can be specified by prefixing
-            <code>env.</code> to it (eg, ${env.HOME}).
+          <li class="section">
+            <div class="wrap">
+              A pathname may contain Java system properties or environment variables enclosed
+              between <code>${</code> and <code>}</code>; eg, <code>${HOME}</code>.  A Java
+              system property takes precedence over an environment variable with the same name.
+            </div>
+            <div class="wrap">
+              &bull;&nbsp; A Java system property can be specified by prefixing
+              <code>sys.</code> to it; for example, <code>${sys.user.home}</code>.
+            </div>
+            <div class="wrap">
+              &bull;&nbsp; An environment variable can be specified by prefixing
+              <code>env.</code> to it; for example, <code>${env.HOME}</code>.
+            </div>
           </li>
         </ul>
       </div>
 
       <p class="wrap">
-        The three main commands &mdash; <span class="command">Compress</span>, <span
+        The three main subcommands &mdash; <span class="command">Compress</span>, <span
         class="command">Expand</span> and <span class="command">Validate</span> &mdash; are
         described in the section on <a href="#section6">commands</a>.
       </p>
@@ -719,11 +745,11 @@
 
       <p class="wrap">
         If your system supports the dragging and dropping of files (for example, from a file
-        manager such as GNOME Nautilus or Windows Explorer), there are three areas of the main
-        window of Onda that you can drag and drop files or directories onto: the <span
-        class="component">Input file or directory</span> combo box, the <span
-        class="component">Output directory</span> combo box, and the remaining area of the
-        window, referred to as the main panel.
+        manager such as GNOME Files (aka Nautilus) on Linux or File Explorer on Windows), there
+        are three areas of the main window of Onda that you can drag and drop files or
+        directories onto: the <span class="component">Input file or directory</span> combo box,
+        the <span class="component">Output directory</span> combo box, and the remaining area of
+        the window, referred to as the main panel.
       </p>
       <p class="wrap">
         The <span class="component">Input file or directory</span> combo box and the <span
@@ -758,7 +784,8 @@
         This section describes the commands that are available in GUI mode, which are issued
         from the buttons in the main window.  The first three commands &mdash; <span
         class="command">Compress</span>, <span class="command">Expand</span> and <span
-        class="command">Validate</span> &mdash; are also available in console mode.
+        class="command">Validate</span> &mdash; are also available as subcommands in console
+        mode.
       </p>
 
       <h3 id="section6-1">6.1&nbsp; <span class="command">Compress</span></h3>
@@ -1486,7 +1513,7 @@
     <div id="lastModified">
       <div>
         <div>
-          Last modified: 2023-08-13
+          Last modified: 2025-05-27
         </div>
         <div class="image">
           <a class="hideHover" href="http://validator.w3.org/check?uri=referer">

@@ -44,15 +44,15 @@ interface AppConstants
 	String	REPLACE_STR			= "Replace";
 	String	ALREADY_EXISTS_STR	= "\nThe file already exists.\nDo you want to replace it?";
 
-	// Filename suffixes
-	String		AIFF_FILE_SUFFIX1		= ".aif";
-	String		AIFF_FILE_SUFFIX2		= ".aiff";
-	String		COMPRESSED_FILE_SUFFIX	= ".onda";
-	String		WAVE_FILE_SUFFIX1		= ".wav";
-	String		WAVE_FILE_SUFFIX2		= ".wave";
-	String		XML_FILE_SUFFIX			= ".xml";
-	String[]	AUDIO_FILE_SUFFIXES		= { AIFF_FILE_SUFFIX1, AIFF_FILE_SUFFIX2,
-											WAVE_FILE_SUFFIX1, WAVE_FILE_SUFFIX2 };
+	// Filename extensions
+	String		AIFF_FILENAME_EXTENSION1		= ".aif";
+	String		AIFF_FILENAME_EXTENSION2		= ".aiff";
+	String		COMPRESSED_FILENAME_EXTENSION	= ".onda";
+	String		WAVE_FILENAME_EXTENSION1		= ".wav";
+	String		WAVE_FILENAME_EXTENSION2		= ".wave";
+	String		XML_FILENAME_EXTENSION			= ".xml";
+	String[]	AUDIO_FILENAME_EXTENSIONS		= { AIFF_FILENAME_EXTENSION1, AIFF_FILENAME_EXTENSION2,
+													WAVE_FILENAME_EXTENSION1, WAVE_FILENAME_EXTENSION2 };
 
 	// File-filter descriptions
 	String	AUDIO_FILES_STR			= "Audio files";

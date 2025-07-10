@@ -186,7 +186,7 @@ enum AppCommand
 
 	public void actionPerformed(ActionEvent event)
 	{
-		App.INSTANCE.getMainWindow().executeCommand(this);
+		OndaApp.INSTANCE.getMainWindow().executeCommand(this);
 	}
 
 	//------------------------------------------------------------------

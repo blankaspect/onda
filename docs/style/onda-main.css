@@ -6,26 +6,34 @@ Styles for Onda project page
 
 @import url("blankaspect-project.css");
 
-div#nlf
-{
+div#nlf {
   padding-bottom: 0.8em;
 }
 
-h3
-{
+h3 {
   padding-bottom: 0.4em;
-  border-bottom: 1px solid #B4B8C8;
+  border-bottom: 1px solid;
 }
 
-h4
-{
+h4 {
   padding-bottom: 0.3em;
-  border-bottom: 1px solid #B4B8C8;
+  border-bottom: 1px solid;
 }
 
-ul.list li
-{
+ul.list li {
   margin-left: -0.5em;
+}
+
+@media (prefers-color-scheme: light) {
+  h1, h2, h3, h4, h5 {
+    border-bottom-color: #B4B8C8;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  h1, h2, h3, h4, h5 {
+    border-bottom-color: #606888;
+  }
 }
 
 /*--------------------------------------------------------------------*/

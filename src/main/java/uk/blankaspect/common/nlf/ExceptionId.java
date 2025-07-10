@@ -137,17 +137,25 @@ public enum ExceptionId
 	("An error occurred in encoding the chunk data.");
 
 ////////////////////////////////////////////////////////////////////////
+//  Instance variables
+////////////////////////////////////////////////////////////////////////
+
+	private	String	message;
+
+////////////////////////////////////////////////////////////////////////
 //  Constructors
 ////////////////////////////////////////////////////////////////////////
 
 	/**
 	 * Creates a new enumeration constant for an exception identifier.
 	 *
-	 * @param message  the message that is associated with the exception identifier.
+	 * @param message
+	 *          the message that is associated with the exception identifier.
 	 * @since 1.0
 	 */
 
-	private ExceptionId(String message)
+	private ExceptionId(
+		String	message)
 	{
 		this.message = message;
 	}
@@ -171,12 +179,6 @@ public enum ExceptionId
 	}
 
 	//------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////
-//  Instance variables
-////////////////////////////////////////////////////////////////////////
-
-	private	String	message;
 
 }
 

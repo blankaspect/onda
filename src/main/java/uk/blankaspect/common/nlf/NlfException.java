@@ -45,6 +45,14 @@ public class NlfException
 {
 
 ////////////////////////////////////////////////////////////////////////
+//  Instance variables
+////////////////////////////////////////////////////////////////////////
+
+	private	ExceptionId	id;
+	private	File		file;
+	private	long		offset;
+
+////////////////////////////////////////////////////////////////////////
 //  Constructors
 ////////////////////////////////////////////////////////////////////////
 
@@ -52,11 +60,13 @@ public class NlfException
 	 * Creates a new instance of an exception with the specified identifier.  The identifier is associated with a
 	 * message that is used as the detail message in the constructor of {@link Exception}.
 	 *
-	 * @param id  the identifier of the exception.
+	 * @param id
+	 *          the identifier of the exception.
 	 * @since 1.0
 	 */
 
-	public NlfException(ExceptionId id)
+	public NlfException(
+		ExceptionId	id)
 	{
 		// Call superclass constructor
 		super(id.getMessage());
@@ -72,13 +82,16 @@ public class NlfException
 	 * Creates a new instance of an exception with the specified identifier and cause.  The identifier is associated
 	 * with a message that is used as the detail message in the constructor of {@link Exception}.
 	 *
-	 * @param id     the identifier of the exception.
-	 * @param cause  the underlying cause of the exception.
+	 * @param id
+	 *          the identifier of the exception.
+	 * @param cause
+	 *          the underlying cause of the exception.
 	 * @since 1.0
 	 */
 
-	public NlfException(ExceptionId id,
-						Throwable   cause)
+	public NlfException(
+		ExceptionId	id,
+		Throwable	cause)
 	{
 		// Call superclass constructor
 		super(id.getMessage(), cause);
@@ -94,13 +107,16 @@ public class NlfException
 	 * Creates a new instance of an exception with the specified identifier and file.  The identifier is associated with
 	 * a message that is used as the detail message in the constructor of {@link Exception}.
 	 *
-	 * @param id    the identifier of the exception.
-	 * @param file  the file that is associated with the exception, usually the file on which the exception occurred.
+	 * @param id
+	 *          the identifier of the exception.
+	 * @param file
+	 *          the file that is associated with the exception, usually the file on which the exception occurred.
 	 * @since 1.0
 	 */
 
-	public NlfException(ExceptionId id,
-						File        file)
+	public NlfException(
+		ExceptionId	id,
+		File		file)
 	{
 		// Call alternative constructor
 		this(id, file, -1);
@@ -112,15 +128,19 @@ public class NlfException
 	 * Creates a new instance of an exception with the specified identifier, file and cause.  The identifier is
 	 * associated with a message that is used as the detail message in the constructor of {@link Exception}.
 	 *
-	 * @param id     the identifier of the exception.
-	 * @param file   the file that is associated with the exception, usually the file on which the exception occurred.
-	 * @param cause  the underlying cause of the exception.
+	 * @param id
+	 *          the identifier of the exception.
+	 * @param file
+	 *          the file that is associated with the exception, usually the file on which the exception occurred.
+	 * @param cause
+	 *          the underlying cause of the exception.
 	 * @since 1.0
 	 */
 
-	public NlfException(ExceptionId id,
-						File        file,
-						Throwable   cause)
+	public NlfException(
+		ExceptionId	id,
+		File		file,
+		Throwable	cause)
 	{
 		// Call alternative constructor
 		this(id, file, -1, cause);
@@ -132,16 +152,20 @@ public class NlfException
 	 * Creates a new instance of an exception with the specified identifier, file and offset.  The identifier is
 	 * associated with a message that is used as the detail message in the constructor of {@link Exception}.
 	 *
-	 * @param id      the identifier of the exception.
-	 * @param file    the file that is associated with the exception, usually the file on which the exception occurred.
-	 * @param offset  the offset that is associated with the exception, usually the offset to <b>{@code file}</b> at
-	 *                which the exception occurred.
+	 * @param id
+	 *          the identifier of the exception.
+	 * @param file
+	 *          the file that is associated with the exception, usually the file on which the exception occurred.
+	 * @param offset
+	 *          the offset that is associated with the exception, usually the offset to {@code file} at which the
+	 *          exception occurred.
 	 * @since 1.0
 	 */
 
-	public NlfException(ExceptionId id,
-						File        file,
-						long        offset)
+	public NlfException(
+		ExceptionId	id,
+		File		file,
+		long		offset)
 	{
 		// Call superclass constructor
 		super(id.getMessage());
@@ -158,18 +182,23 @@ public class NlfException
 	 * Creates a new instance of an exception with the specified identifier, file, offset and cause.  The identifier is
 	 * associated with a message that is used as the detail message in the constructor of {@link Exception}.
 	 *
-	 * @param id      the identifier of the exception.
-	 * @param file    the file that is associated with the exception, usually the file on which the exception occurred.
-	 * @param offset  the offset that is associated with the exception, usually the offset to <b>{@code file}</b> at
-	 *                which the exception occurred.
-	 * @param cause   the underlying cause of the exception.
+	 * @param id
+	 *          the identifier of the exception.
+	 * @param file
+	 *          the file that is associated with the exception, usually the file on which the exception occurred.
+	 * @param offset
+	 *          the offset that is associated with the exception, usually the offset to {@code file} at which the
+	 *          exception occurred.
+	 * @param cause
+	 *          the underlying cause of the exception.
 	 * @since 1.0
 	 */
 
-	public NlfException(ExceptionId id,
-						File        file,
-						long        offset,
-						Throwable   cause)
+	public NlfException(
+		ExceptionId	id,
+		File		file,
+		long		offset,
+		Throwable	cause)
 	{
 		// Call superclass constructor
 		super(id.getMessage(), cause);
@@ -232,14 +261,6 @@ public class NlfException
 	}
 
 	//------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////
-//  Instance variables
-////////////////////////////////////////////////////////////////////////
-
-	private	ExceptionId	id;
-	private	File		file;
-	private	long		offset;
 
 }
 
