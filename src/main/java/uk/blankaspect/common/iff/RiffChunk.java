@@ -123,7 +123,7 @@ public class RiffChunk
 	{
 		id.put(buffer, offset);
 		putSize(size, buffer, offset + IffId.SIZE);
-		return (offset + Chunk.HEADER_SIZE);
+		return offset + Chunk.HEADER_SIZE;
 	}
 
 	//------------------------------------------------------------------

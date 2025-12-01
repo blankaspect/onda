@@ -384,7 +384,7 @@ public class Id
 
 	public int getFieldSize()
 	{
-		return (SIZE_SIZE + getSize());
+		return SIZE_SIZE + getSize();
 	}
 
 	//------------------------------------------------------------------
@@ -399,7 +399,7 @@ public class Id
 
 	public boolean isReserved()
 	{
-		return (value.startsWith(RESERVED_PREFIX));
+		return value.startsWith(RESERVED_PREFIX);
 	}
 
 	//------------------------------------------------------------------

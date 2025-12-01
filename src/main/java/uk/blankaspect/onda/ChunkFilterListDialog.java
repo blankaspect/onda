@@ -35,7 +35,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -67,6 +66,8 @@ import uk.blankaspect.ui.swing.list.SingleSelectionList;
 import uk.blankaspect.ui.swing.misc.GuiUtils;
 
 import uk.blankaspect.ui.swing.text.TextRendering;
+
+import uk.blankaspect.ui.swing.workaround.LinuxWorkarounds;
 
 //----------------------------------------------------------------------
 
@@ -109,7 +110,15 @@ class ChunkFilterListDialog
 		String	CLOSE					= "close";
 	}
 
-	private static final	Map<String, String>	COMMAND_MAP;
+	private static final	Map<String, String>	COMMAND_MAP	= Map.of
+	(
+		SingleSelectionList.Command.EDIT_ELEMENT,      Command.EDIT_FILTER,
+		SingleSelectionList.Command.DELETE_ELEMENT,    Command.CONFIRM_DELETE_FILTER,
+		SingleSelectionList.Command.DELETE_EX_ELEMENT, Command.DELETE_FILTER,
+		SingleSelectionList.Command.MOVE_ELEMENT_UP,   Command.MOVE_FILTER_UP,
+		SingleSelectionList.Command.MOVE_ELEMENT_DOWN, Command.MOVE_FILTER_DOWN,
+		SingleSelectionList.Command.DRAG_ELEMENT,      Command.MOVE_FILTER
+	);
 
 ////////////////////////////////////////////////////////////////////////
 //  Class variables
@@ -127,21 +136,6 @@ class ChunkFilterListDialog
 	private	JButton		addButton;
 	private	JButton		editButton;
 	private	JButton		deleteButton;
-
-////////////////////////////////////////////////////////////////////////
-//  Static initialiser
-////////////////////////////////////////////////////////////////////////
-
-	static
-	{
-		COMMAND_MAP = new HashMap<>();
-		COMMAND_MAP.put(SingleSelectionList.Command.EDIT_ELEMENT,      Command.EDIT_FILTER);
-		COMMAND_MAP.put(SingleSelectionList.Command.DELETE_ELEMENT,    Command.CONFIRM_DELETE_FILTER);
-		COMMAND_MAP.put(SingleSelectionList.Command.DELETE_EX_ELEMENT, Command.DELETE_FILTER);
-		COMMAND_MAP.put(SingleSelectionList.Command.MOVE_ELEMENT_UP,   Command.MOVE_FILTER_UP);
-		COMMAND_MAP.put(SingleSelectionList.Command.MOVE_ELEMENT_DOWN, Command.MOVE_FILTER_DOWN);
-		COMMAND_MAP.put(SingleSelectionList.Command.DRAG_ELEMENT,      Command.MOVE_FILTER);
-	}
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -297,11 +291,22 @@ class ChunkFilterListDialog
 		// Dispose of window explicitly
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 
-		// Handle window closing
+		// Handle window events
 		addWindowListener(new WindowAdapter()
 		{
 			@Override
-			public void windowClosing(WindowEvent event)
+			public void windowOpened(
+				WindowEvent	event)
+			{
+				// WORKAROUND for a bug that has been observed on Linux/GNOME whereby a window is displaced downwards
+				// when its location is set.  The error in the y coordinate is the height of the title bar of the
+				// window.  The workaround is to set the location of the window again with an adjustment for the error.
+				LinuxWorkarounds.fixWindowYCoord(event.getWindow(), location);
+			}
+
+			@Override
+			public void windowClosing(
+				WindowEvent	event)
 			{
 				onClose();
 			}
@@ -344,41 +349,28 @@ class ChunkFilterListDialog
 //  Instance methods : ActionListener interface
 ////////////////////////////////////////////////////////////////////////
 
+	@Override
 	public void actionPerformed(ActionEvent event)
 	{
 		String command = event.getActionCommand();
-		if (command.equals(Command.CONFIRM_DELETE_FILTER) &&
-			 ((event.getModifiers() & MODIFIERS_MASK) == ActionEvent.SHIFT_MASK))
+		if (command.equals(Command.CONFIRM_DELETE_FILTER)
+				&& ((event.getModifiers() & MODIFIERS_MASK) == ActionEvent.SHIFT_MASK))
 			command = Command.DELETE_FILTER;
 		else if (COMMAND_MAP.containsKey(command))
 			command = COMMAND_MAP.get(command);
 
-		if (command.equals(Command.ADD_FILTER))
-			onAddFilter();
-
-		else if (command.equals(Command.EDIT_FILTER))
-			onEditFilter();
-
-		else if (command.equals(Command.DELETE_FILTER))
-			onDeleteFilter();
-
-		else if (command.equals(Command.CONFIRM_DELETE_FILTER))
-			onConfirmDeleteFilter();
-
-		else if (command.equals(Command.MOVE_FILTER_UP))
-			onMoveFilterUp();
-
-		else if (command.equals(Command.MOVE_FILTER_DOWN))
-			onMoveFilterDown();
-
-		else if (command.equals(Command.MOVE_FILTER))
-			onMoveFilter();
-
-		else if (command.equals(Command.ACCEPT))
-			onAccept();
-
-		else if (command.equals(Command.CLOSE))
-			onClose();
+		switch (command)
+		{
+			case Command.ADD_FILTER            -> onAddFilter();
+			case Command.EDIT_FILTER           -> onEditFilter();
+			case Command.DELETE_FILTER         -> onDeleteFilter();
+			case Command.CONFIRM_DELETE_FILTER -> onConfirmDeleteFilter();
+			case Command.MOVE_FILTER_UP        -> onMoveFilterUp();
+			case Command.MOVE_FILTER_DOWN      -> onMoveFilterDown();
+			case Command.MOVE_FILTER           -> onMoveFilter();
+			case Command.ACCEPT                -> onAccept();
+			case Command.CLOSE                 -> onClose();
+		}
 	}
 
 	//------------------------------------------------------------------
@@ -387,10 +379,10 @@ class ChunkFilterListDialog
 //  Instance methods : ChangeListener interface
 ////////////////////////////////////////////////////////////////////////
 
+	@Override
 	public void stateChanged(ChangeEvent event)
 	{
-		if (!filterListScrollPane.getVerticalScrollBar().getValueIsAdjusting() &&
-			 !filterList.isDragging())
+		if (!filterListScrollPane.getVerticalScrollBar().getValueIsAdjusting() && !filterList.isDragging())
 			filterList.snapViewPosition();
 	}
 
@@ -400,6 +392,7 @@ class ChunkFilterListDialog
 //  Instance methods : ListSelectionListener interface
 ////////////////////////////////////////////////////////////////////////
 
+	@Override
 	public void valueChanged(ListSelectionEvent event)
 	{
 		if (!event.getValueIsAdjusting())
@@ -414,7 +407,7 @@ class ChunkFilterListDialog
 
 	private List<ChunkFilter> getFilters()
 	{
-		return (accepted ? filterList.getElements() : null);
+		return accepted ? filterList.getElements() : null;
 	}
 
 	//------------------------------------------------------------------
@@ -442,8 +435,7 @@ class ChunkFilterListDialog
 
 	private void onEditFilter()
 	{
-		ChunkFilter filter = ChunkFilterDialog.showDialog(this, EDIT_FILTER_STR,
-														  filterList.getSelectedElement());
+		ChunkFilter filter = ChunkFilterDialog.showDialog(this, EDIT_FILTER_STR, filterList.getSelectedElement());
 		if (filter != null)
 		{
 			if (filter.getNumIds() == 0)
@@ -466,9 +458,9 @@ class ChunkFilterListDialog
 	private void onConfirmDeleteFilter()
 	{
 		String[] optionStrs = Utils.getOptionStrings(DELETE_STR);
-		if (JOptionPane.showOptionDialog(this, DELETE_MESSAGE_STR, DELETE_FILTER_STR,
-										 JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null,
-										 optionStrs, optionStrs[1]) == JOptionPane.OK_OPTION)
+		if (JOptionPane.showOptionDialog(this, DELETE_MESSAGE_STR, DELETE_FILTER_STR, JOptionPane.OK_CANCEL_OPTION,
+										 JOptionPane.QUESTION_MESSAGE, null, optionStrs,
+										 optionStrs[1]) == JOptionPane.OK_OPTION)
 			onDeleteFilter();
 	}
 
@@ -548,10 +540,9 @@ class ChunkFilterListDialog
 		{
 			super(NUM_COLUMNS, NUM_ROWS, AppFont.MAIN.getFont(), filters);
 			setExtraWidth(ICON_MARGIN + Icons.INCLUDE.getIconWidth());
-			FontMetrics fontMetrics = getFontMetrics(getFont());
-			setRowHeight(2 * VERTICAL_MARGIN +
-										Math.max(Icons.INCLUDE.getIconHeight(),
-												 fontMetrics.getAscent() + fontMetrics.getDescent()));
+			FontMetrics fm = getFontMetrics(getFont());
+			setRowHeight(2 * VERTICAL_MARGIN
+							+ Math.max(Icons.INCLUDE.getIconHeight(), fm.getAscent() + fm.getDescent()));
 		}
 
 		//--------------------------------------------------------------
@@ -573,26 +564,26 @@ class ChunkFilterListDialog
 								   int      index)
 		{
 			// Create copy of graphics context
-			gr = gr.create();
+			Graphics2D gr2d = GuiUtils.copyGraphicsContext(gr);
 
 			// Draw icon
 			int rowHeight = getRowHeight();
 			int x = ICON_MARGIN;
 			int y = index * rowHeight;
 			ImageIcon icon = getElement(index).isInclude() ? Icons.INCLUDE : Icons.EXCLUDE;
-			gr.drawImage(icon.getImage(), x, y + (rowHeight - icon.getIconHeight()) / 2, null);
+			gr2d.drawImage(icon.getImage(), x, y + (rowHeight - icon.getIconHeight()) / 2, null);
 
 			// Set rendering hints for text antialiasing and fractional metrics
-			TextRendering.setHints((Graphics2D)gr);
+			TextRendering.setHints(gr2d);
 
 			// Get text and truncate it if it is too wide
-			FontMetrics fontMetrics = gr.getFontMetrics();
+			FontMetrics fontMetrics = gr2d.getFontMetrics();
 			String text = truncateText(getElementText(index), fontMetrics, getMaxTextWidth());
 
 			// Draw text
 			x = getExtraWidth() + getHorizontalMargin();
-			gr.setColor(getForegroundColour(index));
-			gr.drawString(text, x, y + FontUtils.getBaselineOffset(rowHeight, fontMetrics));
+			gr2d.setColor(getForegroundColour(index));
+			gr2d.drawString(text, x, y + FontUtils.getBaselineOffset(rowHeight, fontMetrics));
 		}
 
 		//--------------------------------------------------------------

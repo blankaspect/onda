@@ -34,9 +34,9 @@ import uk.blankaspect.common.filesystem.PathUtils;
 
 import uk.blankaspect.common.function.IFunction1;
 
-import uk.blankaspect.common.misc.Tokeniser;
-
 import uk.blankaspect.common.string.StringUtils;
+
+import uk.blankaspect.common.tokeniser.Tokeniser;
 
 //----------------------------------------------------------------------
 
@@ -236,26 +236,26 @@ public class CommandLine<E extends Enum<E> & CommandLine.IOption<E>>
 			// Extract arguments from file
 			for (int i = 0; i < lines.size(); i++)
 			{
-				// Get line
-				String str = lines.get(i);
+				// Get next line
+				String line = lines.get(i);
 
 				// Strip any comment
 				if (commentPrefix != null)
 				{
-					int index = str.indexOf(commentPrefix);
+					int index = line.indexOf(commentPrefix);
 					if (index >= 0)
-						str = str.substring(0, index);
+						line = line.substring(0, index);
 				}
 
 				// Remove leading and trailing whitespace
-				str = str.strip();
+				line = line.strip();
 
 				// Extract arguments from line
-				if (!str.isEmpty())
+				if (!line.isEmpty())
 				{
 					try
 					{
-						extractor.setSequence(str);
+						extractor.setInputText(line);
 						arguments.addAll(Tokeniser.removeEmptyText(extractor.getTokenText(true)));
 					}
 					catch (Tokeniser.UnclosedQuotationException e)

@@ -94,6 +94,8 @@ import uk.blankaspect.ui.swing.text.TextRendering;
 
 import uk.blankaspect.ui.swing.textfield.IntegerValueField;
 
+import uk.blankaspect.ui.swing.workaround.LinuxWorkarounds;
+
 //----------------------------------------------------------------------
 
 
@@ -154,470 +156,40 @@ class PreferencesDialog
 	}
 
 ////////////////////////////////////////////////////////////////////////
-//  Enumerated types
+//  Class variables
 ////////////////////////////////////////////////////////////////////////
 
-
-	// TABS
-
-
-	private enum Tab
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		GENERAL
-		(
-			"General"
-		)
-		{
-			@Override
-			protected JPanel createPanel(PreferencesDialog dialog)
-			{
-				return dialog.createPanelGeneral();
-			}
-
-			//----------------------------------------------------------
-
-			@Override
-			protected void validatePreferences(PreferencesDialog dialog)
-				throws AppException
-			{
-				dialog.validatePreferencesGeneral();
-			}
-
-			//----------------------------------------------------------
-
-			@Override
-			protected void setPreferences(PreferencesDialog dialog)
-			{
-				dialog.setPreferencesGeneral();
-			}
-
-			//----------------------------------------------------------
-		},
-
-		APPEARANCE
-		(
-			"Appearance"
-		)
-		{
-			@Override
-			protected JPanel createPanel(PreferencesDialog dialog)
-			{
-				return dialog.createPanelAppearance();
-			}
-
-			//----------------------------------------------------------
-
-			@Override
-			protected void validatePreferences(PreferencesDialog dialog)
-				throws AppException
-			{
-				dialog.validatePreferencesAppearance();
-			}
-
-			//----------------------------------------------------------
-
-			@Override
-			protected void setPreferences(PreferencesDialog dialog)
-			{
-				dialog.setPreferencesAppearance();
-			}
-
-			//----------------------------------------------------------
-		},
-
-		COMPRESSION
-		(
-			"Compression"
-		)
-		{
-			@Override
-			protected JPanel createPanel(PreferencesDialog dialog)
-			{
-				return dialog.createPanelCompression();
-			}
-
-			//----------------------------------------------------------
-
-			@Override
-			protected void validatePreferences(PreferencesDialog dialog)
-				throws AppException
-			{
-				dialog.validatePreferencesCompression();
-			}
-
-			//----------------------------------------------------------
-
-			@Override
-			protected void setPreferences(PreferencesDialog dialog)
-			{
-				dialog.setPreferencesCompression();
-			}
-
-			//----------------------------------------------------------
-		},
-
-		CHUNK_FILTERS
-		(
-			"Pattern"
-		)
-		{
-			@Override
-			protected JPanel createPanel(PreferencesDialog dialog)
-			{
-				return dialog.createPanelChunkFilters();
-			}
-
-			//----------------------------------------------------------
-
-			@Override
-			protected void validatePreferences(PreferencesDialog dialog)
-				throws AppException
-			{
-				dialog.validatePreferencesChunkFilters();
-			}
-
-			//----------------------------------------------------------
-
-			@Override
-			protected void setPreferences(PreferencesDialog dialog)
-			{
-				dialog.setPreferencesChunkFilters();
-			}
-
-			//----------------------------------------------------------
-		},
-
-		FONTS
-		(
-			"Fonts"
-		)
-		{
-			@Override
-			protected JPanel createPanel(PreferencesDialog dialog)
-			{
-				return dialog.createPanelFonts();
-			}
-
-			//----------------------------------------------------------
-
-			@Override
-			protected void validatePreferences(PreferencesDialog dialog)
-				throws AppException
-			{
-				dialog.validatePreferencesFonts();
-			}
-
-			//----------------------------------------------------------
-
-			@Override
-			protected void setPreferences(PreferencesDialog dialog)
-			{
-				dialog.setPreferencesFonts();
-			}
-
-			//----------------------------------------------------------
-		};
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private Tab(String text)
-		{
-			this.text = text;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Abstract methods
-	////////////////////////////////////////////////////////////////////
-
-		protected abstract JPanel createPanel(PreferencesDialog dialog);
-
-		//--------------------------------------------------------------
-
-		protected abstract void validatePreferences(PreferencesDialog dialog)
-			throws AppException;
-
-		//--------------------------------------------------------------
-
-		protected abstract void setPreferences(PreferencesDialog dialog);
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	text;
-
-	}
-
-	//==================================================================
+	private static	Point	location;
+	private static	int		tabIndex;
 
 ////////////////////////////////////////////////////////////////////////
-//  Member classes : non-inner classes
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
-
-	// FILTER COMBO BOX RENDERER CLASS
-
-
-	private class FilterComboBoxRenderer
-		extends JComponent
-		implements ListCellRenderer<ChunkFilter>
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		private static final	int	NUM_COLUMNS	= 48;
-
-		private static final	int	TOP_MARGIN		= 1;
-		private static final	int	BOTTOM_MARGIN	= TOP_MARGIN;
-		private static final	int	LEADING_MARGIN	= 3;
-		private static final	int	TRAILING_MARGIN	= 5;
-		private static final	int	ICON_TEXT_GAP	= 4;
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		public FilterComboBoxRenderer()
-		{
-			setOpaque(true);
-			setFocusable(false);
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : ListCellRenderer interface
-	////////////////////////////////////////////////////////////////////
-
-		public Component getListCellRendererComponent(JList<? extends ChunkFilter> list,
-													  ChunkFilter                  value,
-													  int                          index,
-													  boolean                      isSelected,
-													  boolean                      cellHasFocus)
-		{
-			setBackground(isSelected ? list.getSelectionBackground() : list.getBackground());
-			setForeground(isSelected ? list.getSelectionForeground() : list.getForeground());
-
-			ChunkFilter filter = (ChunkFilter)value;
-			icon = (filter == null) ? null
-									: filter.isIncludeAll()
-											? Icons.INCLUDE
-											: filter.isExcludeAll()
-													? Icons.EXCLUDE
-													: filter.isInclude()
-															? Icons.INCLUDE
-															: Icons.EXCLUDE;
-			text = (filter == null) ? "" : filter.getIdString();
-
-			FontMetrics fontMetrics = getFontMetrics(list.getFont());
-			maxTextWidth = NUM_COLUMNS * FontUtils.getCharWidth('0', fontMetrics);
-			textWidth = fontMetrics.stringWidth(text);
-			if (textWidth > maxTextWidth)
-			{
-				int maxWidth = maxTextWidth - fontMetrics.stringWidth(AppConstants.ELLIPSIS_STR);
-				char[] chars = text.toCharArray();
-				int length = chars.length;
-				while ((length > 0) && (textWidth > maxWidth))
-					textWidth -= fontMetrics.charWidth(chars[--length]);
-				text = new String(chars, 0, length) + AppConstants.ELLIPSIS_STR;
-			}
-			textHeight = fontMetrics.getHeight();
-
-			return this;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : overriding methods
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		public Dimension getPreferredSize()
-		{
-			int width = LEADING_MARGIN + icon.getIconWidth() + ICON_TEXT_GAP + maxTextWidth +
-																							TRAILING_MARGIN;
-			int height = TOP_MARGIN + Math.max(icon.getIconHeight(), textHeight) + BOTTOM_MARGIN;
-			return new Dimension(width, height);
-		}
-
-		//--------------------------------------------------------------
-
-		@Override
-		protected void paintComponent(Graphics gr)
-		{
-			// Create copy of graphics context
-			gr = gr.create();
-
-			// Fill background
-			Rectangle rect = gr.getClipBounds();
-			gr.setColor(getBackground());
-			gr.fillRect(rect.x, rect.y, rect.width, rect.height);
-
-			// Draw icon
-			int x = LEADING_MARGIN;
-			int y = (getHeight() - icon.getIconHeight()) / 2;
-			gr.drawImage(icon.getImage(), x, y, null);
-
-			// Set rendering hints for text antialiasing and fractional metrics
-			TextRendering.setHints((Graphics2D)gr);
-
-			// Draw text
-			FontMetrics fontMetrics = gr.getFontMetrics();
-			x += icon.getIconWidth() + ICON_TEXT_GAP;
-			y = (getHeight() - textHeight) / 2 + fontMetrics.getAscent();
-			gr.setColor(getForeground());
-			gr.drawString(text, x, y);
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	int			maxTextWidth;
-		private	int			textWidth;
-		private	int			textHeight;
-		private	ImageIcon	icon;
-		private	String		text;
-
-	}
-
-	//==================================================================
-
-
-	// FONT PANEL CLASS
-
-
-	private static class FontPanel
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		private static final	int	MIN_SIZE	= 0;
-		private static final	int	MAX_SIZE	= 99;
-
-		private static final	int	SIZE_FIELD_LENGTH	= 2;
-
-		private static final	String	DEFAULT_FONT_STR	= "<default font>";
-
-	////////////////////////////////////////////////////////////////////
-	//  Member classes : non-inner classes
-	////////////////////////////////////////////////////////////////////
-
-
-		// SIZE SPINNER CLASS
-
-
-		private static class SizeSpinner
-			extends IntegerSpinner
-		{
-
-		////////////////////////////////////////////////////////////////
-		//  Constructors
-		////////////////////////////////////////////////////////////////
-
-			private SizeSpinner(int value)
-			{
-				super(value, MIN_SIZE, MAX_SIZE, SIZE_FIELD_LENGTH);
-				AppFont.TEXT_FIELD.apply(this);
-			}
-
-			//----------------------------------------------------------
-
-		////////////////////////////////////////////////////////////////
-		//  Instance methods : overriding methods
-		////////////////////////////////////////////////////////////////
-
-			/**
-			 * @throws NumberFormatException
-			 */
-
-			@Override
-			protected int getEditorValue()
-			{
-				IntegerValueField field = (IntegerValueField)getEditor();
-				return (field.isEmpty() ? 0 : field.getValue());
-			}
-
-			//----------------------------------------------------------
-
-			@Override
-			protected void setEditorValue(int value)
-			{
-				IntegerValueField field = (IntegerValueField)getEditor();
-				if (value == 0)
-					field.setText(null);
-				else
-					field.setValue(value);
-			}
-
-			//----------------------------------------------------------
-
-		}
-
-		//==============================================================
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private FontPanel(FontEx   font,
-						  String[] fontNames)
-		{
-			nameComboBox = new FComboBox<>();
-			nameComboBox.addItem(DEFAULT_FONT_STR);
-			for (String fontName : fontNames)
-				nameComboBox.addItem(fontName);
-			nameComboBox.setSelectedIndex(Utils.indexOf(font.getName(), fontNames) + 1);
-
-			styleComboBox = new FComboBox<>(FontStyle.values());
-			styleComboBox.setSelectedValue(font.getStyle());
-
-			sizeSpinner = new SizeSpinner(font.getSize());
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods
-	////////////////////////////////////////////////////////////////////
-
-		public FontEx getFont()
-		{
-			String name = (nameComboBox.getSelectedIndex() <= 0) ? null : nameComboBox.getSelectedValue();
-			return new FontEx(name, styleComboBox.getSelectedValue(), sizeSpinner.getIntValue());
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	FComboBox<String>		nameComboBox;
-		private	FComboBox<FontStyle>	styleComboBox;
-		private	SizeSpinner				sizeSpinner;
-
-	}
-
-	//==================================================================
+	// Main panel
+	private	boolean										accepted;
+	private	JTabbedPane									tabbedPanel;
+
+	// General panel
+	private	FComboBox<String>							characterEncodingComboBox;
+	private	BooleanComboBox								ignoreFilenameCaseComboBox;
+	private	BooleanComboBox								showUnixPathnamesComboBox;
+	private	BooleanComboBox								selectTextOnFocusGainedComboBox;
+	private	BooleanComboBox								saveMainWindowLocationComboBox;
+
+	// Appearance panel
+	private	FComboBox<String>							lookAndFeelComboBox;
+	private	FComboBox<TextRendering.Antialiasing>		textAntialiasingComboBox;
+	private	BooleanComboBox								showOverallProgressComboBox;
+
+	// Compression panel
+	private	FIntegerSpinner								blockLengthSpinner;
+
+	// Chunk filters panel
+	private	Map<AudioFileKind, JComboBox<ChunkFilter>>	chunkFilterComboBoxes;
+
+	// Fonts panel
+	private	FontPanel[]									fontPanels;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -747,11 +319,22 @@ class PreferencesDialog
 		// Dispose of window explicitly
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 
-		// Handle window closing
+		// Handle window events
 		addWindowListener(new WindowAdapter()
 		{
 			@Override
-			public void windowClosing(WindowEvent event)
+			public void windowOpened(
+				WindowEvent	event)
+			{
+				// WORKAROUND for a bug that has been observed on Linux/GNOME whereby a window is displaced downwards
+				// when its location is set.  The error in the y coordinate is the height of the title bar of the
+				// window.  The workaround is to set the location of the window again with an adjustment for the error.
+				LinuxWorkarounds.fixWindowYCoord(event.getWindow(), location);
+			}
+
+			@Override
+			public void windowClosing(
+				WindowEvent	event)
 			{
 				onClose();
 			}
@@ -792,21 +375,22 @@ class PreferencesDialog
 //  Instance methods : ActionListener interface
 ////////////////////////////////////////////////////////////////////////
 
+	@Override
 	public void actionPerformed(ActionEvent event)
 	{
 		String command = event.getActionCommand();
 
 		if (command.startsWith(Command.EDIT_FILTERS))
 			onEditFilters(StringUtils.removePrefix(command, Command.EDIT_FILTERS));
-
-		else if (command.equals(Command.SAVE_CONFIGURATION))
-			onSaveConfiguration();
-
-		else if (command.equals(Command.ACCEPT))
-			onAccept();
-
-		else if (command.equals(Command.CLOSE))
-			onClose();
+		else
+		{
+			switch (command)
+			{
+				case Command.SAVE_CONFIGURATION -> onSaveConfiguration();
+				case Command.ACCEPT             -> onAccept();
+				case Command.CLOSE              -> onClose();
+			}
+		}
 	}
 
 	//------------------------------------------------------------------
@@ -876,8 +460,7 @@ class PreferencesDialog
 				{
 					setPreferences();
 					accepted = true;
-					TaskProgressDialog.showDialog(this, WRITE_CONFIG_FILE_STR,
-												  new Task.WriteConfig(file));
+					TaskProgressDialog.showDialog(this, WRITE_CONFIG_FILE_STR, new Task.WriteConfig(file));
 				}
 			}
 		}
@@ -920,7 +503,6 @@ class PreferencesDialog
 
 	private JPanel createPanelGeneral()
 	{
-
 		//----  Control panel
 
 		GridBagLayout gridBag = new GridBagLayout();
@@ -1110,14 +692,12 @@ class PreferencesDialog
 		outerPanel.add(controlPanel);
 
 		return outerPanel;
-
 	}
 
 	//------------------------------------------------------------------
 
 	private JPanel createPanelAppearance()
 	{
-
 		//----  Control panel
 
 		GridBagLayout gridBag = new GridBagLayout();
@@ -1258,14 +838,12 @@ class PreferencesDialog
 		outerPanel.add(controlPanel);
 
 		return outerPanel;
-
 	}
 
 	//------------------------------------------------------------------
 
 	private JPanel createPanelCompression()
 	{
-
 		//----  Control panel
 
 		GridBagLayout gridBag = new GridBagLayout();
@@ -1328,14 +906,12 @@ class PreferencesDialog
 		outerPanel.add(controlPanel);
 
 		return outerPanel;
-
 	}
 
 	//------------------------------------------------------------------
 
 	private JPanel createPanelChunkFilters()
 	{
-
 		//----  Outer panel
 
 		GridBagLayout gridBag = new GridBagLayout();
@@ -1428,14 +1004,12 @@ class PreferencesDialog
 		}
 
 		return outerPanel;
-
 	}
 
 	//------------------------------------------------------------------
 
 	private JPanel createPanelFonts()
 	{
-
 		//----  Control panel
 
 		GridBagLayout gridBag = new GridBagLayout();
@@ -1557,7 +1131,6 @@ class PreferencesDialog
 		outerPanel.add(controlPanel);
 
 		return outerPanel;
-
 	}
 
 	//------------------------------------------------------------------
@@ -1607,8 +1180,7 @@ class PreferencesDialog
 		config.setShowUnixPathnames(showUnixPathnamesComboBox.getSelectedValue());
 		config.setSelectTextOnFocusGained(selectTextOnFocusGainedComboBox.getSelectedValue());
 		if (saveMainWindowLocationComboBox.getSelectedValue() != config.isMainWindowLocation())
-			config.setMainWindowLocation(saveMainWindowLocationComboBox.getSelectedValue() ? new Point()
-																						   : null);
+			config.setMainWindowLocation(saveMainWindowLocationComboBox.getSelectedValue() ? new Point() : null);
 	}
 
 	//------------------------------------------------------------------
@@ -1664,40 +1236,469 @@ class PreferencesDialog
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Class variables
+//  Enumerated types
 ////////////////////////////////////////////////////////////////////////
 
-	private static	Point	location;
-	private static	int		tabIndex;
+
+	// TABS
+
+
+	private enum Tab
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		GENERAL
+		(
+			"General"
+		)
+		{
+			@Override
+			protected JPanel createPanel(PreferencesDialog dialog)
+			{
+				return dialog.createPanelGeneral();
+			}
+
+			//----------------------------------------------------------
+
+			@Override
+			protected void validatePreferences(PreferencesDialog dialog)
+				throws AppException
+			{
+				dialog.validatePreferencesGeneral();
+			}
+
+			//----------------------------------------------------------
+
+			@Override
+			protected void setPreferences(PreferencesDialog dialog)
+			{
+				dialog.setPreferencesGeneral();
+			}
+
+			//----------------------------------------------------------
+		},
+
+		APPEARANCE
+		(
+			"Appearance"
+		)
+		{
+			@Override
+			protected JPanel createPanel(PreferencesDialog dialog)
+			{
+				return dialog.createPanelAppearance();
+			}
+
+			//----------------------------------------------------------
+
+			@Override
+			protected void validatePreferences(PreferencesDialog dialog)
+				throws AppException
+			{
+				dialog.validatePreferencesAppearance();
+			}
+
+			//----------------------------------------------------------
+
+			@Override
+			protected void setPreferences(PreferencesDialog dialog)
+			{
+				dialog.setPreferencesAppearance();
+			}
+
+			//----------------------------------------------------------
+		},
+
+		COMPRESSION
+		(
+			"Compression"
+		)
+		{
+			@Override
+			protected JPanel createPanel(PreferencesDialog dialog)
+			{
+				return dialog.createPanelCompression();
+			}
+
+			//----------------------------------------------------------
+
+			@Override
+			protected void validatePreferences(PreferencesDialog dialog)
+				throws AppException
+			{
+				dialog.validatePreferencesCompression();
+			}
+
+			//----------------------------------------------------------
+
+			@Override
+			protected void setPreferences(PreferencesDialog dialog)
+			{
+				dialog.setPreferencesCompression();
+			}
+
+			//----------------------------------------------------------
+		},
+
+		CHUNK_FILTERS
+		(
+			"Pattern"
+		)
+		{
+			@Override
+			protected JPanel createPanel(PreferencesDialog dialog)
+			{
+				return dialog.createPanelChunkFilters();
+			}
+
+			//----------------------------------------------------------
+
+			@Override
+			protected void validatePreferences(PreferencesDialog dialog)
+				throws AppException
+			{
+				dialog.validatePreferencesChunkFilters();
+			}
+
+			//----------------------------------------------------------
+
+			@Override
+			protected void setPreferences(PreferencesDialog dialog)
+			{
+				dialog.setPreferencesChunkFilters();
+			}
+
+			//----------------------------------------------------------
+		},
+
+		FONTS
+		(
+			"Fonts"
+		)
+		{
+			@Override
+			protected JPanel createPanel(PreferencesDialog dialog)
+			{
+				return dialog.createPanelFonts();
+			}
+
+			//----------------------------------------------------------
+
+			@Override
+			protected void validatePreferences(PreferencesDialog dialog)
+				throws AppException
+			{
+				dialog.validatePreferencesFonts();
+			}
+
+			//----------------------------------------------------------
+
+			@Override
+			protected void setPreferences(PreferencesDialog dialog)
+			{
+				dialog.setPreferencesFonts();
+			}
+
+			//----------------------------------------------------------
+		};
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	text;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private Tab(String text)
+		{
+			this.text = text;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Abstract methods
+	////////////////////////////////////////////////////////////////////
+
+		protected abstract JPanel createPanel(PreferencesDialog dialog);
+
+		//--------------------------------------------------------------
+
+		protected abstract void validatePreferences(PreferencesDialog dialog)
+			throws AppException;
+
+		//--------------------------------------------------------------
+
+		protected abstract void setPreferences(PreferencesDialog dialog);
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance variables
+//  Member classes : non-inner classes
 ////////////////////////////////////////////////////////////////////////
 
-	// Main panel
-	private	boolean										accepted;
-	private	JTabbedPane									tabbedPanel;
 
-	// General panel
-	private	FComboBox<String>							characterEncodingComboBox;
-	private	BooleanComboBox								ignoreFilenameCaseComboBox;
-	private	BooleanComboBox								showUnixPathnamesComboBox;
-	private	BooleanComboBox								selectTextOnFocusGainedComboBox;
-	private	BooleanComboBox								saveMainWindowLocationComboBox;
+	// FILTER COMBO BOX RENDERER CLASS
 
-	// Appearance panel
-	private	FComboBox<String>							lookAndFeelComboBox;
-	private	FComboBox<TextRendering.Antialiasing>		textAntialiasingComboBox;
-	private	BooleanComboBox								showOverallProgressComboBox;
 
-	// Compression panel
-	private	FIntegerSpinner								blockLengthSpinner;
+	private class FilterComboBoxRenderer
+		extends JComponent
+		implements ListCellRenderer<ChunkFilter>
+	{
 
-	// Chunk filters panel
-	private	Map<AudioFileKind, JComboBox<ChunkFilter>>	chunkFilterComboBoxes;
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
 
-	// Fonts panel
-	private	FontPanel[]									fontPanels;
+		private static final	int	NUM_COLUMNS	= 48;
+
+		private static final	int	TOP_MARGIN		= 1;
+		private static final	int	BOTTOM_MARGIN	= TOP_MARGIN;
+		private static final	int	LEADING_MARGIN	= 3;
+		private static final	int	TRAILING_MARGIN	= 5;
+		private static final	int	ICON_TEXT_GAP	= 4;
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	int			maxTextWidth;
+		private	int			textWidth;
+		private	int			textHeight;
+		private	ImageIcon	icon;
+		private	String		text;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		public FilterComboBoxRenderer()
+		{
+			setOpaque(true);
+			setFocusable(false);
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : ListCellRenderer interface
+	////////////////////////////////////////////////////////////////////
+
+		public Component getListCellRendererComponent(JList<? extends ChunkFilter> list,
+													  ChunkFilter                  value,
+													  int                          index,
+													  boolean                      isSelected,
+													  boolean                      cellHasFocus)
+		{
+			setBackground(isSelected ? list.getSelectionBackground() : list.getBackground());
+			setForeground(isSelected ? list.getSelectionForeground() : list.getForeground());
+
+			ChunkFilter filter = (ChunkFilter)value;
+			icon = (filter == null) ? null
+									: filter.isIncludeAll()
+											? Icons.INCLUDE
+											: filter.isExcludeAll()
+													? Icons.EXCLUDE
+													: filter.isInclude()
+															? Icons.INCLUDE
+															: Icons.EXCLUDE;
+			text = (filter == null) ? "" : filter.getIdString();
+
+			FontMetrics fontMetrics = getFontMetrics(list.getFont());
+			maxTextWidth = NUM_COLUMNS * FontUtils.getCharWidth('0', fontMetrics);
+			textWidth = fontMetrics.stringWidth(text);
+			if (textWidth > maxTextWidth)
+			{
+				int maxWidth = maxTextWidth - fontMetrics.stringWidth(AppConstants.ELLIPSIS_STR);
+				char[] chars = text.toCharArray();
+				int length = chars.length;
+				while ((length > 0) && (textWidth > maxWidth))
+					textWidth -= fontMetrics.charWidth(chars[--length]);
+				text = new String(chars, 0, length) + AppConstants.ELLIPSIS_STR;
+			}
+			textHeight = fontMetrics.getHeight();
+
+			return this;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : overriding methods
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		public Dimension getPreferredSize()
+		{
+			int width = LEADING_MARGIN + icon.getIconWidth() + ICON_TEXT_GAP + maxTextWidth + TRAILING_MARGIN;
+			int height = TOP_MARGIN + Math.max(icon.getIconHeight(), textHeight) + BOTTOM_MARGIN;
+			return new Dimension(width, height);
+		}
+
+		//--------------------------------------------------------------
+
+		@Override
+		protected void paintComponent(Graphics gr)
+		{
+			// Create copy of graphics context
+			Graphics2D gr2d = GuiUtils.copyGraphicsContext(gr);
+
+			// Fill background
+			Rectangle rect = gr2d.getClipBounds();
+			gr2d.setColor(getBackground());
+			gr2d.fillRect(rect.x, rect.y, rect.width, rect.height);
+
+			// Draw icon
+			int x = LEADING_MARGIN;
+			int y = (getHeight() - icon.getIconHeight()) / 2;
+			gr2d.drawImage(icon.getImage(), x, y, null);
+
+			// Set rendering hints for text antialiasing and fractional metrics
+			TextRendering.setHints(gr2d);
+
+			// Draw text
+			FontMetrics fontMetrics = gr2d.getFontMetrics();
+			x += icon.getIconWidth() + ICON_TEXT_GAP;
+			y = (getHeight() - textHeight) / 2 + fontMetrics.getAscent();
+			gr2d.setColor(getForeground());
+			gr2d.drawString(text, x, y);
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
+
+
+	// FONT PANEL CLASS
+
+
+	private static class FontPanel
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		private static final	int		MIN_SIZE	= 0;
+		private static final	int		MAX_SIZE	= 99;
+
+		private static final	int		SIZE_FIELD_LENGTH	= 2;
+
+		private static final	String	DEFAULT_FONT_STR	= "<default font>";
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	FComboBox<String>		nameComboBox;
+		private	FComboBox<FontStyle>	styleComboBox;
+		private	SizeSpinner				sizeSpinner;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private FontPanel(FontEx   font,
+						  String[] fontNames)
+		{
+			nameComboBox = new FComboBox<>();
+			nameComboBox.addItem(DEFAULT_FONT_STR);
+			for (String fontName : fontNames)
+				nameComboBox.addItem(fontName);
+			nameComboBox.setSelectedIndex(Utils.indexOf(font.getName(), fontNames) + 1);
+
+			styleComboBox = new FComboBox<>(FontStyle.values());
+			styleComboBox.setSelectedValue(font.getStyle());
+
+			sizeSpinner = new SizeSpinner(font.getSize());
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods
+	////////////////////////////////////////////////////////////////////
+
+		public FontEx getFont()
+		{
+			String name = (nameComboBox.getSelectedIndex() <= 0) ? null : nameComboBox.getSelectedValue();
+			return new FontEx(name, styleComboBox.getSelectedValue(), sizeSpinner.getIntValue());
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Member classes : non-inner classes
+	////////////////////////////////////////////////////////////////////
+
+
+		// SIZE SPINNER CLASS
+
+
+		private static class SizeSpinner
+			extends IntegerSpinner
+		{
+
+		////////////////////////////////////////////////////////////////
+		//  Constructors
+		////////////////////////////////////////////////////////////////
+
+			private SizeSpinner(int value)
+			{
+				super(value, MIN_SIZE, MAX_SIZE, SIZE_FIELD_LENGTH);
+				AppFont.TEXT_FIELD.apply(this);
+			}
+
+			//----------------------------------------------------------
+
+		////////////////////////////////////////////////////////////////
+		//  Instance methods : overriding methods
+		////////////////////////////////////////////////////////////////
+
+			/**
+			 * @throws NumberFormatException
+			 */
+
+			@Override
+			protected int getEditorValue()
+			{
+				IntegerValueField field = (IntegerValueField)getEditor();
+				return field.isEmpty() ? 0 : field.getValue();
+			}
+
+			//----------------------------------------------------------
+
+			@Override
+			protected void setEditorValue(int value)
+			{
+				IntegerValueField field = (IntegerValueField)getEditor();
+				if (value == 0)
+					field.setText(null);
+				else
+					field.setValue(value);
+			}
+
+			//----------------------------------------------------------
+
+		}
+
+		//==============================================================
+
+	}
+
+	//==================================================================
 
 }
 

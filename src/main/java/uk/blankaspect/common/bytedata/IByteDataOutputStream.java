@@ -2,7 +2,7 @@
 
 IByteDataOutputStream.java
 
-Byte data output stream interface.
+Interface: byte-data output stream.
 
 \*====================================================================*/
 
@@ -23,7 +23,7 @@ import uk.blankaspect.common.exception.AppException;
 //----------------------------------------------------------------------
 
 
-// BYTE DATA OUTPUT STREAM INTERFACE
+// INTERFACE: BYTE-DATA OUTPUT STREAM
 
 
 public interface IByteDataOutputStream
@@ -33,9 +33,10 @@ public interface IByteDataOutputStream
 //  Methods
 ////////////////////////////////////////////////////////////////////////
 
-	void write(byte[] buffer,
-			   int    offset,
-			   int    length)
+	void write(
+		byte[]	buffer,
+		int		offset,
+		int		length)
 		throws AppException;
 
 	//------------------------------------------------------------------

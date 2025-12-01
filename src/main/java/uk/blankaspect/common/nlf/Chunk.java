@@ -1020,7 +1020,7 @@ public class Chunk
 		public int getInputLength(
 			long	size)
 		{
-			return (lineLength / 4 * 3);
+			return lineLength / 4 * 3;
 		}
 
 		//--------------------------------------------------------------

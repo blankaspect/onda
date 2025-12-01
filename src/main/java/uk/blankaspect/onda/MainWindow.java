@@ -68,7 +68,6 @@ import uk.blankaspect.common.exception.TaskCancelledException;
 
 import uk.blankaspect.common.iff.ChunkFilter;
 
-import uk.blankaspect.common.misc.FilenameSuffixFilter;
 import uk.blankaspect.common.misc.SystemUtils;
 
 import uk.blankaspect.ui.swing.action.KeyAction;
@@ -83,6 +82,8 @@ import uk.blankaspect.ui.swing.container.PathnamePanel;
 
 import uk.blankaspect.ui.swing.dialog.NonEditableTextPaneDialog;
 
+import uk.blankaspect.ui.swing.filechooser.FileChooserUtils;
+
 import uk.blankaspect.ui.swing.label.FLabel;
 
 import uk.blankaspect.ui.swing.menu.FMenuItem;
@@ -90,6 +91,8 @@ import uk.blankaspect.ui.swing.menu.FMenuItem;
 import uk.blankaspect.ui.swing.misc.GuiUtils;
 
 import uk.blankaspect.ui.swing.transfer.DataImporter;
+
+import uk.blankaspect.ui.swing.workaround.LinuxWorkarounds;
 
 //----------------------------------------------------------------------
 
@@ -189,20 +192,17 @@ class MainWindow
 		compressFileChooser = new JFileChooser(config.getCompressDirectory());
 		compressFileChooser.setDialogTitle(COMPRESS_FILE_STR);
 		compressFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		compressFileChooser.setFileFilter(new FilenameSuffixFilter(AppConstants.AUDIO_FILES_STR,
-																   AppConstants.AUDIO_FILENAME_EXTENSIONS));
+		FileChooserUtils.setFilter(compressFileChooser, AppConstants.AUDIO_FILE_FILTER);
 
 		expandFileChooser = new JFileChooser(config.getExpandDirectory());
 		expandFileChooser.setDialogTitle(EXPAND_FILE_STR);
 		expandFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		expandFileChooser.setFileFilter(new FilenameSuffixFilter(AppConstants.COMPRESSED_FILES_STR,
-																 AppConstants.COMPRESSED_FILENAME_EXTENSION));
+		FileChooserUtils.setFilter(expandFileChooser, AppConstants.COMPRESSED_FILE_FILTER);
 
 		validateFileChooser = new JFileChooser(config.getValidateDirectory());
 		validateFileChooser.setDialogTitle(VALIDATE_FILE_STR);
 		validateFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		validateFileChooser.setFileFilter(new FilenameSuffixFilter(AppConstants.COMPRESSED_FILES_STR,
-																   AppConstants.COMPRESSED_FILENAME_EXTENSION));
+		FileChooserUtils.setFilter(validateFileChooser, AppConstants.COMPRESSED_FILE_FILTER);
 
 
 		//----  Control panel
@@ -478,15 +478,22 @@ class MainWindow
 		pack();
 
 		// Set location of window
-		setLocation(config.isMainWindowLocation()
-								? GuiUtils.getLocationWithinScreen(this, config.getMainWindowLocation())
-								: GuiUtils.getComponentLocation(this));
+		Point location = config.getMainWindowLocation();
+		location = (location == null)
+							? GuiUtils.getComponentLocation(this)
+							: GuiUtils.getLocationWithinScreen(this, location);
+		setLocation(location);
 
 		// Set focus
 		inPathnameComboBox.requestFocusInWindow();
 
 		// Make window visible
 		setVisible(true);
+
+		// WORKAROUND for a bug that has been observed on Linux/GNOME whereby a window is displaced downwards when its
+		// location is set.  The error in the y coordinate is the height of the title bar of the window.  The workaround
+		// is to set the location of the window again with an adjustment for the error.
+		LinuxWorkarounds.fixWindowYCoord(this, location);
 	}
 
 	//------------------------------------------------------------------
@@ -498,22 +505,14 @@ class MainWindow
 	@Override
 	public void actionPerformed(ActionEvent event)
 	{
-		String command = event.getActionCommand();
-
-		if (command.equals(Command.CHOOSE_INPUT_PATHNAME))
-			onChooseInputPathname();
-
-		else if (command.equals(Command.CHOOSE_OUTPUT_DIRECTORY))
-			onChooseOutputDirectory();
-
-		else if (command.equals(Command.COPY_INPUT_PATHNAME_TO_OUTPUT_PATHNAME))
-			onCopyInputPathnameToOutputPathname();
-
-		else if (command.equals(Command.COPY_OUTPUT_PATHNAME_TO_INPUT_PATHNAME))
-			onCopyOutputPathnameToInputPathname();
-
-		else if (command.equals(Command.SHOW_CONTEXT_MENU))
-			onShowContextMenu();
+		switch (event.getActionCommand())
+		{
+			case Command.CHOOSE_INPUT_PATHNAME                  -> onChooseInputPathname();
+			case Command.CHOOSE_OUTPUT_DIRECTORY                -> onChooseOutputDirectory();
+			case Command.COPY_INPUT_PATHNAME_TO_OUTPUT_PATHNAME -> onCopyInputPathnameToOutputPathname();
+			case Command.COPY_OUTPUT_PATHNAME_TO_INPUT_PATHNAME -> onCopyOutputPathnameToInputPathname();
+			case Command.SHOW_CONTEXT_MENU                      -> onShowContextMenu();
+		}
 	}
 
 	//------------------------------------------------------------------
@@ -701,7 +700,7 @@ class MainWindow
 
 	private File getOutDirectory()
 	{
-		return (outDirectoryComboBox.isEmpty() ? null : outDirectoryComboBox.getFile());
+		return outDirectoryComboBox.isEmpty() ? null : outDirectoryComboBox.getFile();
 	}
 
 	//------------------------------------------------------------------
@@ -1184,8 +1183,8 @@ class MainWindow
 	//  Constants
 	////////////////////////////////////////////////////////////////////
 
-		private static final	int	NUM_COLUMNS	= 72;
-		private static final	int	NUM_ROWS	= 24;
+		private static final	int		NUM_COLUMNS	= 72;
+		private static final	int		NUM_ROWS	= 24;
 
 		private static final	String	KEY	= LogDialog.class.getCanonicalName();
 

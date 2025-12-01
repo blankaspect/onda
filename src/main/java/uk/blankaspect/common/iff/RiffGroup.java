@@ -87,7 +87,7 @@ public class RiffGroup
 		groupId.put(buffer, offset);
 		RiffChunk.putSize(size, buffer, offset + IffId.SIZE);
 		typeId.put(buffer, offset + Chunk.HEADER_SIZE);
-		return (offset + Group.HEADER_SIZE);
+		return offset + Group.HEADER_SIZE;
 	}
 
 	//------------------------------------------------------------------

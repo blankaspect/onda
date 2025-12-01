@@ -549,13 +549,13 @@ public class AiffFile
 	//  Constants
 	////////////////////////////////////////////////////////////////////
 
-		private static final	int		NUM_CHANNELS_SIZE			= 2;
-		private static final	int		NUM_SAMPLE_FRAMES_SIZE		= 4;
-		private static final	int		BITS_PER_SAMPLE_SIZE		= 2;
-		private static final	int		SAMPLE_RATE_EXPONENT_SIZE	= 2;
-		private static final	int		SAMPLE_RATE_MANTISSA_SIZE	= 8;
-		private static final	int		SAMPLE_RATE_SIZE			=
-				SAMPLE_RATE_EXPONENT_SIZE +SAMPLE_RATE_MANTISSA_SIZE;
+		private static final	int		NUM_CHANNELS_SIZE				= 2;
+		private static final	int		NUM_SAMPLE_FRAMES_SIZE			= 4;
+		private static final	int		BITS_PER_SAMPLE_SIZE			= 2;
+		private static final	int		SAMPLE_RATE_EXPONENT_SIZE		= 2;
+		private static final	int		SAMPLE_RATE_SIGNIFICAND_SIZE	= 8;
+		private static final	int		SAMPLE_RATE_SIZE				=
+				SAMPLE_RATE_EXPONENT_SIZE + SAMPLE_RATE_SIGNIFICAND_SIZE;
 
 		private static final	int		CHUNK_SIZE1	=
 				NUM_CHANNELS_SIZE + NUM_SAMPLE_FRAMES_SIZE + BITS_PER_SAMPLE_SIZE + SAMPLE_RATE_SIZE;
@@ -621,20 +621,20 @@ public class AiffFile
 
 			int exponent = NumberCodec.bytesToIntBE(data, offset, SAMPLE_RATE_EXPONENT_SIZE);
 			offset += SAMPLE_RATE_EXPONENT_SIZE;
-			long mantissa = NumberCodec.bytesToULongBE(data, offset, SAMPLE_RATE_MANTISSA_SIZE);
-			offset += SAMPLE_RATE_MANTISSA_SIZE;
+			long significand = NumberCodec.bytesToULongBE(data, offset, SAMPLE_RATE_SIGNIFICAND_SIZE);
+			offset += SAMPLE_RATE_SIGNIFICAND_SIZE;
 			if (exponent > 0)
 			{
 				exponent -= SAMPLE_RATE_EXPONENT_BIAS;
 				if (exponent <= 62)
 				{
-					mantissa >>>= 62 - exponent;
-					long m2 = mantissa;
-					mantissa >>>= 1;
+					significand >>>= 62 - exponent;
+					long m2 = significand;
+					significand >>>= 1;
 					if ((m2 & 1) != 0)
-						++mantissa;
-					if (mantissa <= Integer.MAX_VALUE)
-						sampleRate = (int)mantissa;
+						++significand;
+					if (significand <= Integer.MAX_VALUE)
+						sampleRate = (int)significand;
 				}
 			}
 
@@ -666,16 +666,16 @@ public class AiffFile
 			offset += BITS_PER_SAMPLE_SIZE;
 
 			int exponent = SAMPLE_RATE_EXPONENT_BIAS - 33;
-			long mantissa = sampleRate & 0xFFFFFFFFL;
-			while (mantissa >= 0)
+			long significand = sampleRate & 0xFFFFFFFFL;
+			while (significand >= 0)
 			{
-				mantissa <<= 1;
+				significand <<= 1;
 				++exponent;
 			}
 			NumberCodec.intToBytesBE(exponent, buffer, offset, SAMPLE_RATE_EXPONENT_SIZE);
 			offset += SAMPLE_RATE_EXPONENT_SIZE;
-			NumberCodec.uLongToBytesBE(mantissa, buffer, offset, SAMPLE_RATE_MANTISSA_SIZE);
-			offset += SAMPLE_RATE_MANTISSA_SIZE;
+			NumberCodec.uLongToBytesBE(significand, buffer, offset, SAMPLE_RATE_SIGNIFICAND_SIZE);
+			offset += SAMPLE_RATE_SIGNIFICAND_SIZE;
 
 			return offset;
 		}
@@ -962,7 +962,7 @@ public class AiffFile
 			}
 
 			// If sample data were written to buffer, return it
-			return ((outStream == null) ? outBuffer : null);
+			return (outStream == null) ? outBuffer : null;
 		}
 
 		//--------------------------------------------------------------
@@ -1074,7 +1074,7 @@ public class AiffFile
 		@Override
 		public IffId getNextId()
 		{
-			return ((chunkIndex < chunks.size()) ? chunks.get(chunkIndex++).getId() : null);
+			return (chunkIndex < chunks.size()) ? chunks.get(chunkIndex++).getId() : null;
 		}
 
 		//--------------------------------------------------------------

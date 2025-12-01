@@ -704,7 +704,7 @@ public class Attributes
 
 		public int getSize()
 		{
-			return (NAME_SIZE_SIZE + NlfUtils.getUtf8Length(name) + VALUE_SIZE_SIZE + NlfUtils.getUtf8Length(value));
+			return NAME_SIZE_SIZE + NlfUtils.getUtf8Length(name) + VALUE_SIZE_SIZE + NlfUtils.getUtf8Length(value);
 		}
 
 		//--------------------------------------------------------------

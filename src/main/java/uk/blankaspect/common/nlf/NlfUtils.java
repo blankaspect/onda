@@ -189,7 +189,7 @@ public class NlfUtils
 		int		maxLength)
 	{
 		int size = getUtf8Length(str);
-		return ((size >= minLength) && (size <= maxLength));
+		return (size >= minLength) && (size <= maxLength);
 	}
 
 	//------------------------------------------------------------------

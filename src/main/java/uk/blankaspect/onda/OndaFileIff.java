@@ -520,7 +520,7 @@ class OndaFileIff
 	{
 		ChunkReader reader = new ChunkReader(READ_PRIVATE_DATA, null);
 		new IffFormFile(file).read(reader);
-		return ((privateData == null) ? null : new PrivateData(privateData));
+		return (privateData == null) ? null : new PrivateData(privateData);
 	}
 
 	//------------------------------------------------------------------

@@ -81,7 +81,7 @@ public class IffException
 	@Override
 	protected String getPrefix()
 	{
-		return (getPathname(file) + "\n" + CHUNK_ID_STR + ": '" + chunkId + "'");
+		return getPathname(file) + "\n" + CHUNK_ID_STR + ": '" + chunkId + "'";
 	}
 
 	//------------------------------------------------------------------

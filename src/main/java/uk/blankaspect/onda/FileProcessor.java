@@ -817,7 +817,7 @@ class FileProcessor
 		@Override
 		public long getLength()
 		{
-			return (numSampleFrames * bytesPerSampleFrame);
+			return numSampleFrames * bytesPerSampleFrame;
 		}
 
 		//--------------------------------------------------------------

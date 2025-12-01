@@ -264,7 +264,7 @@ public class ChunkList
 		}
 		else
 			prefix1 = parent.getPathname();
-		return (prefix1 + prefix2 + instanceId.getValue());
+		return prefix1 + prefix2 + instanceId.getValue();
 	}
 
 	//------------------------------------------------------------------

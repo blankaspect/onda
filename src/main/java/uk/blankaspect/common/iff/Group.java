@@ -138,7 +138,7 @@ public abstract class Group
 
 	public int getExtent()
 	{
-		return (HEADER_SIZE + getSize());
+		return HEADER_SIZE + getSize();
 	}
 
 	//------------------------------------------------------------------

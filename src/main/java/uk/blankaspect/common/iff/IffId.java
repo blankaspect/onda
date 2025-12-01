@@ -107,7 +107,10 @@ public class IffId
 	@Override
 	public boolean equals(Object obj)
 	{
-		return ((obj instanceof IffId) && (value == ((IffId)obj).value));
+		if (this == obj)
+			return true;
+
+		return (obj instanceof IffId other) && (value == other.value);
 	}
 
 	//------------------------------------------------------------------

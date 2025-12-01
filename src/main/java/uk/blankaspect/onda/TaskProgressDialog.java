@@ -69,6 +69,8 @@ import uk.blankaspect.ui.swing.misc.GuiUtils;
 import uk.blankaspect.ui.swing.text.TextRendering;
 import uk.blankaspect.ui.swing.text.TextUtils;
 
+import uk.blankaspect.ui.swing.workaround.LinuxWorkarounds;
+
 //----------------------------------------------------------------------
 
 
@@ -345,16 +347,23 @@ class TaskProgressDialog
 		addWindowListener(new WindowAdapter()
 		{
 			@Override
-			public void windowOpened(WindowEvent event)
+			public void windowOpened(
+				WindowEvent	event)
 			{
 				Task.setProgressView((TaskProgressDialog)event.getWindow());
 				Task.setException(null, true);
 				Task.setCancelled(false);
 				task.start();
+
+				// WORKAROUND for a bug that has been observed on Linux/GNOME whereby a window is displaced downwards
+				// when its location is set.  The error in the y coordinate is the height of the title bar of the
+				// window.  The workaround is to set the location of the window again with an adjustment for the error.
+				LinuxWorkarounds.fixWindowYCoord(event.getWindow(), location);
 			}
 
 			@Override
-			public void windowClosing(WindowEvent event)
+			public void windowClosing(
+				WindowEvent	event)
 			{
 				location = getLocation();
 				if (stopped)
@@ -613,21 +622,21 @@ class TaskProgressDialog
 		protected void paintComponent(Graphics gr)
 		{
 			// Create copy of graphics context
-			gr = gr.create();
+			Graphics2D gr2d = GuiUtils.copyGraphicsContext(gr);
 
 			// Draw background
-			gr.setColor(getBackground());
-			gr.fillRect(0, 0, getWidth(), getHeight());
+			gr2d.setColor(getBackground());
+			gr2d.fillRect(0, 0, getWidth(), getHeight());
 
 			// Draw text
 			if (text != null)
 			{
 				// Set rendering hints for text antialiasing and fractional metrics
-				TextRendering.setHints((Graphics2D)gr);
+				TextRendering.setHints(gr2d);
 
 				// Draw text
-				gr.setColor(Color.BLACK);
-				gr.drawString(text, 0, gr.getFontMetrics().getAscent());
+				gr2d.setColor(Color.BLACK);
+				gr2d.drawString(text, 0, gr2d.getFontMetrics().getAscent());
 			}
 		}
 
@@ -703,22 +712,22 @@ class TaskProgressDialog
 		protected void paintComponent(Graphics gr)
 		{
 			// Create copy of graphics context
-			gr = gr.create();
+			Graphics2D gr2d = GuiUtils.copyGraphicsContext(gr);
 
 			// Draw background
-			gr.setColor(getBackground());
-			gr.fillRect(0, 0, getWidth(), getHeight());
+			gr2d.setColor(getBackground());
+			gr2d.fillRect(0, 0, getWidth(), getHeight());
 
 			// Draw text
 			if (text != null)
 			{
 				// Set rendering hints for text antialiasing and fractional metrics
-				TextRendering.setHints((Graphics2D)gr);
+				TextRendering.setHints(gr2d);
 
 				// Draw text
-				FontMetrics fontMetrics = gr.getFontMetrics();
-				gr.setColor(TEXT_COLOUR);
-				gr.drawString(text, getWidth() - fontMetrics.stringWidth(text), fontMetrics.getAscent());
+				FontMetrics fontMetrics = gr2d.getFontMetrics();
+				gr2d.setColor(TEXT_COLOUR);
+				gr2d.drawString(text, getWidth() - fontMetrics.stringWidth(text), fontMetrics.getAscent());
 			}
 		}
 

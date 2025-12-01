@@ -84,7 +84,7 @@ public class ChunkFilter
 
 		public static Kind get(int index)
 		{
-			return (((index >= 0) && (index < values().length)) ? values()[index] : null);
+			return ((index >= 0) && (index < values().length)) ? values()[index] : null;
 		}
 
 		//--------------------------------------------------------------
@@ -223,7 +223,7 @@ public class ChunkFilter
 				break;
 			}
 		}
-		return ((index < length) ? str.substring(0, index) : str);
+		return (index < length) ? str.substring(0, index) : str;
 	}
 
 	//------------------------------------------------------------------
@@ -308,7 +308,7 @@ public class ChunkFilter
 	public boolean accept(IffId id)
 	{
 		boolean found = ids.contains(id);
-		return ((kind == Kind.INCLUDE) ? found : !found);
+		return (kind == Kind.INCLUDE) ? found : !found;
 	}
 
 	//------------------------------------------------------------------

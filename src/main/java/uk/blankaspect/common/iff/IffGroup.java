@@ -87,7 +87,7 @@ public class IffGroup
 		groupId.put(buffer, offset);
 		IffChunk.putSize(size, buffer, offset + IffId.SIZE);
 		typeId.put(buffer, offset + Chunk.HEADER_SIZE);
-		return (offset + Group.HEADER_SIZE);
+		return offset + Group.HEADER_SIZE;
 	}
 
 	//------------------------------------------------------------------

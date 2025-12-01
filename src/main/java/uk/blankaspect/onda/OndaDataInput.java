@@ -240,7 +240,7 @@ public class OndaDataInput
 			bitDataLength += 8;
 		}
 		bitDataLength -= length;
-		return (bitBuffer >>> bitDataLength & ((1 << length) - 1));
+		return bitBuffer >>> bitDataLength & ((1 << length) - 1);
 	}
 
 	//------------------------------------------------------------------

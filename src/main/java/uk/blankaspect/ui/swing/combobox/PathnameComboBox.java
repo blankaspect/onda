@@ -165,7 +165,7 @@ public class PathnameComboBox
 
 		public int getFieldWidth()
 		{
-			return (getColumns() * getColumnWidth());
+			return getColumns() * getColumnWidth();
 		}
 
 		//--------------------------------------------------------------
@@ -432,7 +432,7 @@ public class PathnameComboBox
 
 	protected char getFileSeparatorChar()
 	{
-		return (getField().isUnixStyle() ? '/' : File.separatorChar);
+		return getField().isUnixStyle() ? '/' : File.separatorChar;
 	}
 
 	//------------------------------------------------------------------

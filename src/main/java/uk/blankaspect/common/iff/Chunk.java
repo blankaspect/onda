@@ -113,7 +113,7 @@ public abstract class Chunk
 
 	public int getSize()
 	{
-		return ((data == null) ? 0 : data.length);
+		return (data == null) ? 0 : data.length;
 	}
 
 	//------------------------------------------------------------------

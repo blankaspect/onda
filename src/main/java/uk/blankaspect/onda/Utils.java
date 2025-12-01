@@ -83,7 +83,7 @@ class Utils
 				break;
 			}
 		}
-		return ((index < length) ? str.substring(0, index) : str);
+		return (index < length) ? str.substring(0, index) : str;
 	}
 
 	//------------------------------------------------------------------
@@ -106,7 +106,7 @@ class Utils
 
 	public static char getFileSeparatorChar()
 	{
-		return (AppConfig.INSTANCE.isShowUnixPathnames() ? '/' : File.separatorChar);
+		return AppConfig.INSTANCE.isShowUnixPathnames() ? '/' : File.separatorChar;
 	}
 
 	//------------------------------------------------------------------

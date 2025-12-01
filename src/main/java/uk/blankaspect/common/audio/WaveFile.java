@@ -871,7 +871,7 @@ public class WaveFile
 			}
 
 			// If sample data were written to buffer, return it
-			return ((outStream == null) ? outBuffer : null);
+			return (outStream == null) ? outBuffer : null;
 		}
 
 		//--------------------------------------------------------------
@@ -982,7 +982,7 @@ public class WaveFile
 		@Override
 		public IffId getNextId()
 		{
-			return ((chunkIndex < chunks.size()) ? chunks.get(chunkIndex++).getId() : null);
+			return (chunkIndex < chunks.size()) ? chunks.get(chunkIndex++).getId() : null;
 		}
 
 		//--------------------------------------------------------------

@@ -349,14 +349,14 @@ class OndaFile
 
 		public int getBytesPerSample()
 		{
-			return (bitsPerSample + 7 >> 3);
+			return bitsPerSample + 7 >> 3;
 		}
 
 		//--------------------------------------------------------------
 
 		public int getBytesPerSampleFrame()
 		{
-			return (getBytesPerSample() * numChannels);
+			return getBytesPerSample() * numChannels;
 		}
 
 		//--------------------------------------------------------------
@@ -677,7 +677,7 @@ class OndaFile
 		throws AppException
 	{
 		read(READ_PRIVATE_DATA, null);
-		return ((privateData == null) ? null : new PrivateData(privateData));
+		return (privateData == null) ? null : new PrivateData(privateData);
 	}
 
 	//------------------------------------------------------------------

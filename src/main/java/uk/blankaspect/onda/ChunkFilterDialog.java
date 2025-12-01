@@ -66,6 +66,8 @@ import uk.blankaspect.ui.swing.text.TextRendering;
 
 import uk.blankaspect.ui.swing.textfield.ConstrainedTextField;
 
+import uk.blankaspect.ui.swing.workaround.LinuxWorkarounds;
+
 //----------------------------------------------------------------------
 
 
@@ -95,309 +97,23 @@ class ChunkFilterDialog
 
 	private static final	KeyAction.KeyCommandPair[]	KEY_COMMANDS	=
 	{
-		new KeyAction.KeyCommandPair(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0),
-									 Command.MOVE_UP),
-		new KeyAction.KeyCommandPair(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0),
-									 Command.MOVE_DOWN)
+		KeyAction.command(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0),   Command.MOVE_UP),
+		KeyAction.command(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), Command.MOVE_DOWN)
 	};
 
 ////////////////////////////////////////////////////////////////////////
-//  Enumerated types
+//  Class variables
 ////////////////////////////////////////////////////////////////////////
 
-
-	// FILTER KIND
-
-
-	private enum FilterKind
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		INCLUDE
-		(
-			"Include",
-			new Color(0, 168, 0)
-		),
-
-		EXCLUDE
-		(
-			"Exclude",
-			new Color(192, 48, 0)
-		);
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private FilterKind(String text,
-						   Color  colour)
-		{
-			this.text = text;
-			this.colour = colour;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : overriding methods
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		public String toString()
-		{
-			return text;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods
-	////////////////////////////////////////////////////////////////////
-
-		public Color getColour()
-		{
-			return colour;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	text;
-		private	Color	colour;
-
-	}
-
-	//==================================================================
+	private static	Point	location;
 
 ////////////////////////////////////////////////////////////////////////
-//  Member classes : non-inner classes
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
-
-	// FILTER KIND BUTTON CLASS
-
-
-	private static class FilterKindButton
-		extends JButton
-		implements ActionListener
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		private static final	int		VERTICAL_MARGIN		= 5;
-		private static final	int		HORIZONTAL_MARGIN	= 12;
-
-		private static final	Color	TEXT_COLOUR				= Color.WHITE;
-		private static final	Color	BORDER_COLOUR			= Colours.LINE_BORDER;
-		private static final	Color	FOCUSED_BORDER_COLOUR1	= Color.WHITE;
-		private static final	Color	FOCUSED_BORDER_COLOUR2	= Color.BLACK;
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private FilterKindButton(ChunkFilter.Kind filterKind)
-		{
-			this.filterKind = (filterKind == ChunkFilter.Kind.INCLUDE) ? FilterKind.INCLUDE
-																	   : FilterKind.EXCLUDE;
-			setFont(AppFont.MAIN.getFont().deriveFont(Font.BOLD));
-			setBorder(BorderFactory.createEmptyBorder(VERTICAL_MARGIN, HORIZONTAL_MARGIN,
-													  VERTICAL_MARGIN, HORIZONTAL_MARGIN));
-			FontMetrics fontMetrics = getFontMetrics(getFont());
-			for (FilterKind kind : FilterKind.values())
-			{
-				int strWidth = fontMetrics.stringWidth(kind.toString());
-				if (width < strWidth)
-					width = strWidth;
-			}
-			width += getInsets().left + getInsets().right;
-			height = getInsets().top + fontMetrics.getAscent() + fontMetrics.getDescent() + getInsets().bottom;
-			addActionListener(this);
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : ActionListener interface
-	////////////////////////////////////////////////////////////////////
-
-		public void actionPerformed(ActionEvent event)
-		{
-			filterKind = (filterKind == FilterKind.INCLUDE) ? FilterKind.EXCLUDE : FilterKind.INCLUDE;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : overriding methods
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		public Dimension getPreferredSize()
-		{
-			return new Dimension(width, height);
-		}
-
-		//--------------------------------------------------------------
-
-		@Override
-		protected void paintComponent(Graphics gr)
-		{
-			// Create copy of graphics context
-			Graphics2D gr2d = GuiUtils.copyGraphicsContext(gr);
-
-			// Fill interior
-			gr2d.setColor(filterKind.getColour());
-			gr2d.fillRect(0, 0, width, height);
-
-			// Set rendering hints for text antialiasing and fractional metrics
-			TextRendering.setHints(gr2d);
-
-			// Draw text
-			FontMetrics fontMetrics = gr2d.getFontMetrics();
-			String str = filterKind.toString();
-			gr2d.setColor(TEXT_COLOUR);
-			gr2d.drawString(str, (width - fontMetrics.stringWidth(str)) / 2,
-							FontUtils.getBaselineOffset(height, fontMetrics));
-
-			// Draw border
-			gr2d.setColor(BORDER_COLOUR);
-			gr2d.drawRect(0, 0, width - 1, height - 1);
-			if (isFocusOwner())
-			{
-				gr2d.setColor(FOCUSED_BORDER_COLOUR1);
-				gr2d.drawRect(1, 1, width - 3, height - 3);
-
-				gr2d.setStroke(GuiConstants.BASIC_DASH);
-				gr2d.setColor(FOCUSED_BORDER_COLOUR2);
-				gr2d.drawRect(1, 1, width - 3, height - 3);
-			}
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods
-	////////////////////////////////////////////////////////////////////
-
-		public ChunkFilter.Kind getFilterKind()
-		{
-			return (filterKind == FilterKind.INCLUDE) ? ChunkFilter.Kind.INCLUDE : ChunkFilter.Kind.EXCLUDE;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	FilterKind	filterKind;
-		private	int			width;
-		private	int			height;
-
-	}
-
-	//==================================================================
-
-
-	// ID FIELD CLASS
-
-
-	private static class IdField
-		extends ConstrainedTextField
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		private static final	int		FIELD_LENGTH	= 4;
-
-		private static final	Color	FOREGROUND_COLOUR		= Color.BLACK;
-		private static final	Color	BACKGROUND_COLOUR		= Colours.BACKGROUND;
-		private static final	Color	EMPTY_BACKGROUND_COLOUR	= new Color(208, 208, 208);
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private IdField(int   index,
-						IffId id)
-		{
-			super(FIELD_LENGTH, (id == null) ? null : Utils.stripTrailingSpace(id.toString()));
-			this.index = index;
-			AppFont.TEXT_FIELD.apply(this);
-			GuiUtils.setPaddedLineBorder(this, 2, 4);
-			setForeground(FOREGROUND_COLOUR);
-			setCaretColor(FOREGROUND_COLOUR);
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : overriding methods
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		public Color getBackground()
-		{
-			return (isEmpty() ? EMPTY_BACKGROUND_COLOUR : BACKGROUND_COLOUR);
-		}
-
-		//--------------------------------------------------------------
-
-		@Override
-		protected int getColumnWidth()
-		{
-			return (FontUtils.getCharWidth('D', getFontMetrics(getFont())) + 1);
-		}
-
-		//--------------------------------------------------------------
-
-		@Override
-		protected boolean acceptCharacter(char ch,
-										  int  index)
-		{
-			return ((ch >= IffId.MIN_CHAR) && (ch <= IffId.MAX_CHAR));
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods
-	////////////////////////////////////////////////////////////////////
-
-		public int getIndex()
-		{
-			return index;
-		}
-
-		//--------------------------------------------------------------
-
-		public IffId getId()
-		{
-			return (isEmpty() ? null : new IffId(getText() + "   "));
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	int	index;
-
-	}
-
-	//==================================================================
+	private	boolean				accepted;
+	private	FilterKindButton	filterKindButton;
+	private	IdField[]			idFields;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -528,11 +244,22 @@ class ChunkFilterDialog
 		// Dispose of window explicitly
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 
-		// Handle window closing
+		// Handle window events
 		addWindowListener(new WindowAdapter()
 		{
 			@Override
-			public void windowClosing(WindowEvent event)
+			public void windowOpened(
+				WindowEvent	event)
+			{
+				// WORKAROUND for a bug that has been observed on Linux/GNOME whereby a window is displaced downwards
+				// when its location is set.  The error in the y coordinate is the height of the title bar of the
+				// window.  The workaround is to set the location of the window again with an adjustment for the error.
+				LinuxWorkarounds.fixWindowYCoord(event.getWindow(), location);
+			}
+
+			@Override
+			public void windowClosing(
+				WindowEvent	event)
 			{
 				onClose();
 			}
@@ -579,21 +306,16 @@ class ChunkFilterDialog
 //  Instance methods : ActionListener interface
 ////////////////////////////////////////////////////////////////////////
 
+	@Override
 	public void actionPerformed(ActionEvent event)
 	{
-		String command = event.getActionCommand();
-
-		if (command.equals(Command.MOVE_UP))
-			onMoveUp();
-
-		else if (command.equals(Command.MOVE_DOWN))
-			onMoveDown();
-
-		else if (command.equals(Command.ACCEPT))
-			onAccept();
-
-		else if (command.equals(Command.CLOSE))
-			onClose();
+		switch (event.getActionCommand())
+		{
+			case Command.MOVE_UP   -> onMoveUp();
+			case Command.MOVE_DOWN -> onMoveDown();
+			case Command.ACCEPT    -> onAccept();
+			case Command.CLOSE     -> onClose();
+		}
 	}
 
 	//------------------------------------------------------------------
@@ -623,8 +345,7 @@ class ChunkFilterDialog
 
 	private int getCurrentIdIndex()
 	{
-		Component component = getFocusOwner();
-		return ((component != null) && (component instanceof IdField)) ? ((IdField)component).getIndex() : -1;
+		return (getFocusOwner() instanceof IdField field) ? field.getIndex() : -1;
 	}
 
 	//------------------------------------------------------------------
@@ -665,18 +386,303 @@ class ChunkFilterDialog
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Class variables
+//  Enumerated types
 ////////////////////////////////////////////////////////////////////////
 
-	private static	Point	location;
+
+	// FILTER KIND
+
+
+	private enum FilterKind
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		INCLUDE
+		(
+			"Include",
+			new Color(0, 168, 0)
+		),
+
+		EXCLUDE
+		(
+			"Exclude",
+			new Color(192, 48, 0)
+		);
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	text;
+		private	Color	colour;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private FilterKind(String text,
+						   Color  colour)
+		{
+			this.text = text;
+			this.colour = colour;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : overriding methods
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		public String toString()
+		{
+			return text;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods
+	////////////////////////////////////////////////////////////////////
+
+		public Color getColour()
+		{
+			return colour;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance variables
+//  Member classes : non-inner classes
 ////////////////////////////////////////////////////////////////////////
 
-	private	boolean				accepted;
-	private	FilterKindButton	filterKindButton;
-	private	IdField[]			idFields;
+
+	// FILTER KIND BUTTON CLASS
+
+
+	private static class FilterKindButton
+		extends JButton
+		implements ActionListener
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		private static final	int		VERTICAL_MARGIN		= 5;
+		private static final	int		HORIZONTAL_MARGIN	= 12;
+
+		private static final	Color	TEXT_COLOUR				= Color.WHITE;
+		private static final	Color	BORDER_COLOUR			= Colours.LINE_BORDER;
+		private static final	Color	FOCUSED_BORDER_COLOUR1	= Color.WHITE;
+		private static final	Color	FOCUSED_BORDER_COLOUR2	= Color.BLACK;
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	FilterKind	filterKind;
+		private	int			width;
+		private	int			height;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private FilterKindButton(ChunkFilter.Kind filterKind)
+		{
+			this.filterKind = (filterKind == ChunkFilter.Kind.INCLUDE) ? FilterKind.INCLUDE
+																	   : FilterKind.EXCLUDE;
+			setFont(AppFont.MAIN.getFont().deriveFont(Font.BOLD));
+			setBorder(BorderFactory.createEmptyBorder(VERTICAL_MARGIN, HORIZONTAL_MARGIN,
+													  VERTICAL_MARGIN, HORIZONTAL_MARGIN));
+			FontMetrics fontMetrics = getFontMetrics(getFont());
+			for (FilterKind kind : FilterKind.values())
+			{
+				int strWidth = fontMetrics.stringWidth(kind.toString());
+				if (width < strWidth)
+					width = strWidth;
+			}
+			width += getInsets().left + getInsets().right;
+			height = getInsets().top + fontMetrics.getAscent() + fontMetrics.getDescent() + getInsets().bottom;
+			addActionListener(this);
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : ActionListener interface
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		public void actionPerformed(ActionEvent event)
+		{
+			filterKind = (filterKind == FilterKind.INCLUDE) ? FilterKind.EXCLUDE : FilterKind.INCLUDE;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : overriding methods
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		public Dimension getPreferredSize()
+		{
+			return new Dimension(width, height);
+		}
+
+		//--------------------------------------------------------------
+
+		@Override
+		protected void paintComponent(Graphics gr)
+		{
+			// Create copy of graphics context
+			Graphics2D gr2d = GuiUtils.copyGraphicsContext(gr);
+
+			// Fill interior
+			gr2d.setColor(filterKind.getColour());
+			gr2d.fillRect(0, 0, width, height);
+
+			// Set rendering hints for text antialiasing and fractional metrics
+			TextRendering.setHints(gr2d);
+
+			// Draw text
+			FontMetrics fontMetrics = gr2d.getFontMetrics();
+			String str = filterKind.toString();
+			gr2d.setColor(TEXT_COLOUR);
+			gr2d.drawString(str, (width - fontMetrics.stringWidth(str)) / 2,
+							FontUtils.getBaselineOffset(height, fontMetrics));
+
+			// Draw border
+			gr2d.setColor(BORDER_COLOUR);
+			gr2d.drawRect(0, 0, width - 1, height - 1);
+			if (isFocusOwner())
+			{
+				gr2d.setColor(FOCUSED_BORDER_COLOUR1);
+				gr2d.drawRect(1, 1, width - 3, height - 3);
+
+				gr2d.setStroke(GuiConstants.BASIC_DASH);
+				gr2d.setColor(FOCUSED_BORDER_COLOUR2);
+				gr2d.drawRect(1, 1, width - 3, height - 3);
+			}
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods
+	////////////////////////////////////////////////////////////////////
+
+		public ChunkFilter.Kind getFilterKind()
+		{
+			return (filterKind == FilterKind.INCLUDE) ? ChunkFilter.Kind.INCLUDE : ChunkFilter.Kind.EXCLUDE;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
+
+
+	// ID FIELD CLASS
+
+
+	private static class IdField
+		extends ConstrainedTextField
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		private static final	int		FIELD_LENGTH	= 4;
+
+		private static final	Color	FOREGROUND_COLOUR		= Color.BLACK;
+		private static final	Color	BACKGROUND_COLOUR		= Colours.BACKGROUND;
+		private static final	Color	EMPTY_BACKGROUND_COLOUR	= new Color(208, 208, 208);
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	int	index;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private IdField(int   index,
+						IffId id)
+		{
+			super(FIELD_LENGTH, (id == null) ? null : Utils.stripTrailingSpace(id.toString()));
+			this.index = index;
+			AppFont.TEXT_FIELD.apply(this);
+			GuiUtils.setPaddedLineBorder(this, 2, 4);
+			setForeground(FOREGROUND_COLOUR);
+			setCaretColor(FOREGROUND_COLOUR);
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : overriding methods
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		public Color getBackground()
+		{
+			return isEmpty() ? EMPTY_BACKGROUND_COLOUR : BACKGROUND_COLOUR;
+		}
+
+		//--------------------------------------------------------------
+
+		@Override
+		protected int getColumnWidth()
+		{
+			return FontUtils.getCharWidth('D', getFontMetrics(getFont())) + 1;
+		}
+
+		//--------------------------------------------------------------
+
+		@Override
+		protected boolean acceptCharacter(char ch,
+										  int  index)
+		{
+			return (ch >= IffId.MIN_CHAR) && (ch <= IffId.MAX_CHAR);
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods
+	////////////////////////////////////////////////////////////////////
+
+		public int getIndex()
+		{
+			return index;
+		}
+
+		//--------------------------------------------------------------
+
+		public IffId getId()
+		{
+			return isEmpty() ? null : new IffId(getText() + "   ");
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
 
 }
 

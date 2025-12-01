@@ -129,7 +129,7 @@ public abstract class AudioFile
 
 	public static int bitsPerSampleToBytesPerSample(int bitsPerSample)
 	{
-		return (bitsPerSample + 7 >> 3);
+		return bitsPerSample + 7 >> 3;
 	}
 
 	//------------------------------------------------------------------
@@ -371,7 +371,7 @@ public abstract class AudioFile
 
 	public int getBytesPerSampleFrame()
 	{
-		return (numChannels * bitsPerSampleToBytesPerSample(bitsPerSample));
+		return numChannels * bitsPerSampleToBytesPerSample(bitsPerSample);
 	}
 
 	//------------------------------------------------------------------

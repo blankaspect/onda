@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Set;
 
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -99,6 +98,12 @@ public class OndaApp
 	/** The name of the build-properties file. */
 	private static final	String	BUILD_PROPERTIES_FILENAME	= "build.properties";
 
+	/** The name of the usage-message file. */
+	private static final	String	USAGE_MESSAGE_FILENAME	= "usageMessage.txt";
+
+	/** The placeholder for the name of the application in the usage message. */
+	private static final	String	APP_NAME_PLACEHOLDER	= "${appName}";
+
 	/** The string that can be prefixed to an input pathname to disable other special characters in a command line. */
 	private static final	String	PATHNAME_PREFIX	= "+";
 
@@ -111,93 +116,6 @@ public class OndaApp
 
 	/** The separator after a message that is written to the standard output stream. */
 	private static final	String	MESSAGE_SEPARATOR	= "-".repeat(36);
-
-	/** The usage message. */
-	private static final	String	USAGE_MESSAGE	=
-		"Usage: " + NAME_KEY + " subcommand [options] [input-pathnames]\n\n" +
-		"""
-		Subcommands:
-		  (The '--' prefix of a subcommand may be omitted.)
-		  --compress
-		      Compress the files specified by the input pathnames.
-		      If an output directory is specified, the compressed files are written to
-		      it; otherwise, each compressed file is written to the same directory as
-		      its input file.
-		  --expand
-		      Expand the files specified by the input pathnames.
-		      If an output directory is specified, the expanded files are written to
-		      it; otherwise, each expanded file is written to the same directory as its
-		      input file.
-		  --help
-		      Write help information to the standard output stream.
-		  --validate
-		      Validate the files specified by the input pathnames.
-		  --version
-		      Write version information to the standard output stream.
-
-		Options:
-		  --aiff-chunk-filter=(+|-)<chunk-ids>
-		  --wave-chunk-filter=(+|-)<chunk-ids>
-		      When compressing a file of the appropriate kind, preserve or discard
-		      ancillary chunks with the identifiers specified by <chunk-ids>.  If this
-		      option is not specified, all ancillary chunks are preserved.
-		      <chunk-ids> must have either '+' or '-' prefixed to them:
-		        If the prefix is '+', the filter is inclusive: a chunk is preserved if
-		        its ID is in <chunk-ids>.
-		        If the prefix is '-', the filter is exclusive: a chunk is preserved if
-		        its ID is not in <chunk-ids>.
-		      The first character after the '+' or '-' is taken to be the separator
-		      between the identifiers listed in <chunk-ids>.  Trailing spaces are
-		      assumed for any identifier that has fewer than four characters.
-		      Examples:
-		        --wave-chunk-filter=+/bext/cue
-		            preserves the chunks in a WAVE file with IDs 'bext' and 'cue ';
-		        --aiff-chunk-filter=-
-		            preserves all the ancillary chunks in an AIFF file (ie, excludes
-		            none) (the default);
-		        --wave-chunk-filter=+
-		            discards all the ancillary chunks in a WAVE file (ie, includes
-		            none).
-		  --output-directory=<pathname>
-		      The directory to which output files will be written.  If an input
-		      pathname is a directory and the '--recursive' option is present, the
-		      directory structure below the input directory will be reproduced in the
-		      output directory.
-		  --overwrite
-		      Overwrite an existing file without seeking confirmation.
-		  --recursive
-		      Process the input directory recursively.
-		  --show-info={none|title|log|result|all}
-		      The kinds of information that will be written to the standard output
-		      stream.  Multiple kinds may be specified, separated by ','.  The default
-		      value is 'log,result'.
-
-		If an option takes an argument, the name and argument of the option may be
-		separated either by whitespace or by a single '='.
-
-		If an input pathname has the prefix '@', it denotes a file that contains a list
-		of input pathnames and, optionally, corresponding output directories.  Each
-		non-empty line of the file is expected to contain a single input pathname,
-		which may be followed by one or more tab characters (U+0009) and the pathname
-		of an output directory.
-
-		The last component of an input pathname may contain the wildcards '?' and '*'.
-
-		If an input pathname has the prefix '+', the prefix is ignored.  The prefix can
-		be used
-		  - to prevent the expansion of patterns such as '*' on the Java command line,
-		  - to avoid a conflict with an option or a subcommand, or
-		  - to allow a pathname that starts with a literal '@'.
-		A literal '+' at the start of a pathname can be escaped by prefixing '+' to
-		it.
-
-		A pathname may contain Java system properties or environment variables enclosed
-		between '${' and '}'; eg, ${HOME}.  The cent sign (U+00A2) may be used instead
-		of '$'.  A Java system property takes precedence over an environment variable.
-		  - A Java system property can be specified explicitly with the prefix 'sys.';
-		    for example, ${sys.user.home}.
-		  - An environment variable can be specified explicitly with the prefix 'env.';
-		    for example, ${env.HOME}.""";
 
 	/** Miscellaneous strings. */
 	private static final	String	CONFIG_ERROR_STR			= "Configuration error";
@@ -640,7 +558,7 @@ public class OndaApp
 			try
 			{
 				List<CommandLine.Element<Option>> commandLineElements =
-						new CommandLine<>(Option.class, true, USAGE_MESSAGE).parse(args);
+						new CommandLine<>(Option.class, true, usageMessage()).parse(args);
 				if (!commandLineElements.isEmpty())
 					parseCommandLine(commandLineElements);
 			}
@@ -761,7 +679,7 @@ public class OndaApp
 						{
 							if (InfoKind.ALL_KEY.equals(key))
 							{
-								Stream.of(InfoKind.values())
+								Arrays.stream(InfoKind.values())
 										.filter(value -> value != InfoKind.NONE)
 										.forEach(infoKinds::add);
 							}
@@ -839,7 +757,7 @@ public class OndaApp
 			case HELP:
 				showTitle();
 				System.out.println();
-				System.out.println(USAGE_MESSAGE);
+				System.out.print(usageMessage());
 				break;
 
 			case VALIDATE:
@@ -862,6 +780,30 @@ public class OndaApp
 	}
 
 	//------------------------------------------------------------------
+
+	/**
+	 * Returns the usage message of this application.
+	 *
+	 * @return the usage message of this application.
+	 */
+
+	private String usageMessage()
+	{
+		try
+		{
+			return ResourceUtils.readText(getClass(), USAGE_MESSAGE_FILENAME).replace(APP_NAME_PLACEHOLDER, NAME_KEY);
+		}
+		catch (IOException e)
+		{
+			throw new UnexpectedRuntimeException(e);
+		}
+	}
+
+	//------------------------------------------------------------------
+
+	/**
+	 * Writes the title of this application to the standard output stream if it has not already been written.
+	 */
 
 	private void showTitle()
 	{
@@ -1345,7 +1287,7 @@ public class OndaApp
 		String[] patterns = new String[AppConstants.AUDIO_FILENAME_EXTENSIONS.length];
 		for (int i = 0; i < patterns.length; i++)
 			patterns[i] = "*" + AppConstants.AUDIO_FILENAME_EXTENSIONS[i];
-		return new FilenameFilter.MultipleFilter(patterns, AppConfig.INSTANCE.isIgnoreFilenameCase());
+		return new FilenameFilter.MultipleFilter(AppConfig.INSTANCE.isIgnoreFilenameCase(), patterns);
 	}
 
 	//------------------------------------------------------------------
@@ -1661,10 +1603,7 @@ public class OndaApp
 		private static InfoKind forKey(
 			String	key)
 		{
-			return Stream.of(values())
-					.filter(value -> value.key.equalsIgnoreCase(key))
-					.findFirst()
-					.orElse(null);
+			return Arrays.stream(values()).filter(value -> value.key.equalsIgnoreCase(key)).findFirst().orElse(null);
 		}
 
 		//--------------------------------------------------------------

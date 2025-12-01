@@ -79,7 +79,7 @@ enum AppCommand
 	EDIT_PREFERENCES
 	(
 		"editPreferences",
-		"Preferences" + AppConstants.ELLIPSIS_STR,
+		"Preferences",
 		KeyEvent.VK_P
 	),
 
