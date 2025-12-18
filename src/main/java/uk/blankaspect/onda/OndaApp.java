@@ -1543,7 +1543,7 @@ public class OndaApp
 		),
 
 		/**
-		 * The result of the application.
+		 * The result of a subcommand.
 		 */
 		RESULT
 		(

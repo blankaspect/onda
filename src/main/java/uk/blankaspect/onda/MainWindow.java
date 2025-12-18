@@ -577,33 +577,13 @@ class MainWindow
 		{
 			switch (command)
 			{
-				case IMPORT_FILES:
-					onImportFiles();
-					break;
-
-				case COMPRESS:
-					onCompress();
-					break;
-
-				case EXPAND:
-					onExpand();
-					break;
-
-				case VALIDATE:
-					onValidate();
-					break;
-
-				case VIEW_LOG:
-					onViewLog();
-					break;
-
-				case EDIT_PREFERENCES:
-					onEditPreferences();
-					break;
-
-				case EXIT:
-					onExit();
-					break;
+				case IMPORT_FILES     -> onImportFiles();
+				case COMPRESS         -> onCompress();
+				case EXPAND           -> onExpand();
+				case VALIDATE         -> onValidate();
+				case VIEW_LOG         -> onViewLog();
+				case EDIT_PREFERENCES -> onEditPreferences();
+				case EXIT             -> onExit();
 			}
 		}
 		catch (AppException e)
