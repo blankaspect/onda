@@ -512,9 +512,6 @@ public class OndaApp
 		AppConfig config = AppConfig.INSTANCE;
 		config.read();
 
-		// Set UNIX style for pathnames in file exceptions
-		ExceptionUtils.setUnixStyle(config.isShowUnixPathnames());
-
 		// Start application
 		if (hasGui)
 		{

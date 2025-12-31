@@ -44,18 +44,6 @@ class FPathnameComboBox
 	public FPathnameComboBox()
 	{
 		super(MAX_NUM_PATHNAMES, NUM_COLUMNS);
-		setUnixStyle(AppConfig.INSTANCE.isShowUnixPathnames());
-	}
-
-	//------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////
-//  Class methods
-////////////////////////////////////////////////////////////////////////
-
-	public static void addObserver(FPathnameComboBox comboBox)
-	{
-		AppConfig.INSTANCE.addShowUnixPathnamesObserver(comboBox.getField());
 	}
 
 	//------------------------------------------------------------------

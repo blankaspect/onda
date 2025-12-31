@@ -58,224 +58,14 @@ class PrivateData
 	private static final	int	BLOCK_SIZE	= 1 << 12;  // 4096
 
 ////////////////////////////////////////////////////////////////////////
-//  Enumerated types
+//  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
-
-	// ERROR IDENTIFIERS
-
-
-	private enum ErrorId
-		implements AppException.IId
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constants
-	////////////////////////////////////////////////////////////////////
-
-		MALFORMED_DATA
-		("The private data is malformed."),
-
-		INVALID_DATA
-		("The private data is invalid."),
-
-		UNRECOGNISED_SOURCE_FILE_KIND
-		("The private data belong to an unrecognised kind of audio file."),
-
-		INVALID_NUM_CHUNKS
-		("The number of chunks specified in the private data is invalid."),
-
-		INCORRECT_ADLER32
-		("The checksum of the private data is incorrect.");
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private ErrorId(String message)
-		{
-			this.message = message;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : AppException.IId interface
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		public String getMessage()
-		{
-			return message;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	String	message;
-
-	}
-
-	//==================================================================
-
-////////////////////////////////////////////////////////////////////////
-//  Member classes : non-inner classes
-////////////////////////////////////////////////////////////////////////
-
-
-	// SOURCE CHUNK CLASS
-
-
-	private static class SourceChunk
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private SourceChunk(IffId id,
-							int   size)
-		{
-			this.id = id;
-			this.size = size;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		IffId	id;
-		int		size;
-
-	}
-
-	//==================================================================
-
-////////////////////////////////////////////////////////////////////////
-//  Member classes : inner classes
-////////////////////////////////////////////////////////////////////////
-
-
-	// CHUNK READER CLASS
-
-
-	private class Reader
-		implements FormFile.IChunkReader
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private Reader(ChunkFilter filter)
-		{
-			this.filter = filter;
-			compressor = new Deflater(Deflater.BEST_COMPRESSION);
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods : FormFile.IChunkReader interface
-	////////////////////////////////////////////////////////////////////
-
-		@Override
-		public void beginReading(RandomAccessFile raFile,
-								 IffId            typeId,
-								 int              size)
-		{
-			sourceChunks.clear();
-			compressedDataBlocks.clear();
-			outBuffer = new byte[BLOCK_SIZE];
-			outOffset = 0;
-			compressor.reset();
-		}
-
-		//--------------------------------------------------------------
-
-		@Override
-		public void read(RandomAccessFile raFile,
-						 IffId            id,
-						 int              size)
-			throws AppException, IOException
-		{
-			if (Utils.indexOf(id, sourceKind.getCriticalIds()) < 0)
-			{
-				if (filter.accept(id))
-				{
-					sourceChunks.add(new SourceChunk(id, size));
-					if (size > 0)
-					{
-						byte[] buffer = new byte[size];
-						raFile.readFully(buffer);
-						compressor.setInput(buffer);
-						updateCompressedData();
-					}
-				}
-			}
-			else
-				sourceChunks.add(new SourceChunk(id, 0));
-		}
-
-		//--------------------------------------------------------------
-
-		@Override
-		public void endReading(RandomAccessFile raFile)
-		{
-			compressor.finish();
-			updateCompressedData();
-			if (outOffset > 0)
-			{
-				byte[] buffer = new byte[outOffset];
-				System.arraycopy(outBuffer, 0, buffer, 0, buffer.length);
-				compressedDataBlocks.add(buffer);
-			}
-			adler32 = compressor.getAdler();
-			compressor.end();
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance methods
-	////////////////////////////////////////////////////////////////////
-
-		private void updateCompressedData()
-		{
-			while (true)
-			{
-				int length = compressor.deflate(outBuffer, outOffset, outBuffer.length - outOffset);
-				if (length == 0)
-					break;
-				outOffset += length;
-				if (outOffset >= outBuffer.length)
-				{
-					compressedDataBlocks.add(outBuffer);
-					outBuffer = new byte[BLOCK_SIZE];
-					outOffset = 0;
-				}
-			}
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		private	ChunkFilter	filter;
-		private	byte[]		outBuffer;
-		private	int			outOffset;
-		private	Deflater	compressor;
-
-	}
-
-	//==================================================================
+	private	AudioFileKind	sourceKind;
+	private	int				adler32;
+	private	List<ChunkInfo>	sourceChunks;
+	private	List<byte[]>	compressedDataBlocks;
+	private	byte[]			decompressedData;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -321,10 +111,10 @@ class PrivateData
 	public List<IffId> getAncillaryIds()
 	{
 		List<IffId> ids = new ArrayList<>();
-		for (SourceChunk element : sourceChunks)
+		for (ChunkInfo chunk : sourceChunks)
 		{
-			if (Utils.indexOf(element.id, sourceKind.getCriticalIds()) < 0)
-				ids.add(element.id);
+			if (Utils.indexOf(chunk.id, sourceKind.getCriticalIds()) < 0)
+				ids.add(chunk.id);
 		}
 		return ids;
 	}
@@ -349,11 +139,11 @@ class PrivateData
 		offset += NUM_CHUNKS_SIZE;
 
 		// Set list of chunks in buffer
-		for (SourceChunk element : sourceChunks)
+		for (ChunkInfo chunk : sourceChunks)
 		{
-			element.id.put(buffer, offset);
+			chunk.id.put(buffer, offset);
 			offset += IffId.SIZE;
-			NumberCodec.uIntToBytesBE(element.size, buffer, offset, Chunk.SIZE_SIZE);
+			NumberCodec.uIntToBytesBE(chunk.size, buffer, offset, Chunk.SIZE_SIZE);
 			offset += Chunk.SIZE_SIZE;
 		}
 
@@ -420,41 +210,239 @@ class PrivateData
 			offset += IffId.SIZE;
 			int size = NumberCodec.bytesToUIntBE(data, offset, Chunk.SIZE_SIZE);
 			offset += Chunk.SIZE_SIZE;
-			sourceChunks.add(new SourceChunk(id, size));
+			sourceChunks.add(new ChunkInfo(id, size));
 			length += size;
 		}
 
 		// Decompress data
 		decompressedData = new byte[length];
 		Inflater decompressor = new Inflater();
-		decompressor.setInput(data, offset, data.length - offset);
 		try
 		{
-			length = decompressor.inflate(decompressedData);
-		}
-		catch (DataFormatException e)
-		{
-			throw new AppException(ErrorId.INVALID_DATA);
-		}
+			// Decompress data
+			decompressor.setInput(data, offset, data.length - offset);
+			try
+			{
+				length = decompressor.inflate(decompressedData);
+			}
+			catch (DataFormatException e)
+			{
+				throw new AppException(ErrorId.INVALID_DATA);
+			}
 
-		// Validate data
-		if (!decompressor.finished() || (length < decompressedData.length))
-			throw new AppException(ErrorId.INVALID_DATA);
-		if (decompressor.getAdler() != adler32)
-			throw new AppException(ErrorId.INCORRECT_ADLER32);
+			// Validate data
+			if (!decompressor.finished() || (length < decompressedData.length))
+				throw new AppException(ErrorId.INVALID_DATA);
+			if (decompressor.getAdler() != adler32)
+				throw new AppException(ErrorId.INCORRECT_ADLER32);
+		}
+		finally
+		{
+			decompressor.end();
+		}
 	}
 
 	//------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////
-//  Instance variables
+//  Enumerated types
 ////////////////////////////////////////////////////////////////////////
 
-	private	AudioFileKind		sourceKind;
-	private	int					adler32;
-	private	List<SourceChunk>	sourceChunks;
-	private	List<byte[]>		compressedDataBlocks;
-	private	byte[]				decompressedData;
+
+	// ERROR IDENTIFIERS
+
+
+	private enum ErrorId
+		implements AppException.IId
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		MALFORMED_DATA
+		("The private data is malformed."),
+
+		INVALID_DATA
+		("The private data is invalid."),
+
+		UNRECOGNISED_SOURCE_FILE_KIND
+		("The private data belong to an unrecognised kind of audio file."),
+
+		INVALID_NUM_CHUNKS
+		("The number of chunks specified in the private data is invalid."),
+
+		INCORRECT_ADLER32
+		("The checksum of the private data is incorrect.");
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	message;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private ErrorId(String message)
+		{
+			this.message = message;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : AppException.IId interface
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		public String getMessage()
+		{
+			return message;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
+
+////////////////////////////////////////////////////////////////////////
+//  Member records
+////////////////////////////////////////////////////////////////////////
+
+
+	// RECORD: CHUNK INFORMATION
+
+
+	private record ChunkInfo(
+		IffId	id,
+		int		size)
+	{ }
+
+	//==================================================================
+
+////////////////////////////////////////////////////////////////////////
+//  Member classes : inner classes
+////////////////////////////////////////////////////////////////////////
+
+
+	// CHUNK READER CLASS
+
+
+	private class Reader
+		implements FormFile.IChunkReader
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	ChunkFilter	filter;
+		private	byte[]		outBuffer;
+		private	int			outOffset;
+		private	Deflater	compressor;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private Reader(ChunkFilter filter)
+		{
+			this.filter = filter;
+			compressor = new Deflater(Deflater.BEST_COMPRESSION);
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : FormFile.IChunkReader interface
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		public void beginReading(RandomAccessFile raFile,
+								 IffId            typeId,
+								 int              size)
+		{
+			sourceChunks.clear();
+			compressedDataBlocks.clear();
+			outBuffer = new byte[BLOCK_SIZE];
+			outOffset = 0;
+			compressor.reset();
+		}
+
+		//--------------------------------------------------------------
+
+		@Override
+		public void read(RandomAccessFile raFile,
+						 IffId            id,
+						 int              size)
+			throws AppException, IOException
+		{
+			if (Utils.indexOf(id, sourceKind.getCriticalIds()) < 0)
+			{
+				if (filter.accept(id))
+				{
+					sourceChunks.add(new ChunkInfo(id, size));
+					if (size > 0)
+					{
+						byte[] buffer = new byte[size];
+						raFile.readFully(buffer);
+						compressor.setInput(buffer);
+						updateCompressedData();
+					}
+				}
+			}
+			else
+				sourceChunks.add(new ChunkInfo(id, 0));
+		}
+
+		//--------------------------------------------------------------
+
+		@Override
+		public void endReading(RandomAccessFile raFile)
+		{
+			compressor.finish();
+			updateCompressedData();
+			if (outOffset > 0)
+			{
+				byte[] buffer = new byte[outOffset];
+				System.arraycopy(outBuffer, 0, buffer, 0, buffer.length);
+				compressedDataBlocks.add(buffer);
+			}
+			adler32 = compressor.getAdler();
+			compressor.end();
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods
+	////////////////////////////////////////////////////////////////////
+
+		private void updateCompressedData()
+		{
+			while (true)
+			{
+				int length = compressor.deflate(outBuffer, outOffset, outBuffer.length - outOffset);
+				if (length == 0)
+					break;
+				outOffset += length;
+				if (outOffset >= outBuffer.length)
+				{
+					compressedDataBlocks.add(outBuffer);
+					outBuffer = new byte[BLOCK_SIZE];
+					outOffset = 0;
+				}
+			}
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
 
 }
 

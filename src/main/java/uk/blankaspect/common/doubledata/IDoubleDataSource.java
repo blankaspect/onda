@@ -2,7 +2,7 @@
 
 IDoubleDataSource.java
 
-Double-data source interface.
+Interface: double-data source.
 
 \*====================================================================*/
 
@@ -25,58 +25,12 @@ import uk.blankaspect.common.misc.IDataInput;
 //----------------------------------------------------------------------
 
 
-// DOUBLE-DATA SOURCE INTERFACE
+// INTERFACE: DOUBLE-DATA SOURCE
 
 
 public interface IDoubleDataSource
 	extends IDataInput
 {
-
-////////////////////////////////////////////////////////////////////////
-//  Member classes : non-inner classes
-////////////////////////////////////////////////////////////////////////
-
-
-	// DOUBLE DATA CLASS
-
-
-	public static class DoubleData
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		public DoubleData(double[] data)
-		{
-			this.data = data;
-			length = data.length;
-		}
-
-		//--------------------------------------------------------------
-
-		public DoubleData(double[] data,
-						  int      offset,
-						  int      length)
-		{
-			this.data = data;
-			this.offset = offset;
-			this.length = length;
-		}
-
-		//--------------------------------------------------------------
-
-	////////////////////////////////////////////////////////////////////
-	//  Instance variables
-	////////////////////////////////////////////////////////////////////
-
-		public	double[]	data;
-		public	int			offset;
-		public	int			length;
-
-	}
-
-	//==================================================================
 
 ////////////////////////////////////////////////////////////////////////
 //  Methods
@@ -86,6 +40,54 @@ public interface IDoubleDataSource
 		throws AppException;
 
 	//------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////
+//  Member classes : non-inner classes
+////////////////////////////////////////////////////////////////////////
+
+
+	// CLASS: DOUBLE DATA
+
+
+	public static class DoubleData
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		public	double[]	data;
+		public	int			offset;
+		public	int			length;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		public DoubleData(
+			double[]	data)
+		{
+			this.data = data;
+			length = data.length;
+		}
+
+		//--------------------------------------------------------------
+
+		public DoubleData(
+			double[]	data,
+			int			offset,
+			int			length)
+		{
+			this.data = data;
+			this.offset = offset;
+			this.length = length;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
 
 }
 

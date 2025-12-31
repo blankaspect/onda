@@ -48,6 +48,8 @@ import uk.blankaspect.common.filesystem.PathnameUtils;
 
 import uk.blankaspect.common.iff.ChunkFilter;
 
+import uk.blankaspect.common.misc.SystemUtils;
+
 import uk.blankaspect.common.property.Property;
 import uk.blankaspect.common.property.PropertySet;
 
@@ -124,7 +126,6 @@ class AppConfig
 		String	PATH						= "path";
 		String	SELECT_TEXT_ON_FOCUS_GAINED	= "selectTextOnFocusGained";
 		String	SHOW_OVERALL_PROGRESS		= "showOverallProgress";
-		String	SHOW_UNIX_PATHNAMES			= "showUnixPathnames";
 		String	TEXT_ANTIALIASING			= "textAntialiasing";
 		String	VALIDATE					= "validate";
 	}
@@ -763,70 +764,6 @@ class AppConfig
 	//==================================================================
 
 
-	// PROPERTY CLASS: SHOW UNIX PATHNAMES
-
-
-	private class CPShowUnixPathnames
-		extends Property.BooleanProperty
-	{
-
-	////////////////////////////////////////////////////////////////////
-	//  Constructors
-	////////////////////////////////////////////////////////////////////
-
-		private CPShowUnixPathnames()
-		{
-			super(concatenateKeys(Key.GENERAL, Key.SHOW_UNIX_PATHNAMES));
-			value = false;
-		}
-
-		//--------------------------------------------------------------
-
-	}
-
-	//------------------------------------------------------------------
-
-//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-//  Instance methods : associated methods in enclosing class
-//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-	public boolean isShowUnixPathnames()
-	{
-		return cpShowUnixPathnames.getValue();
-	}
-
-	//------------------------------------------------------------------
-
-	public void setShowUnixPathnames(boolean value)
-	{
-		cpShowUnixPathnames.setValue(value);
-	}
-
-	//------------------------------------------------------------------
-
-	public void addShowUnixPathnamesObserver(Property.IObserver observer)
-	{
-		cpShowUnixPathnames.addObserver(observer);
-	}
-
-	//------------------------------------------------------------------
-
-	public void removeShowUnixPathnamesObserver(Property.IObserver observer)
-	{
-		cpShowUnixPathnames.removeObserver(observer);
-	}
-
-	//------------------------------------------------------------------
-
-//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-//  Instance variables : associated variables in enclosing class
-//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-	private	CPShowUnixPathnames	cpShowUnixPathnames	= new CPShowUnixPathnames();
-
-	//==================================================================
-
-
 	// PROPERTY CLASS: SELECT TEXT ON FOCUS GAINED
 
 
@@ -1185,7 +1122,7 @@ class AppConfig
 		private CPCompressPathname()
 		{
 			super(concatenateKeys(Key.PATH, Key.COMPRESS));
-			value = PathnameUtils.USER_HOME_PREFIX;
+			value = SystemUtils.userHomeDirectoryPathname();
 		}
 
 		//--------------------------------------------------------------
@@ -1242,7 +1179,7 @@ class AppConfig
 		private CPExpandPathname()
 		{
 			super(concatenateKeys(Key.PATH, Key.EXPAND));
-			value = PathnameUtils.USER_HOME_PREFIX;
+			value = SystemUtils.userHomeDirectoryPathname();
 		}
 
 		//--------------------------------------------------------------
@@ -1299,7 +1236,7 @@ class AppConfig
 		private CPValidatePathname()
 		{
 			super(concatenateKeys(Key.PATH, Key.VALIDATE));
-			value = PathnameUtils.USER_HOME_PREFIX;
+			value = SystemUtils.userHomeDirectoryPathname();
 		}
 
 		//--------------------------------------------------------------

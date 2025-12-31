@@ -37,8 +37,6 @@ import javax.swing.JComboBox;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
-import uk.blankaspect.common.property.Property;
-
 import uk.blankaspect.ui.swing.font.FontKey;
 import uk.blankaspect.ui.swing.font.FontUtils;
 
@@ -144,21 +142,6 @@ public class PathnameComboBox
 
 		//--------------------------------------------------------------
 
-		@Override
-		public void propertyChanged(Property property)
-		{
-			// Update UNIX style
-			super.propertyChanged(property);
-
-			// Update pathnames in drop-down list
-			List<String> pathnames = new ArrayList<>();
-			for (String pathname : getPathnames())
-				pathnames.add(convertPathname(pathname));
-			setPathnames(pathnames);
-		}
-
-		//--------------------------------------------------------------
-
 	////////////////////////////////////////////////////////////////////
 	//  Instance methods
 	////////////////////////////////////////////////////////////////////
@@ -200,7 +183,7 @@ public class PathnameComboBox
 		@Override
 		protected void reduceTextWidth(FontMetrics fontMetrics)
 		{
-			text = TextUtils.getLimitedWidthPathname(text, fontMetrics, maxTextWidth, getFileSeparatorChar());
+			text = TextUtils.getLimitedWidthPathname(text, fontMetrics, maxTextWidth, File.separatorChar);
 			textWidth = fontMetrics.stringWidth(text);
 		}
 
@@ -394,13 +377,6 @@ public class PathnameComboBox
 
 	//------------------------------------------------------------------
 
-	public void setUnixStyle(boolean unixStyle)
-	{
-		getField().setUnixStyle(unixStyle);
-	}
-
-	//------------------------------------------------------------------
-
 	public void updateList()
 	{
 		String str = getField().getText();
@@ -426,13 +402,6 @@ public class PathnameComboBox
 	public void setDefaultColours()
 	{
 		((ComboBoxRenderer<?>)getRenderer()).setDefaultColours();
-	}
-
-	//------------------------------------------------------------------
-
-	protected char getFileSeparatorChar()
-	{
-		return getField().isUnixStyle() ? '/' : File.separatorChar;
 	}
 
 	//------------------------------------------------------------------

@@ -459,7 +459,7 @@ class TaskProgressDialog
 				FontMetrics fontMetrics = infoField.getFontMetrics(infoField.getFont());
 				int maxWidth = infoField.getWidth() - ((str == null) ? 0 : fontMetrics.stringWidth(str + " "));
 				String pathname = TextUtils.getLimitedWidthPathname(Utils.getPathname(file), fontMetrics, maxWidth,
-																	Utils.getFileSeparatorChar());
+																	File.separatorChar);
 				infoField.setText((str == null) ? pathname : str + " " + pathname);
 			}
 		});

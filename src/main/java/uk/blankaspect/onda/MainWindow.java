@@ -62,7 +62,6 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 
 import uk.blankaspect.common.exception.AppException;
-import uk.blankaspect.common.exception.ExceptionUtils;
 import uk.blankaspect.common.exception.FileException;
 import uk.blankaspect.common.exception.TaskCancelledException;
 
@@ -293,7 +292,6 @@ class MainWindow
 
 		// Panel: input pathname
 		inPathnameComboBox = new FPathnameComboBox();
-		FPathnameComboBox.addObserver(inPathnameComboBox);
 		PathnamePanel inPathnamePanel = new PathnamePanel(inPathnameComboBox, Command.CHOOSE_INPUT_PATHNAME, this);
 		inPathnamePanel.setButtonTooltipText(SELECT_INPUT_PATHNAME_TOOLTIP_STR);
 
@@ -345,7 +343,6 @@ class MainWindow
 
 		// Panel: output directory
 		outDirectoryComboBox = new FPathnameComboBox();
-		FPathnameComboBox.addObserver(outDirectoryComboBox);
 		PathnamePanel outDirectoryPanel =
 				new PathnamePanel(outDirectoryComboBox, Command.CHOOSE_OUTPUT_DIRECTORY, this);
 		outDirectoryPanel.setButtonTooltipText(SELECT_OUTPUT_DIRECTORY_TOOLTIP_STR);
@@ -1010,8 +1007,7 @@ class MainWindow
 
 	private void onEditPreferences()
 	{
-		if (PreferencesDialog.showDialog(this))
-			ExceptionUtils.setUnixStyle(AppConfig.INSTANCE.isShowUnixPathnames());
+		PreferencesDialog.showDialog(this);
 	}
 
 	//------------------------------------------------------------------
