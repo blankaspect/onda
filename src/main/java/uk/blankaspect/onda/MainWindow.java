@@ -158,7 +158,6 @@ class MainWindow
 	private	JFileChooser			compressFileChooser;
 	private	JFileChooser			expandFileChooser;
 	private	JFileChooser			validateFileChooser;
-	private	JPopupMenu				contextMenu;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -726,25 +725,22 @@ class MainWindow
 		if ((event == null) || event.isPopupTrigger())
 		{
 			// Create context menu
-			if (contextMenu == null)
-			{
-				contextMenu = new JPopupMenu();
-				contextMenu.add(new FMenuItem(AppCommand.COMPRESS));
-				contextMenu.add(new FMenuItem(AppCommand.EXPAND));
-				contextMenu.add(new FMenuItem(AppCommand.VALIDATE));
-				contextMenu.add(new FMenuItem(AppCommand.VIEW_LOG));
-				contextMenu.add(new FMenuItem(AppCommand.EDIT_PREFERENCES));
-				contextMenu.add(new FMenuItem(AppCommand.EXIT));
-			}
+			JPopupMenu menu = new JPopupMenu();
+			menu.add(new FMenuItem(AppCommand.COMPRESS));
+			menu.add(new FMenuItem(AppCommand.EXPAND));
+			menu.add(new FMenuItem(AppCommand.VALIDATE));
+			menu.add(new FMenuItem(AppCommand.VIEW_LOG));
+			menu.add(new FMenuItem(AppCommand.EDIT_PREFERENCES));
+			menu.add(new FMenuItem(AppCommand.EXIT));
 
 			// Update commands for menu items
 			updateCommands();
 
 			// Display menu
 			if (event == null)
-				contextMenu.show(getContentPane(), 0, 0);
+				menu.show(getContentPane(), 0, 0);
 			else
-				contextMenu.show(event.getComponent(), event.getX(), event.getY());
+				menu.show(event.getComponent(), event.getX(), event.getY());
 		}
 	}
 

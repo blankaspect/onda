@@ -676,8 +676,9 @@ class TaskProgressDialog
 		private static final	int	MIN_TIME	= 0;
 		private static final	int	MAX_TIME	= 100 * 60 * 60 * 1000 - 1;
 
-		private static final	String	SEPARATOR_STR		= ":";
-		private static final	String	PROTOTYPE_STR		= "00" + SEPARATOR_STR + "00" + SEPARATOR_STR + "00";
+		private static final	String	SEPARATOR		= ":";
+		private static final	String	PROTOTYPE_TEXT	= "00" + SEPARATOR + "00" + SEPARATOR + "00";
+
 		private static final	String	OUT_OF_RANGE_STR	= "--";
 
 		private static final	Color	TEXT_COLOUR	= new Color(0, 0, 144);
@@ -696,7 +697,7 @@ class TaskProgressDialog
 		{
 			AppFont.MAIN.apply(this);
 			FontMetrics fontMetrics = getFontMetrics(getFont());
-			setPreferredSize(new Dimension(fontMetrics.stringWidth(PROTOTYPE_STR),
+			setPreferredSize(new Dimension(fontMetrics.stringWidth(PROTOTYPE_TEXT),
 										   fontMetrics.getAscent() + fontMetrics.getDescent()));
 			setOpaque(true);
 			setFocusable(false);
@@ -747,9 +748,8 @@ class TaskProgressDialog
 				int hours = minutes / 60;
 				str = ((hours == 0)
 							? Integer.toString(minutes)
-							: Integer.toString(hours) + SEPARATOR_STR
-											+ NumberUtils.uIntToDecString(minutes % 60, 2, '0')) + SEPARATOR_STR
-											+ NumberUtils.uIntToDecString(seconds % 60, 2, '0');
+							: Integer.toString(hours) + SEPARATOR + NumberUtils.uIntToDecString(minutes % 60, 2, '0'))
+						+ SEPARATOR + NumberUtils.uIntToDecString(seconds % 60, 2, '0');
 			}
 			setText(str);
 		}
